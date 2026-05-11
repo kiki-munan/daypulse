@@ -443,7 +443,9 @@
 
 <div class="layout">
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
     <div class="sidebar-label">归档日期</div>
     <ul class="date-list" id="dateList">
       <li><a href="2026/5/11/index.html" class="active">2026 / 5 / 11</a></li>
@@ -453,6 +455,7 @@
       <li><a href="2026/5/6/index.html">2026 / 5 / 6</a></li>
       <li><a href="2026/5/5/index.html">2026 / 5 / 5</a></li>
     </ul>
+    </div>
   </aside>
 
   <!-- Main -->
@@ -695,5 +698,26 @@
   DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
 </footer>
 
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
 </body>
 </html>
