@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dairy knows · 2026/5/5</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">Dairy <span>knows</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="../../7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="../../6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="../index.html" class="active">2026 / 5 / 5</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 05</div>
+      <div class="day-week">星期二 · 五一假期最后一天</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">中美经贸高层视频通话，双方同意管控分歧加强合作</div>
+            <div class="news-item-desc">4月30日晚，中美经贸中方牵头人何立峰与美方财政部长贝森特、贸易代表格里尔举行视频通话，就落实两国元首釜山会晤共识交换意见，双方同意发挥经贸磋商机制推动关系健康发展。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">商务部发布阻断禁令，对抗美国涉伊朗石油制裁</div>
+            <div class="news-item-desc">商务部发布2026年第21号公告，针对美国制裁5家中国企业措施，规定不得承认或遵守相关制裁，维护中企合法权益。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">A股2025年分红总额达2.43万亿，工商银行蝉联"分红王"</div>
+            <div class="news-item-desc">中上协报告显示3711家上市公司发布分红方案，工商银行全年派息逾1105亿元，中国移动、建设银行、贵州茅台分红亦表现亮眼。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">商业航天多地加速布局，五一前后政策与资本双催化</div>
+            <div class="news-item-desc">上海商业航天海上发射技术有限公司设立，由五家国央企持股覆盖上下游。多地抢占赛道，2026年商业航天企业IPO进程提速，板块获资金持续加仓。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">工信部批复卫星物联网商用试验，低轨卫星通信进入实质推进</div>
+            <div class="news-item-desc">工信部批复北京国电高科开展卫星物联网业务商用试验，标志着我国低轨卫星通信规模化应用正式启动，后续将有更多企业跟进。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">资本 · 市场</div>
+          <div class="news-item">
+            <div class="news-item-title">美股收跌道指跌超550点，中东局势升温令风险偏好承压</div>
+            <div class="news-item-desc">阿联酋拦截伊朗导弹，油价应声大涨。布伦特原油涨5.8%报114美元/桶，金价则因通胀担忧下跌2%。欧洲股市汽车板块领跌，宝马跌2.4%、奔驰跌3.3%。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-05/doc-inhwuxfq9292687.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美光科技与闪迪双双创历史新高，存储芯片景气度持续上行</div>
+            <div class="news-item-desc">美光涨6.31%、闪迪涨5.80%，均创历史新高。AI算力扩张带动高速内存需求强劲，存储行业结构性转变逻辑持续兑现。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-05/doc-inhwuxfq9292687.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书月活跃用户达3.5亿，95后+00后合计占比超八成</div>
+            <div class="news-item-desc">2026年小红书已成品牌营销兵家必争之地，95后占50%、00后占35%，二线及以上城市用户占52%。平台从"好物种草"全面进化为品效合一的营销生态。</div>
+            <a class="news-item-link" href="https://www.163.com/dy/article/KRNPSQ3K0556HG0C.html" target="_blank">→ 网易</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">港星吴千语小红书11小时直播单场破1.5亿，刷新非大促纪录</div>
+            <div class="news-item-desc">低粉素人与头部艺人共同推动小红书直播带货生态进化，平台直播商业化加速，内容与交易的边界持续消融。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4824221.html" target="_blank">→ 虎嗅</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">伊朗无人机袭击阿联酋富查伊拉石油设施，美伊停火陷危机</div>
+            <div class="news-item-desc">霍尔木兹海峡紧张局势显著升级，油轮遭袭，特朗普拒绝确认停火协议是否仍有效，仅表示"若回答会被认为不够聪明"。市场对海峡封锁风险高度警惕。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-05/doc-inhwuxfq9292687.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">黄金短期反弹至4575美元，油价通胀预期压制金价上行空间</div>
+            <div class="news-item-desc">现货黄金北美时段反弹1.2%，但中东局势脆弱、能源高企引发通胀担忧，美联储加息路径存在变数，黄金走势受宏观数据牵引。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#五一最后一天 假期收尾情绪内容爆发</div>
+            <div class="trend-meta">节假日情感内容 · 全平台共振</div>
+            <div class="trend-obs">💡 趋势观察：五一尾声，"最后一天""假期结束综合征"类内容在小红书形成高互动峰值。这类情绪型内容天然契合轻量品牌互动——适合快消、旅行、生活方式品牌借势发声，低成本撬动共鸣。</div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#飞猪×小红书五一出行报告 主题出行成首要决策驱动力</div>
+            <div class="trend-meta">平台联名报告 · 旅行内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：两平台联合发布报告，强调69%用户以"人群分化+主题出行"作为旅行决策首要驱动。这意味着内容种草已在旅行决策链路中占据核心位置，也为平台大事件与旅行IP联动提供了数据背书。</div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#中东油价 #能源危机 财经内容渗透生活圈</div>
+            <div class="trend-meta">财经话题 · 跨圈层传播</div>
+            <div class="trend-obs">💡 趋势观察：中东局势推动油价飙升的讨论开始从财经媒体溢出至小红书生活圈，"加油成本上涨""出行计划受影响"的用户自发讨论增多。宏观事件向日常消费渗透，是平台内容生态成熟的标志。</div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#吴千语直播 明星直播带货新纪录引发讨论</div>
+            <div class="trend-meta">直播电商话题 · 艺人商业化</div>
+            <div class="trend-obs">💡 趋势观察：港星在小红书直播单场破1.5亿的话题引发行业广泛讨论。这不只是一个销售数字，更代表着小红书直播生态的成熟信号——艺人直播已从微博/抖音的附属玩法，升级为小红书自己的造星与变现通路。</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 平台生态</div>
+        <div class="learning-title">「从流量到留量」：小红书的商业化在做一件反直觉的事</div>
+        <div class="learning-subtitle">读懂小红书2026年营销逻辑的底层密码</div>
+        <div class="learning-body">
+          <p>大多数平台的商业化是线性的：更多用户→更多广告位→更多收入。但小红书的路径是弯的——它在做一件反直觉的事：<strong>主动降低广告的"广告感"</strong>。</p>
+          <p>2026年小红书提出的核心方向是"从流量到留量"。流量是一次性的——用户被吸引来，完成转化就走了；而留量是持续的——用户因为认同品牌的价值观，主动回访、主动分享、主动推荐。</p>
+          <p>具体表现在两个变化：<strong>① 种草的颗粒度变细</strong>。过去是"铺量曝光"，现在是精准找到有相同生活方式的用户群体，用真实内容建立信任；<strong>② 交易场景前置</strong>。笔记直接挂购物链接、直播间变成内容场，内容与转化不再是两个分开的步骤。</p>
+          <p>对IP营销的启示：大事件活动在小红书上的内容策略，不应只追求"话题曝光量"，而应思考"活动结束后有多少用户把品牌加入了生活的一部分"——这才是平台给出的留量答案。</p>
+        </div>
+        <div class="learning-source">📖 参考来源：新浪财经《2026年小红书营销新航向》· 网易《2026国内十大小红书种草巨头深度剖析》· 知乎《看见具体的人：2026品牌如何在小红书重构增长》</div>
+      </div>
+    </section>
+
+    <!-- ④ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 影视</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 公路电影的哲学</div>
+        <div class="knowledge-headline">在路上：从凯鲁亚克到《末路狂花》，公路叙事为什么永不过时</div>
+        <div class="knowledge-tagline">「上路，是因为留下来更难。」</div>
+
+        <div class="knowledge-intro">
+          公路电影（Road Movie）不是一个类型，它是一种人类的基本冲动：逃离、寻找、失去、抵达。它起源于1960-70年代美国的反文化运动，在《逍遥骑士》里达到政治高潮，在《末路狂花》里完成了性别革命，在《天堂陌影》里变成了存在主义哲学……<br><br>
+          公路电影的核心结构永远一样：一辆车，两个或几个人，一段旅程——但真正的目的地从来不是地图上的那个城市，而是人物内心某个必须面对的真相。理解公路叙事，就是理解为什么"旅行"这个母题能在任何时代的内容营销中产生穿透力。
+        </div>
+
+        <div class="knowledge-cards">
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">《逍遥骑士》</div>
+            <div class="knowledge-card-sub">Easy Rider · 1969 · 美国</div>
+            <div class="knowledge-card-work">公路电影的圣经。两个摩托车手横穿美国，以悲剧结局宣告了反文化运动的终结。导演丹尼斯·霍珀。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">《末路狂花》</div>
+            <div class="knowledge-card-sub">Thelma & Louise · 1991 · 美国</div>
+            <div class="knowledge-card-work">女性公路电影的里程碑。苏珊·萨兰登+吉娜·戴维斯，一场逃亡变成了一次彻底的自我解放。导演雷德利·斯科特。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">《天堂陌影》</div>
+            <div class="knowledge-card-sub">Stranger Than Paradise · 1984 · 美国</div>
+            <div class="knowledge-card-work">独立电影公路片的标杆。吉姆·贾木许用极简影像拍出了疏离与漂泊的诗意，戛纳摄影机奖。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">《菊次郎的夏天》</div>
+            <div class="knowledge-card-sub">1999 · 日本</div>
+            <div class="knowledge-card-work">北野武最温柔的作品。一个大叔带着一个小孩去找妈妈，公路之上是父性的迟到与救赎，久石让的配乐本身就是一段旅程。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">《无人知晓》</div>
+            <div class="knowledge-card-sub">2004 · 日本</div>
+            <div class="knowledge-card-work">是枝裕和。没有公路，却是最彻底的"流浪"——几个被遗弃的孩子困在一间公寓里，内心的漂泊比任何公路都漫长。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">《心迷宫》</div>
+            <div class="knowledge-card-sub">2014 · 中国</div>
+            <div class="knowledge-card-work">忻钰坤导演。中国版"公路悬疑"，以非线性叙事拍出乡村人心的迷宫。小成本独立电影的代表作，展示了公路母题在中国语境中的变体。</div>
+          </div>
+        </div>
+
+        <div class="knowledge-coda">
+          公路叙事与营销的连接：品牌在策划旅行类IP活动时，不妨想想——你的用户"上路"的真实动机是什么？是逃离日常，还是寻找归属？是自我验证，还是与某人重新联结？找到那个真实动机，才能让品牌在旅途中真正出现在对的位置。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  Dairy knows · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+</body>
+</html>
