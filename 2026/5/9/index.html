@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/9</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="../9/index.html" class="active">2026 / 5 / 9</a></li>
+      <li><a href="../8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="../7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="../6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="../5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 09</div>
+      <div class="day-week">星期六 · 五一调休补班</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">一季度GDP增长5%，"十五五"开局超预期，消费成为压舱石</div>
+            <div class="news-item-desc">2026年一季度GDP同比增长5%，为连续五个季度最高增速。工业、外贸双轮驱动，工业增加值同比增长6.3%，进出口总额重回两位数增长。但消费端仍存"冷感"，经济呈现"温差"特征。</div>
+            <a class="news-item-link" href="https://www.bbc.com/zhongwen/articles/c2ev9nzp99yo/simp" target="_blank">→ BBC中文</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">节后医院人满为患：流感+花粉季叠加，雷暴哮喘频发</div>
+            <div class="news-item-desc">五一假期刚过，气温骤变引发流感高发季，多地医院就诊量激增。雷暴哮喘在多个城市同时出现，公共卫生提醒市民做好防护。</div>
+            <a class="news-item-link" href="https://www.ntdtv.com/gb/2026/05/08/a104094254.html" target="_blank">→ 新唐人</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic新论文撬开大模型黑箱：隐藏动机发现率提升4倍以上</div>
+            <div class="news-item-desc">Anthropic提出"自然语言审计"(NLA)方法，用自然语言训练审计员，在Claude Opus 4.6和Mythos Preview预部署对齐审计中，隐藏动机发现率从不足3%提升至12%-15%。AI安全领域里程碑式进展。</div>
+            <a class="news-item-link" href="https://www.infoq.cn/article/gAkVCqphr0A1r2PLSWDz" target="_blank">→ InfoQ</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">黄仁勋：英伟达在华AI芯片份额降至0%，国产替代强势崛起</div>
+            <div class="news-item-desc">NVIDIA CEO黄仁勋公开表示，受出口管制影响，其AI加速器在中国市场份额已归零，并警告管制正在拖慢全球AI部署。同期昇腾950PR推理芯片量产，单卡算力较英伟达特供版H20提升2.87倍。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/946/181.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国家大基金拟领投DeepSeek首轮融资，估值逼近450亿美元</div>
+            <div class="news-item-desc">中国集成电路产业投资基金正洽谈领投DeepSeek，腾讯等多家机构参与。募资将用于扩充国产AI芯片推理集群、推进V4模型全球化，AI+国产算力闭环加速形成。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/wm/2026-05-06/doc-inhwxxki9103770.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">2026五一档总票房破3亿，《寒战1994》《消失的人》领跑</div>
+            <div class="news-item-desc">灯塔专业版数据：五一档新片总票房突破3亿，《寒战1994》《消失的人》《穿普拉达的女王2》位列前三。陈思诚《10间敢死队》票房不足5000万，数亿投资遭遇滑铁卢，直言"1200万票房不够电影院房租"。</div>
+            <a class="news-item-link" href="https://c.m.163.com/news/a/KRUHTAVJ0519C6T9.html" target="_blank">→ 网易新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">五一假期全社会跨区域人员流动15.25亿人次，体验经济激活消费</div>
+            <div class="news-item-desc">"体验经济"成关键词：各地举办约1.37万场文旅消费活动，发放超2.84亿元消费券。"一老一小"成家庭消费核心引擎，赛事+演艺流量向本地生活精准转化。</div>
+            <a class="news-item-link" href="https://www.news.cn/20260507/9e2b16becafd47aab2903472f4697a36/c.html" target="_blank">→ 新华网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">孟子义确认回归《五十公里桃花坞》第6季，导演坦言"最想留的人是她"</div>
+            <div class="news-item-desc">孟子义5月8日在微博评论区公开回应确认6月回归，作为唯一回归的老坞民引发热议。导演谢涤葵此前表态"最想留的坞民就是孟子义"。话题#孟子义将回归桃花坞6#登上微博热搜。</div>
+            <a class="news-item-link" href="https://weibo.com/a/hot/79c0a7bcac1e3831_0.html?type=grab" target="_blank">→ 微博</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">2026广告主信心显著回归：超三成选择扩张，"活人感"成新共识</div>
+            <div class="news-item-desc">《2026中国广告主营销趋势调查报告》显示，超30%广告主选择经营扩张，同比提升近7个百分点。"活人感"成为品牌营销核心关键词——从信息播报转向情绪共振，消费者期待品牌成为"真实的人"而非"信息机器"。</div>
+            <a class="news-item-link" href="https://www.163.com/dy/article/KRM9V78U0530HI28.html" target="_blank">→ 网易</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">奥美发布2026意见领袖营销趋势：中国品牌全球化需从流量转向信任</div>
+            <div class="news-item-desc">奥美最新报告指出，中国品牌出海亟需告别流量营销模式，转向以信任与ROI为核心的创作者经济，建立持久的文化联结。</div>
+            <a class="news-item-link" href="https://www.ogilvy.com/cn/ideas/baogao2026nianyijianlingxiuyingxiaoqushi" target="_blank">→ Ogilvy</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">霍尔木兹海峡再起冲突：伊朗称美违反停火协议打击三艘美军舰</div>
+            <div class="news-item-desc">停火接近四周后局势再度紧张，伊朗指控美军在海峡发动攻击。古特雷斯呼吁双方保持克制，俄罗斯同意特朗普提出的5月9-11日停火延长计划。美伊谈判三大症结：海峡开放、浓缩铀、伊朗海外资产。</div>
+            <a class="news-item-link" href="https://tv.cctv.com/2026/05/08/VIDEIo7xQ1HQMFusASh8lad5260508.shtml" target="_blank">→ 央视网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">全球聚焦"习川会"：特朗普即将访中，"斗而不破"成共识</div>
+            <div class="news-item-desc">特朗普即将启程访中与习近平会面，金融分析人士指出特朗普在贸易战和海峡危机中虽占上风，但会给足面子，中美关系"斗而不破"仍是主基调。</div>
+            <a class="news-item-link" href="https://www.voachinese.com/a/voa-interview-with-gordon-poon-20260506/8147947.html" target="_blank">→ 美国之音</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#体验经济 五一假期后持续发酵</div>
+            <div class="trend-meta">消费内容赛道 · 平台大事件方向</div>
+            <div class="trend-obs">💡 趋势观察：五一期间"体验经济"内容在小红书大量产出，从赛事到演艺、从亲子到银发，"有文化厚度的消费体验"成为用户最愿意分享的内容类型。对平台大事件而言，纯展示型内容正在让位于可参与的沉浸式体验——用户不只想"看"，更想"在场"。</div>
+            <div class="trend-source"><a href="https://www.news.cn/20260507/9e2b16becafd47aab2903472f4697a36/c.html" target="_blank">→ 新华网·体验经济激活消费</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#孟子义回归桃花坞6 跨平台话题联动</div>
+            <div class="trend-meta">综艺话题 · 艺人IP热度</div>
+            <div class="trend-obs">💡 趋势观察：孟子义回归消息从微博热搜向小红书快速传导，"作而不茶、憨而真实"的人设标签与小红书的"活人感"审美天然契合。艺人综艺话题的自然生长期窗口，是品牌借势植入的高效率场景。</div>
+            <div class="trend-source"><a href="https://weibo.com/a/hot/79c0a7bcac1e3831_0.html?type=grab" target="_blank">→ 微博·孟子义回归话题</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#五一档票房 陈思诚翻车引发行业讨论</div>
+            <div class="trend-meta">影视内容赛道 · 行业话题</div>
+            <div class="trend-obs">💡 趋势观察：《10间敢死队》票房不足5000万的"翻车"事件在小红书引发"中国电影怎么了"的广泛讨论。用户对"套路化大制作"的审美疲劳正在加速，真实、小切口、强共鸣的内容反而更容易获得口碑——这对内容营销策略有直接参考价值。</div>
+            <div class="trend-source"><a href="https://www.163.com/dy/article/KSBUVVSN0548I7U4.html" target="_blank">→ 网易·陈思诚五一档翻车</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#国产AI芯片 英伟达份额归零引发科技圈热议</div>
+            <div class="trend-meta">科技内容赛道 · AI国产替代</div>
+            <div class="trend-obs">💡 趋势观察：黄仁勋"中国市场份额归零"言论在科技类博主中引发大量解读。昇腾950、寒武纪等国产芯片概念股走强，"AI算力自主可控"正在从小众科技话题升级为全民关注的叙事。小红书科技内容赛道迎来新的流量红利期。</div>
+            <div class="trend-source"><a href="https://www.ithome.com/0/946/181.htm" target="_blank">→ IT之家·英伟达中国份额归零</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#活人感 成为品牌营销新关键词</div>
+            <div class="trend-meta">品牌营销赛道 · 方法论讨论</div>
+            <div class="trend-obs">💡 趋势观察："活人感"从2025年的品牌"祛魅"尝试，到2026年已成为行业共识。西贝、始祖鸟等案例证明，引发广泛讨论的往往不是广告本身，而是品牌像一个"真实的人"在沟通——有态度、有情绪、有缺陷。平台大事件的沟通方式也需要从"官方播报"转向"在场对话"。</div>
+            <div class="trend-source"><a href="https://zhuanlan.zhihu.com/p/1997946002892691054" target="_blank">→ 知乎·2026活人感品牌新共识</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · "活人感"营销</div>
+        <div class="learning-title">品牌正在变成「人」：从信息播报到情绪共振的范式迁移</div>
+        <div class="learning-subtitle">一次拆解2026年品牌"活人感"的底层逻辑</div>
+        <div class="learning-body">
+          <p>2025年，品牌开始学着"做真人"——放下完美人设，用自嘲、自黑、甚至"翻车"来拉近距离。这被称作品牌的"祛魅元年"。</p>
+          <p>但2026年，"活人感"已经不止是一种沟通风格，而是一种<strong>全新的品牌资产</strong>。知萌咨询的《中国消费趋势十年报告》和虎嗅梳理的11大营销趋势都指向同一个结论：<strong>消费者不再需要一个完美的品牌，他们需要一个真实的人。</strong></p>
+          <p><strong>核心转向是什么？</strong></p>
+          <p>从"信息播报"到"情绪共振"。以西贝、始祖鸟等事件为例——真正引发讨论的不是广告投放，而是品牌在某个瞬间表现得像一个"有态度、有情绪、有缺陷的真实的人"。消费者期待被理解、被尊重、被认真对待，而不是被当作流量池里的一个ID。</p>
+          <p>电通创意的《2026创意趋势报告：生成现实》将其提炼为5大驱动力：AI技术从"炫技"回归"策略底座"、内容营销从"蹭热点"升级为"建资产"、情绪价值进入精细化运营阶段、线下商业活动全面回流、以及"活人感"从风格变成共识。</p>
+          <p><strong>对平台大事件的启示是直接的：</strong>当品牌不再想"怎么说"，而想"怎么在场"时，平台需要提供的是"对话的场景"而非"展示的舞台"。一场大事件的价值，不在于覆盖了多少人，而在于让多少人觉得"这个品牌懂我"。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://zhuanlan.zhihu.com/p/1997946002892691054" target="_blank">知乎《2026，活人感成为品牌新共识》</a> ·
+          <a href="https://www.huxiu.com/article/4837827.html" target="_blank">虎嗅《2026影响品牌的11个营销趋势》</a> ·
+          <a href="https://socialbeta.com/article/110936" target="_blank">SocialBeta《5个关键词前瞻2026品牌营销趋势》</a> ·
+          <a href="https://www.163.com/dy/article/KRM9V78U0530HI28.html" target="_blank">网易《2026中国广告主营销趋势调查报告》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 密码学</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🔐 主题策展 · 破译者：信息安全的先驱们</div>
+        <div class="knowledge-headline">从恩尼格玛到量子加密：那些守护秘密的人</div>
+        <div class="knowledge-tagline">「密码学的本质，是在信息中隐藏意图。」</div>
+
+        <div class="knowledge-intro">
+          密码学（Cryptography）的历史，就是人类试图在"说"与"藏"之间寻找平衡的历史。从凯撒密码到恩尼格玛机，从图灵破解纳粹密码到香农奠定信息论基础——每一次密码学的突破，都重塑了战争、商业与权力的格局。<br><br>
+          在今天，当AI能够"读出大模型的隐藏动机"（正如Anthropic本周发表的论文），密码学的精神遗产以另一种方式延续：我们不再只是加密信息，我们开始尝试"加密"AI的思想。理解密码学的脉络，也是理解"安全"这一概念如何在不同时代被重新定义。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Alan_Turing_Aged_16.jpg/320px-Alan_Turing_Aged_16.jpg"
+              alt="Alan Turing"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🧠</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">艾伦·图灵</div>
+              <div class="knowledge-card-sub">Alan Turing · 英国 · 1912–1954</div>
+              <div class="knowledge-card-work">二战期间破解德国恩尼格玛密码，缩短了战争至少两年。提出"图灵机"概念，奠定计算机科学基础。图灵测试至今仍是AI哲学的核心命题。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/ClaudeShannon_MFO3807.jpg/320px-ClaudeShannon_MFO3807.jpg"
+              alt="Claude Shannon"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">📡</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">克劳德·香农</div>
+              <div class="knowledge-card-sub">Claude Shannon · 美国 · 1916–2001</div>
+              <div class="knowledge-card-work">信息论之父。1948年发表论文《通信的数学理论》，定义了"比特"，建立了信息传输与加密的数学基础。他也是二战期间贝尔实验室的密码分析专家。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Whitfield_Diffie_at_CWI%2C_Amsterdam_%281989%29.jpg/320px-Whitfield_Diffie_at_CWI%2C_Amsterdam_%281989%29.jpg"
+              alt="Whitfield Diffie"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🔑</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">惠特菲尔德·迪菲</div>
+              <div class="knowledge-card-sub">Whitfield Diffie · 美国 · 1944–</div>
+              <div class="knowledge-card-work">1976年与Martin Hellman提出"迪菲-赫尔曼密钥交换"，开创公钥密码学时代。2015年获图灵奖。今天HTTPS、SSL/TLS的底层都源于这一突破。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🔒</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王小云</div>
+              <div class="knowledge-card-sub">中国 · 1966– · 密码学家</div>
+              <div class="knowledge-card-work">2004年破解MD5和SHA-1两大国际哈希算法，震动全球密码学界。她设计的SM3成为中国国家密码标准，并被纳入ISO国际标准。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">💻</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">段海新</div>
+              <div class="knowledge-card-sub">中国 · 网络安全专家</div>
+              <div class="knowledge-card-work">清华大学教授，中国密码学会理事。长期致力于网络安全协议和量子密码研究，是中国量子通信和密码体系建设的核心学者之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Shafi_Goldwasser.jpg/320px-Shafi_Goldwasser.jpg"
+              alt="Shafi Goldwasser"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🎓</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">莎菲·戈德瓦塞尔</div>
+              <div class="knowledge-card-sub">Shafi Goldwasser · 以色列/美国 · 1956–</div>
+              <div class="knowledge-card-work">2012年图灵奖得主。在零知识证明、概率加密等领域做出奠基性贡献。"零知识证明"正在成为Web3和隐私计算的核心技术。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          今天的密码学与AI安全的呼应：Anthropic本周发表的"自然语言审计"论文，本质上是在做一件和图灵破解恩尼格玛相似的事——试图从"加密"的行为模式中，还原出真实的意图。密码学教我们：信息可以被隐藏，但模式总会留下痕迹。这个洞察，既适用于破解密码，也适用于理解AI。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+</body>
+</html>
