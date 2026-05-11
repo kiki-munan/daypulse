@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dairy knows · 2026/5/6</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">Dairy <span>knows</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="../../7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="../index.html" class="active">2026 / 5 / 6</a></li>
+      <li><a href="../../5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 06</div>
+      <div class="day-week">星期三 · 五一假期后首个工作日</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">五一消费亮眼：餐饮+31.4%，旅游+21.2%，信心持续回升</div>
+            <div class="news-item-desc">增值税发票数据印证了消费侧的强劲复苏。居民家庭服务同比增长14.2%，"以旧换新"惠及8620万人次，内需引擎启动信号清晰。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">央行开展3000亿买断式逆回购，流动性保持充裕</div>
+            <div class="news-item-desc">期限91天，旨在对冲节后资金面波动。节后首日流动性投放规模超预期，市场情绪稳定。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">字节跳动估值3.8万亿、营收1.3万亿，"超级独角兽"再刷新认知</div>
+            <div class="news-item-desc">节后市场热议字节最新估值数据，其广告+电商+AI多引擎并驱的商业模型被广泛讨论。对国内平台商业化的参照意义持续升温。</div>
+            <a class="news-item-link" href="https://caifuhao.eastmoney.com/news/20260506075409317788430" target="_blank">→ 东方财富</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">DeepSeek宣布转向国产芯片，华为昇腾950下半年大规模供货</div>
+            <div class="news-item-desc">国产AI+国产算力的闭环正在加速形成。DeepSeek新模型定价预计大幅下降，国产AI生态竞争力进一步强化。</div>
+            <a class="news-item-link" href="https://juejin.cn/post/7635832321267482674" target="_blank">→ 稀土掘金</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">资本 · 市场</div>
+          <div class="news-item">
+            <div class="news-item-title">A股节后开门红，科创50一度涨超9%，算力+芯片全线爆发</div>
+            <div class="news-item-desc">科创50涨幅一度触及9%，寒武纪续创历史新高，海光信息触及20cm涨停。算力租赁、商业航天概念活跃，市场成交额3.25万亿元。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">东方证券拟收购上海证券100%股权，券商整合浪潮持续</div>
+            <div class="news-item-desc">通过发行A股+现金方式收购，股票5月7日复牌。证券行业集中度提升趋势延续，头部券商规模效应将进一步凸显。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">体验经济+IP联名引爆假期，"赛事+演艺"流量向本地生活精准转化</div>
+            <div class="news-item-desc">五一假期消费结构显现明显分化：兴趣驱动、体验优先、场景消费成主流。品牌借势演艺赛事IP的转化效率显著高于纯内容投放。</div>
+            <a class="news-item-link" href="http://jjckb.xinhuanet.com/20260505/93266276bd0c4b71bf6535a1581a99ba/c.html" target="_blank">→ 经济参考报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">抖音生活服务五一酒店团购同比+86%，本地生活争夺进入白热化</div>
+            <div class="news-item-desc">抖音心动生活节期间酒店宾馆团购爆发，地方菜堂食+61%，亲子游+49%。美团、抖音、小红书本地生活三方格局加速分化。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/stock/jdts/2026-05-04/detail-inhwtzzu7664512.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美伊停火协议趋稳，美股纳指+标普500续创历史新高</div>
+            <div class="news-item-desc">美伊紧张局势阶段性缓和，纳指涨2.02%、标普500涨1.46%，英伟达涨超5%市值重回5万亿美元。风险资产全面回升，油价同步回落。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-06/doc-inhwxaeq8465454.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">高盛上调美股目标位，预期标普500年底触及8000点</div>
+            <div class="news-item-desc">高盛分析认为，企业盈利表现支撑乐观预期，市场从地缘风险切换至基本面驱动，科技与资源仍是两条核心主线。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/headline/2026-05-05/doc-inhwuxfq9292687.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#节后第一天 #打工人归位 情绪内容全面爆发</div>
+            <div class="trend-meta">节后复工情感内容 · 高互动时段</div>
+            <div class="trend-obs">💡 趋势观察：节后第一个工作日，小红书"假期结束""重新上班"类内容互动量通常是平日的2-3倍。这是品牌触达用户情绪的天然窗口——轻松、自嘲、治愈调性的内容在这一天格外有穿透力。</div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#五一消费数据 话题持续发酵，内容创作者跟进解读</div>
+            <div class="trend-meta">财经解读内容 · 消费洞察赛道</div>
+            <div class="trend-obs">💡 趋势观察：消费数据发布后，小红书上大量财经博主和生活方式博主跟进发布"五一消费趋势解读"，这类PGC+UGC共振内容往往能在平台上维持3-5天的话题热度。对平台商业化而言，节后数据时间节点是输出品牌洞察内容的好时机。</div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#体验式消费 #老字号打卡 文化消费趋势持续升温</div>
+            <div class="trend-meta">生活方式内容 · 文旅赛道</div>
+            <div class="trend-obs">💡 趋势观察：假期中"老字号体验""非遗打卡""夜经济探店"内容持续高热，节后仍有余温。对大事件IP策划的启示：有文化厚度的活动体验，比纯流量导向的活动更容易在小红书生成高质量UGC。</div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#A股开门红 科技股热潮蔓延至小红书理财内容圈</div>
+            <div class="trend-meta">投资理财内容 · 科技板块</div>
+            <div class="trend-obs">💡 趋势观察：A股算力+半导体爆发带动小红书理财内容创作量激增，AI概念股讨论从专业财经平台向生活社区渗透。这个跨圈层渗透路径对品牌的参考价值是：科技类话题已经不只属于科技圈用户。</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 消费心理</div>
+        <div class="learning-title">「体验经济」不是新词，但现在它的含义变了</div>
+        <div class="learning-subtitle">从五一数据出发，理解消费升级的真实方向</div>
+        <div class="learning-body">
+          <p>1998年，约瑟夫·派恩和詹姆斯·吉尔摩在《哈佛商业评论》提出"体验经济"概念：产品→服务→体验，是价值创造的三个层次。消费者不只是在买东西，他们在购买一段经历、一种感受、一个可以讲给别人听的故事。</p>
+          <p>2026年的五一数据让这个概念有了新的注脚：<strong>旅游游览和娱乐服务销售额增长21.2%，夜间客流超8000万，"赛事+演艺"流量向本地生活精准转化。</strong>这些数字说明，消费者不只是"愿意花更多钱体验"，而是主动在用体验来构建自我认同。</p>
+          <p>这个变化对营销的意义是：<strong>你的活动能不能给用户提供一个"值得发到朋友圈/小红书"的理由？</strong>如果不能，预算再高的曝光也是一次性的。品牌活动从"让更多人知道我"升级为"让参与的人有东西可以讲"，才是体验经济时代的营销逻辑。</p>
+          <p>大事件IP的核心价值，本质上就是创造这种"值得被讲述的体验"——策展、沉浸、限定、联名，每一个设计元素的终极目的，都是让用户成为内容的主动传播者。</p>
+        </div>
+        <div class="learning-source">📖 参考来源：约瑟夫·派恩《体验经济》· 央广网《"五一"文旅消费多点开花》· 经济参考报《从人潮涌动到订单飙升》</div>
+      </div>
+    </section>
+
+    <!-- ④ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 品牌</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">👟 主题策展 · 运动品牌的文化战争</div>
+        <div class="knowledge-headline">Nike、Adidas、Li-Ning：一场关于身份认同的百年战争</div>
+        <div class="knowledge-tagline">「卖鞋，不如卖一种成为某种人的可能。」</div>
+
+        <div class="knowledge-intro">
+          运动品牌的竞争，表面上是产品，底层是文化身份的争夺。Nike从来不只是卖运动鞋，它卖的是"Just Do It"背后那个不认输的自我；Adidas卖的是街头文化的归属感；New Balance卖的是"我不追潮流，潮流追我"的反叛态度。<br><br>
+          而李宁在经历了2008年奥运高光与2012年危机之后，用"中国李宁"完成了一次教科书级别的品牌重生——将国潮叙事与运动专业性绑定，让一个本土品牌在国际赛场上真正拥有了文化话语权。理解这几个品牌的竞争轨迹，就是理解运动营销乃至IP营销的底层逻辑。
+        </div>
+
+        <div class="knowledge-cards">
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">Nike</div>
+            <div class="knowledge-card-sub">1964 · 美国俄勒冈州</div>
+            <div class="knowledge-card-work">创始人菲尔·奈特。"Just Do It"1988年诞生，与迈克尔·乔丹的合作重写了运动营销史。球鞋文化的缔造者之一。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">Adidas</div>
+            <div class="knowledge-card-sub">1949 · 德国黑措根奥拉赫</div>
+            <div class="knowledge-card-work">阿迪·达斯勒创立。三条纹是街头文化的图腾，Stan Smith是最畅销球鞋之一。与Kanye合作的Yeezy系列重塑了潮流鞋市场。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">New Balance</div>
+            <div class="knowledge-card-sub">1906 · 美国波士顿</div>
+            <div class="knowledge-card-work">曾因"老爹鞋"被嘲笑，后因此逆袭。"Made in USA"是核心身份标签，用反潮流姿态俘获了最挑剔的年轻消费者。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">李宁</div>
+            <div class="knowledge-card-sub">1990 · 中国广东</div>
+            <div class="knowledge-card-work">2018年纽约时装周"中国李宁"系列爆红，国潮浪潮的引爆点。创始人李宁是体操运动员，品牌从个人IP起步，完成了从运动到文化的跨越。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">安踏</div>
+            <div class="knowledge-card-sub">1991 · 中国福建晋江</div>
+            <div class="knowledge-card-work">收购FILA、始祖鸟、萨洛蒙，构建多品牌矩阵。2023年超越Adidas成为中国第二大运动品牌，并购战略是中国品牌全球化的重要案例。</div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-name">On昂跑</div>
+            <div class="knowledge-card-sub">2010 · 瑞士苏黎世</div>
+            <div class="knowledge-card-work">从山地跑鞋起步，凭借"云感"科技和极简设计打入高端市场。获得Roger Federer投资，是近十年运动品牌中增速最快的新贵之一。</div>
+          </div>
+        </div>
+
+        <div class="knowledge-coda">
+          白鹿签约李宁的新闻联系今日策展来看更有意思：李宁选择白鹿，不只是因为流量，而是因为白鹿的形象与"女子运动生活"的品牌叙事高度契合。运动品牌的代言逻辑，本质上是在用明星的身份认同，强化品牌自己想成为的那种文化符号。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  Dairy knows · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+</body>
+</html>
