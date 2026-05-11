@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/8</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="../9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="../index.html" class="active">2026 / 5 / 8</a></li>
+      <li><a href="../../7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="../../6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="../../5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 08</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">三星宣布退出中国大陆家电市场，国产品牌竞争力全面碾压</div>
+            <div class="news-item-desc">三星5月6日宣布停止在中国大陆销售电视、显示器等全线家电产品，仅保留售后服务。1992年进入中国，在海信、TCL、小米等国产品牌崛起后市场份额持续萎缩至不足1%，此次退出是竞争格局演变的必然结果。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/headline/2026-05-08/detail-inhxcqkt4625593.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">社保基金持仓曝光：持股5746亿，农业银行超千亿成第一重仓</div>
+            <div class="news-item-desc">2026年一季度社保基金现身706只个股前十大股东，持股市值5746亿元。金融板块占重仓前十一半席位，显示出"压舱石"策略的一贯逻辑。京沪高铁、比亚迪亦在列，投资取向稳健而有远见。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/headline/2026-05-08/detail-inhxcqkt4625593.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果首款AI可穿戴：内置摄像头的AirPods进入DVT阶段，9月亮相</div>
+            <div class="news-item-desc">苹果AI AirPods已完成设计验证测试，最快9月发布。左右耳机各配低分辨率摄像头，支持新版Siri视觉问答，技术合作引入Google Gemini。内置数据上传指示灯回应隐私担忧。苹果AI硬件战略从手机屏幕延伸到耳朵，比智能眼镜更贴近日常。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/947/455.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI官方CLI工具开源上线，终端一行命令直接调API</div>
+            <div class="news-item-desc">OpenAI在GitHub正式开源命令行工具openai-cli，Apache 2.0协议，支持Homebrew安装。可直接调用带网页搜索、代码解释器的Responses API，支持JSON/YAML结构化输出，一行命令完成图像生成、语音转录。AI开发效率工具链进一步完善。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">本地推理提速40%：atomic.chat为LLaMA.cpp引入多令牌预测技术</div>
+            <div class="news-item-desc">atomic.chat通过多令牌预测（MTP）技术将Gemma 4 26B在MacBook Pro M5 Max上的生成速度提升约40%，整体运行速度提升1.5倍。本地AI部署进入新效率门槛，轻量化私有化场景可行性再升一级。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">乳企综艺赞助大洗牌：伊利神速拿下《乘风2026》，金典错失王濛红利</div>
+            <div class="news-item-desc">《乘风2026》一公爆火后，伊利火速签下王濛拍TVC，而连续冠名5季的金典因行业整体预算收缩错失良机。安慕希同步撤出综艺赞助，飞鹤反向加码"抄底"。乳制品行业连续两年收入下滑，正在用综艺赞助的洗牌倒逼营销逻辑的重构。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/7975017.html" target="_blank">→ 钛媒体</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">潮玩赛道全景报告：十余家非传统企业入局，IP经济进入规模化拐点</div>
+            <div class="news-item-desc">毕马威报告显示，2021年至2026年初已有十余家零售、科技、教育等跨界企业明确布局潮玩业务单元。泡泡玛特引领的IP经济正从小众圈层走向全年龄段主流消费，情绪价值变现逻辑成立。</div>
+            <a class="news-item-link" href="https://assets.kpmg.com/content/dam/kpmgsites/cn/pdf/zh/2026/04/panoramic-insights-and-trend-prospects-of-the-tide-play.pdf.coredownload.inline.pdf" target="_blank">→ 毕马威报告</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">五一演出市场全景复盘：六大维度爆发，Livehouse与文博展成新增量</div>
+            <div class="news-item-desc">2026五一演出市场在个人演唱会、音乐节、群星演唱会、剧院、Livehouse、文博展览六大维度全面爆发。Livehouse场次同比增长超60%，沉浸式文博展成新宠，演出经济正在重构城市文化消费格局。</div>
+            <a class="news-item-link" href="https://www.xgccm.com/article/detail/5376" target="_blank">→ 星广传媒</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美伊谈判胶着，霍尔木兹海峡控制权成核心分歧，油价剧烈震荡</div>
+            <div class="news-item-desc">美伊停战谈判进入关键期，核计划管控与霍尔木兹海峡控制权分歧难解。5月7日WTI原油盘中跳水超5%，隔夜美股科技股随特朗普"自由计划"政策反复大幅波动。地缘不确定性持续向大宗商品和资本市场传导。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c0019057gj4.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#用万能旅行拍照姿势美美出片 热度931万</div>
+            <div class="trend-meta">摄影内容赛道 · 生活方式</div>
+            <div class="trend-obs">💡 趋势观察：旅行内容的热度在五一后并未迅速退潮，反而从"去哪儿"转向"怎么拍"，用户的内容消费从行程规划转向技巧沉淀。这是平台"种草-拔草-沉淀"内容循环的典型体现，对品牌意味着：旅行赛道的营销窗口远不止节假日前后。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/L4MdA5ldxD" target="_blank">→ 今日热榜·小红书热榜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#耗时三年拍下古诗词里的中国 热度919万</div>
+            <div class="trend-meta">文化内容赛道 · 人文摄影</div>
+            <div class="trend-obs">💡 趋势观察：长周期深度内容在小红书持续获得高传播，"慢工出细活"的创作叙事本身就是内容。文化+视觉+时间感的组合正在成为高质量内容的稳定公式，对大事件策划有启发：不是只有"快"才能打动人。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/L4MdA5ldxD" target="_blank">→ 今日热榜·小红书热榜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#乘风2026 王濛 品牌借势讨论持续发酵</div>
+            <div class="trend-meta">综艺话题 · 品牌营销联动</div>
+            <div class="trend-obs">💡 趋势观察：伊利×王濛的TVC在小红书引发二次传播，用户自发二创和讨论拉长了内容生命周期。综艺爆款人物的营销窗口极短，品牌"网速"决定能否接住流量红利——这是给所有品牌合作策划的一堂实时课。</div>
+            <div class="trend-source"><a href="https://www.tmtpost.com/7975017.html" target="_blank">→ 钛媒体·乳企营销洗牌报道</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#超日常美食教程 热度879万</div>
+            <div class="trend-meta">美食内容赛道 · 生活日常</div>
+            <div class="trend-obs">💡 趋势观察：美食内容的"日常感"正在超越精致感成为核心竞争力——不是摆盘多好看，而是"我也能做"。快消食品品牌在小红书的内容策略应向"生活场景嵌入"转移，而非只做产品展示。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/L4MdA5ldxD" target="_blank">→ 今日热榜·小红书热榜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#定格这一刻的日照 自然摄影话题持续活跃</div>
+            <div class="trend-meta">摄影内容赛道 · 情绪内容</div>
+            <div class="trend-obs">💡 趋势观察：以光线和时间为主题的情绪摄影内容在小红书的传播呈现出强烈的"此刻感"——它不种草具体产品，却在积累用户对美好生活的想象。文旅和生活方式品牌可以借力这类内容做情感共鸣而非硬推广。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/L4MdA5ldxD" target="_blank">→ 今日热榜·小红书热榜</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 综艺营销</div>
+        <div class="learning-title">为什么品牌在综艺上的"网速"比预算更重要？</div>
+        <div class="learning-subtitle">从伊利×王濛看综艺营销的黄金48小时法则</div>
+        <div class="learning-body">
+          <p>2026年《乘风》一公播出后，王濛的表演在48小时内成为全网最热的综艺素材。而伊利在这48小时内完成了从"看到热点"到"TVC上线"的完整链路，让王濛再唱《心愿便利贴》成为品牌内容。这不是靠预算，靠的是<strong>反应速度</strong>。</p>
+          <p>相比之下，连续冠名5季的金典反应慢了一步——它没有错在预算，而是错在<strong>决策链路太长</strong>。热点的生命周期通常不超过72小时，品牌能接住的前提是：决策授权下放、内容模板提前备好、执行团队保持常备状态。</p>
+          <p>这背后是一套营销体系的差异：<strong>传统综艺营销是"计划型"的</strong>——冠名、贴片、植入，内容在播出前数月敲定；而新时代的综艺营销越来越是<strong>"响应型"的</strong>——热点爆发后3-6小时内完成内容生产和投放，品牌成为实时内容的共同创作者。</p>
+          <p>对平台大事件而言，这意味着：活动策划不只需要提前6个月做方案，更需要在活动期间保留20%的"快响应"资源——一旦出现话题爆点，能在最短时间内完成内容接力。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.tmtpost.com/7975017.html" target="_blank">钛媒体《乳企营销大变天：金典"错过"，安慕希"撤退"，飞鹤"抄底"》</a> ·
+          <a href="https://news.qq.com/rain/a/20260501A06AW400" target="_blank">腾讯新闻《综艺赞助格局洗牌》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 米兰设计周</span>
+      </div>
+
+      <img class="festival-banner"
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Salone_del_Mobile_2016_%2826735742705%29.jpg/1280px-Salone_del_Mobile_2016_%2826735742705%29.jpg"
+        alt="Milan Design Week"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="festival-banner-placeholder" style="display:none; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">🏛</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">设计节</span>
+          <span class="festival-tag">意大利·米兰</span>
+          <span class="festival-tag">每年4月</span>
+          <span class="festival-tag">设计·时尚·品牌</span>
+          <span class="festival-tag">全球最大设计展</span>
+        </div>
+        <div class="festival-name">米兰设计周</div>
+        <div class="festival-name-en">Salone del Mobile · Milano Design Week · 1961 至今</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🕰 过去 · 发展脉络</div>
+          <div class="festival-block-body">
+            <p>1961年，米兰国际家具展（Salone del Mobile）在意大利经济腾飞期诞生，最初是家具厂商的B2B贸易展，展览内容单纯：椅子、桌子、灯具。但意大利人天生对美有执念，很快这个展览就不只是交易，而变成了一场关于「如何生活」的年度宣言。</p>
+            <p>1990年代，随着设计师品牌的崛起，米兰设计周开始吸引全球顶级设计师和时尚品牌入驻，形成了以Salone为核心、城市各区域同期举办的"Fuorisalone"（场外展）体系。<strong>Fuorisalone是它真正破圈的关键</strong>——设计展览走出了展馆，蔓延到米兰的咖啡馆、废弃工厂、历史宫殿，整个城市成为了展场。</p>
+            <p>历年标志性时刻：<strong>2007年</strong> Zaha Hadid设计的流线型装置震惊全场；<strong>2018年</strong>苹果以"The Whole Widget"主题展亮相，科技品牌大规模进入设计周；<strong>2023年</strong>路易威登、宝马、三星争相在Brera区和Tortona区设立体验中心，设计周成为奢侈品牌的文化竞技场。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">⚡ 现在 · 规模与商业影响力</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">60+年</div>
+                <div class="festival-stat-label">连续举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">30万+</div>
+                <div class="festival-stat-label">年参观人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">165国</div>
+                <div class="festival-stat-label">参展商来源</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2000+</div>
+                <div class="festival-stat-label">Fuorisalone场外活动数</div>
+              </div>
+            </div>
+            <p><strong>运作模式：</strong>米兰设计周由两套体系并行组成：Salone del Mobile是正式展馆展（B2B+B2C），参展品牌需付展位费；Fuorisalone是城市内的自发展览生态，品牌自选场地自行运营，形成去中心化的城市扩散效应。最热的区域是<strong>Brera设计区</strong>和<strong>Tortona区</strong>，奢侈品牌、汽车品牌、科技品牌争夺最佳场地已提前一年预订。</p>
+            <p><strong>品牌参与逻辑：</strong>2026年设计周，宝马展出AI辅助设计的未来座舱，三星以"Connected Living"为题展示智能家居生态，Loewe、Hermès各自把"手工艺×现代设计"的品牌叙事做到极致。科技品牌越来越把设计周当作"展示品牌价值观"而非"发布新产品"的舞台——这是一种更深层的文化渗透。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🔭 未来 · 展望与启发</div>
+          <div class="festival-block-body">
+            <p><strong>下届规划：</strong>米兰设计周2027预计于2027年4月举行，主办方已宣布将进一步扩大数字参与渠道，推出线上虚拟展览平台，并在可持续材料与循环设计领域设立专项奖项。亚洲品牌的参与度持续上升，中国设计师群体在Fuorisalone的能见度逐年增强。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>💡 对小红书平台大事件的启发：</strong>米兰设计周最值得学习的是它的<strong>「城市扩散」模型</strong>——核心展馆提供权威背书，但真正的传播力来自蔓延全城的Fuorisalone。每一个参与者都是内容节点，整座城市成为展场。平台大事件能不能借鉴这个思路：设立核心活动场域的同时，开放"城市各处联动"的自发参与机制，让用户自己成为活动的"Fuorisalone"？去中心化的参与感，往往比精心策划的中心舞台更有病毒传播力。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px">
+          📖 参考来源：
+          <a href="https://www.salonemilano.it/" target="_blank">Salone del Mobile 官网</a> ·
+          <a href="https://www.digitaling.com/articles/1474535.html" target="_blank">数英网《品牌如何玩转米兰设计周》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 工业设计</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🛋 主题策展 · 改变日常的设计师</div>
+        <div class="knowledge-headline">那些重新定义「椅子」的人：工业设计史上的六个名字</div>
+        <div class="knowledge-tagline">「好的设计，是让人忘记设计本身的存在。」</div>
+
+        <div class="knowledge-intro">
+          呼应今天的节日词典——米兰设计周的核心精神，始终是「日常物品的美学革命」。工业设计史上，有一群人用一把椅子、一盏灯、一个茶壶，重新定义了人与物的关系。他们的作品今天仍在生产，今天仍在博物馆，也仍在被顶级品牌奉为参照物。了解他们，是理解"设计力"作为品牌竞争力的起点。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Dieter_Rams.jpg/320px-Dieter_Rams.jpg"
+              alt="Dieter Rams"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">⚙️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">迪特·拉姆斯</div>
+              <div class="knowledge-card-sub">Dieter Rams · 德国 · 博朗首席设计师</div>
+              <div class="knowledge-card-work">提出"好设计十原则"，苹果设计语言的精神祖师。少即是多，直到今天仍是工业设计的最高信条。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Charles_Ray_Eames.jpg/320px-Charles_Ray_Eames.jpg"
+              alt="Charles and Ray Eames"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🪑</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">查尔斯 & 雷·伊姆斯</div>
+              <div class="knowledge-card-sub">Charles & Ray Eames · 美国 · 现代家具之父母</div>
+              <div class="knowledge-card-work">Eames Lounge Chair至今仍是MoMA永久馆藏。他们证明：量产不是美的敌人，而是美的放大器。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Arne_Jacobsen.jpg/320px-Arne_Jacobsen.jpg"
+              alt="Arne Jacobsen"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🐜</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">阿纳·雅各布森</div>
+              <div class="knowledge-card-sub">Arne Jacobsen · 丹麦 · 北欧设计代言人</div>
+              <div class="knowledge-card-work">Egg Chair、Swan Chair、Ant Chair——他把动物的曲线语言带进家具，北欧简约美学的奠基者。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Philippe_Starck_Cannes_2012.jpg/320px-Philippe_Starck_Cannes_2012.jpg"
+              alt="Philippe Starck"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🫧</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">菲利普·斯塔克</div>
+              <div class="knowledge-card-sub">Philippe Starck · 法国 · 设计界的摇滚明星</div>
+              <div class="knowledge-card-work">Juicy Salif榨汁机、Louis Ghost椅——他让设计成为流行文化，第一个把"设计师"变成了明星身份。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🔦</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">深泽直人</div>
+              <div class="knowledge-card-sub">Naoto Fukasawa · 日本 · 无意识设计</div>
+              <div class="knowledge-card-work">MUJI首席设计顾问，提出"without thought"理念——最好的设计是让你不需要思考就知道怎么用。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🪴</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">贾斯珀·莫里森</div>
+              <div class="knowledge-card-sub">Jasper Morrison · 英国 · 超级普通</div>
+              <div class="knowledge-card-work">提出"Super Normal"概念：不是极简，是那些存在于日常生活中不被注意却不可缺少的设计。深泽直人的精神同道。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          当品牌谈"设计感"时，往往停留在视觉层面。但真正的设计力是功能与美的统一，是让用户在使用时"忘记设计"——这才是从拉姆斯到深泽直人传递下来的核心命题。平台大事件的物料、场景、交互，是否也值得用这套标准来衡量？
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+</body>
+</html>
