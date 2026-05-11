@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/7</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    /* 行业学习 */
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    /* 节日词典 */
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; background: linear-gradient(135deg, #2c1810 0%, #8b3a1a 50%, #c4653a 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+
+    /* 知识增长 */
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    /* 策展卡片带图 */
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="../index.html" class="active">2026 / 5 / 7</a></li>
+      <li><a href="../../6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="../../5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 07</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">"五一"消费全面爆发，餐饮销售额同比暴涨31.4%</div>
+            <div class="news-item-desc">国家税务总局增值税发票数据显示，五一假期全国消费相关行业销售收入同比增长14.3%，旅游游览和娱乐服务增长21.2%，餐饮销售额增长31.4%，消费信心显著回升。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">五一跨区域流动15.17亿人次创历史新高，外国人入境+12.5%</div>
+            <div class="news-item-desc">全国边检机关保障1127.9万人次出入境，出境游与入境游双向升温，国内消费与国际吸引力同步强化。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">国家大基金拟主导DeepSeek首轮融资，估值约450亿美元</div>
+            <div class="news-item-desc">消息人士称双方确在洽谈，估值尚未最终确认。同时参与谈判的还有多家互联网巨头和国资基金，DeepSeek商业化路径受到广泛关注。</div>
+            <a class="news-item-link" href="https://juejin.cn/post/7635832321267482674" target="_blank">→ 稀土掘金</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">DeepSeek全面转向国产芯片，配合华为昇腾950，定价将大幅下调</div>
+            <div class="news-item-desc">国产AI+国产算力闭环加速形成，新模型定价预计大幅下降，AI算力国产替代叙事持续强化。</div>
+            <a class="news-item-link" href="https://juejin.cn/post/7635832321267482674" target="_blank">→ 稀土掘金</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">体验经济+IP联名引爆五一，"赛事+演艺"成消费转化最强杠杆</div>
+            <div class="news-item-desc">五一假期兴趣驱动型出行爆发，"以旧换新"惠及8620万人次。赛事与演艺流量向本地生活精准转化，兼具流量与体验深度的IP正在成为最稀缺的消费场景资产。</div>
+            <a class="news-item-link" href="http://jjckb.xinhuanet.com/20260505/93266276bd0c4b71bf6535a1581a99ba/c.html" target="_blank">→ 经济参考报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">抖音生活服务五一酒店团购同比+86%，本地生活三方格局加速分化</div>
+            <div class="news-item-desc">抖音心动生活节酒店团购大涨，美团、抖音、小红书本地生活赛道激烈角力，各平台差异化路径日渐清晰。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/stock/jdts/2026-05-04/detail-inhwtzzu7664512.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">一季度机器人出口达113.2亿元，覆盖全球148国，耐消品出海韧性凸显</div>
+            <div class="news-item-desc">制造业出海新动能：机器人、新能源汽车、消费电子三大类耐消品持续扩大全球份额，国产制造业整体竞争力升级。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">白鹿今年已拿下四大头部品牌代言，明星商业价值进入新量级</div>
+            <div class="news-item-desc">2026年白鹿已拿下王者荣耀、李宁、香缇卡、蓝月亮代言，头衔半年升级4次，成为当下女艺人商业价值标杆。艺人代言正从"曝光载体"升级为"品牌叙事共同作者"。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260429A08NUY00" target="_blank">→ 腾讯新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">#白鹿跑男争议 引发内娱综艺审美讨论，话题跨平台持续发酵</div>
+            <div class="news-item-desc">艺人话题从微博热搜向小红书传导，"内娱综艺审美巨变"讨论带动大量内容创作，艺人话题的自然生长期正是品牌借势的黄金窗口。</div>
+            <a class="news-item-link" href="https://tophub.today/n/KqndgxeLl9" target="_blank">→ 今日热榜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书月活3.5亿，95后+00后占比超八成，成品牌营销兵家必争之地</div>
+            <div class="news-item-desc">2026年小红书已从"好物种草"全面进化为品效合一营销生态，年GMV超百万单品数增长36%，"从流量到留量"正成为平台核心商业命题。</div>
+            <a class="news-item-link" href="https://www.163.com/dy/article/KRNPSQ3K0556HG0C.html" target="_blank">→ 网易</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026网红营销八大趋势：Z世代64%对产品本身忠诚度高于品牌</div>
+            <div class="news-item-desc">SAP Emarsys最新数据：Z世代64%更忠于产品本身，31%对社交推荐信任度超传统广告。明星/KOL的价值正在从"背书"转向"价值同频"。</div>
+            <a class="news-item-link" href="https://www.digitaling.com/articles/1474535.html" target="_blank">→ 数英网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普称美伊"很有可能"达成协议，原油跌超7%至95美元/桶</div>
+            <div class="news-item-desc">特朗普表示24小时内对话"非常富有成效"，伊朗已同意不拥有核武器。受此影响WTI原油期货跌7.03%，金银大涨，市场情绪大幅改善。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#五一出行 × 小红书 × 飞猪联合报告</div>
+            <div class="trend-meta">话题热度持续 · 旅行内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：小红书与飞猪联合发布《"五一"出行趋势报告》，数据显示69%用户的旅行决策由"人群分化+主题出行"驱动——内容种草对旅行决策的影响已远超传统搜索广告。旅行类IP绑定优质内容创作者，可能是下半年高确定性增量场景。</div>
+            <div class="trend-source"><a href="https://finance.sina.com.cn/tech/roll/2026-05-05/doc-inhwvytf9767747.shtml" target="_blank">→ 新浪财经·飞猪×小红书出行趋势报告</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#体验式消费 #IP联名 节后热搜持续延烧</div>
+            <div class="trend-meta">消费内容赛道 · 品牌合作话题</div>
+            <div class="trend-obs">💡 趋势观察：五一期间"体验经济+IP联名"讨论持续在小红书发酵，老字号、非遗、夜经济内容曝光量同步上升。用户对"有文化厚度的消费体验"产生强烈共鸣——策划IP活动时，文化叙事是差异化锚点。</div>
+            <div class="trend-source"><a href="https://www.shobserver.com/staticsg/res/html/web/newsDetail.html?id=1108134&sid=11" target="_blank">→ 上观新闻·体验式消费IP联名报道</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#白鹿 #内娱综艺审美 微博跨平台联动热搜</div>
+            <div class="trend-meta">艺人话题 · 跨平台传播</div>
+            <div class="trend-obs">💡 趋势观察：白鹿相关话题从微博热搜向小红书传导，"内娱综艺审美巨变"讨论带动大量内容创作。艺人话题的自然生长期窗口，往往比直投贵片效率更高——对商业化营销而言是借势的信号。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9" target="_blank">→ 今日热榜·微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#来中国玩的外国人更多了 入境游内容热潮</div>
+            <div class="trend-meta">文旅内容赛道 · 国际传播</div>
+            <div class="trend-obs">💡 趋势观察：入境游同比+12.5%，外国人在小红书上的内容创作与中文粉丝互动同步升温。对平台国际化内容生态有直接价值，也是品牌探索"华流出海"叙事的好时机。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9" target="_blank">→ 今日热榜·微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#伦敦世乒赛 体育内容赛道持续活跃</div>
+            <div class="trend-meta">体育赛事话题</div>
+            <div class="trend-obs">💡 趋势观察：体育赛事期间，小红书上的实时观赛打卡、赛后讨论内容往往能在24小时内形成自然流量峰值。体育IP绑定是大事件营销的成熟路径，值得持续关注。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9" target="_blank">→ 今日热榜·微博热搜</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 明星营销</div>
+        <div class="learning-title">明星代言的逻辑变了：从「曝光载体」到「价值共鸣体」</div>
+        <div class="learning-subtitle">一次读懂2026年明星代言的底层范式迁移</div>
+        <div class="learning-body">
+          <p>过去，品牌签代言人的逻辑很直接：流量大、颜值高、覆盖面广。代言人的核心价值是「曝光」——把品牌信息打到更多人眼前。</p>
+          <p>但2026年的数据告诉我们，这套逻辑正在失效。<strong>Z世代消费者64%对产品本身的忠诚度高于品牌</strong>，31%对社交媒体推荐的信任度超过传统广告。明星的作用，已经不再是「传声筒」，而是一个「价值认同锚点」。</p>
+          <p>以白鹿×蓝月亮为例：蓝月亮本是一个偏大众、偏母婴形象的清洁品牌，签约白鹿后的操作并不是简单的TVC投放，而是绑定产品科技话题、在直播间挂五个购买链接、让代言人参与产品叙事。结果是：销量短期爆发，品牌形象完成年轻化迁移。</p>
+          <p><strong>这背后的方法论是：明星代言不是广告位，是品牌叙事的共同作者。</strong>品牌要找的，不只是"谁的粉丝多"，而是"谁的人设，和我要讲的品牌故事，有天然的化学反应"。</p>
+          <p>对平台大事件而言，这意味着：引入艺人的方式应从"出现在海报上"升级为"成为活动叙事的一部分"——让艺人的个人标签为活动赋意，而不只是赋流量。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://news.qq.com/rain/a/20260429A08NUY00" target="_blank">腾讯新闻《请白鹿当天就挂5个购物链接，蓝月亮这场翻身仗》</a> ·
+          <a href="https://www.163.com/dy/article/KKI54HSI0534HE6T.html" target="_blank">网易《2026明星代言5大趋势》</a> ·
+          <a href="https://www.digitaling.com/articles/1474535.html" target="_blank">数英网《2026网红营销八大趋势》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 科切拉音乐节</span>
+      </div>
+
+      <img class="festival-banner"
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Coachella_2011_1.jpg/1280px-Coachella_2011_1.jpg"
+        alt="Coachella Music Festival"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="festival-banner-placeholder" style="display:none">🎪</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">音乐节</span>
+          <span class="festival-tag">美国</span>
+          <span class="festival-tag">每年4月</span>
+          <span class="festival-tag">流行文化</span>
+          <span class="festival-tag">品牌营销</span>
+        </div>
+        <div class="festival-name">科切拉音乐节</div>
+        <div class="festival-name-en">Coachella Valley Music and Arts Festival · 1999 至今</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🕰 过去 · 发展脉络</div>
+          <div class="festival-block-body">
+            <p>1999年，加利福尼亚州印第奥市科切拉谷，Goldenvoice公司创办了这个音乐节。最初它是另类摇滚和独立音乐的沙漠避难所，Rage Against the Machine、Beck是早期的精神图腾，参与者是真正的乐迷，不是"去被看见的人"。</p>
+            <p>2011年是转折点：Coachella开始直播，当年流媒体观看人次突破百万，彻底打破了"现场独占性"的边界——反而让更多人想去现场。这一年，Coachella从音乐节变成了<strong>全球性的文化事件直播平台</strong>。</p>
+            <p>历年高光时刻：<strong>2012年</strong>全息投影复活Tupac震惊全球；<strong>2018年</strong>Beyoncé的"Beychella"演出被誉为史上最佳音乐节表演，Netflix专门为此制作了纪录片；<strong>2026年</strong>是25周年纪念版，Sabrina Carpenter、Justin Bieber、Cardi G（首位拉丁裔压轴）领衔，Dior完成首次深度音乐节文化嵌入。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">⚡ 现在 · 规模与商业影响力</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">25年</div>
+                <div class="festival-stat-label">连续举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">12.5万</div>
+                <div class="festival-stat-label">每日现场观众</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">$5亿+</div>
+                <div class="festival-stat-label">年收入规模</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">465%</div>
+                <div class="festival-stat-label">2026年Pinterest穿搭搜索增长</div>
+              </div>
+            </div>
+            <p><strong>运作模式：</strong>Coachella由AEG旗下Goldenvoice主办，核心收入来自门票（普通票约$600+/周末，豪华露营可达$12,000）、品牌赞助、流媒体授权、周边商品。2026年Gap成为独家服装赞助商，GUESS连续第五年打造私人庄园"Desert Compound"，Dior让Sabrina Carpenter全程穿5套定制造型完成演出。</p>
+            <p><strong>内容生产机器：</strong>Coachella不是一个售票活动，是全球时尚/音乐/品牌内容的年度发射台。它提供了一个天然带有强情绪标签的视觉背景，让品牌的商业动作能以极自然的方式嵌入用户的观看体验——沙漠色调、摩天轮、大地艺术装置，这套视觉语言25年从未改变却始终在潮流前沿。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🔭 未来 · 展望与启发</div>
+          <div class="festival-block-body">
+            <p><strong>下届规划：</strong>Coachella 2027预计2027年4月举行，Goldenvoice已宣布将进一步扩大直播规模，并探索沉浸式XR观看体验。可持续性是下届重点议题，绿色能源比例将继续提升。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>💡 对小红书平台大事件的启发：</strong>Coachella最值得借鉴的不是阵容规模，而是它的<strong>「内容基础设施」思维</strong>——它不举办一个活动，而是搭建一个让品牌、艺人、用户共同生产内容的场域。固定的视觉语言（沙漠+摩天轮）创造了跨年的记忆积累；流媒体直播让无法到场的人也成为传播节点；品牌不是赞助商而是"共同创作者"。平台大事件策划可以问自己：我们的活动能不能给每个到场和不到场的人，都留下一个「必须发出去」的理由？
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px">
+          📖 参考来源：
+          <a href="https://news.qq.com/rain/a/20260418A05CU200" target="_blank">腾讯新闻《Coachella如何把音乐节变成全球流行文化的爆发地》</a> ·
+          <a href="https://bigredjelly.com/zh-CN/blog/how-coachellas-branding-made-them-the-festival-of-the-year/" target="_blank">Big Red Jelly《2026科切拉音乐节品牌推广》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 音乐</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎸 主题策展 · 民谣的根</div>
+        <div class="knowledge-headline">从鲍勃·迪伦到李志：民谣是什么？为什么重要？</div>
+        <div class="knowledge-tagline">「民谣不是风格，是一种说话的方式。」</div>
+
+        <div class="knowledge-intro">
+          民谣（Folk Music）的本质，是用最简单的乐器讲最诚实的故事。它起源于美国1950-60年代的抗议运动，在鲍勃·迪伦手里成了文学，在琼·贝兹嘴里成了运动，在比利·布拉格那里变成了左翼政治……然后被无数人拆解、重组、本土化——最终在中国，长出了万晓利、李志、马条、陈粒这些完全不同的面孔。<br><br>
+          了解民谣的脉络，是理解"真实感"内容为何在当下持续有生命力的密钥。在一个人人都在做精致内容的时代，那个拿着吉他坐在凳子上讲故事的人，依然拥有穿透力。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Bob_Dylan_in_November_1963.jpg/320px-Bob_Dylan_in_November_1963.jpg"
+              alt="Bob Dylan"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">鲍勃·迪伦</div>
+              <div class="knowledge-card-sub">Bob Dylan · 美国 · 民谣鼻祖</div>
+              <div class="knowledge-card-work">2016年诺贝尔文学奖。《Blowin' in the Wind》《The Times They Are A-Changin'》——他让民谣成为诗。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Joan_Baez_1963.jpg/320px-Joan_Baez_1963.jpg"
+              alt="Joan Baez"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🎤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">琼·贝兹</div>
+              <div class="knowledge-card-sub">Joan Baez · 美国 · 民权运动之声</div>
+              <div class="knowledge-card-work">迪伦的挚友与情人，用歌声参与了马丁·路德·金的游行。民谣与社会运动绑定的起点。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Simon_and_Garfunkel_1968_%28cropped%29.jpg/320px-Simon_and_Garfunkel_1968_%28cropped%29.jpg"
+              alt="Simon and Garfunkel"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🎶</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Simon & Garfunkel</div>
+              <div class="knowledge-card-sub">美国 · 民谣流行化</div>
+              <div class="knowledge-card-work">《The Sound of Silence》《Mrs. Robinson》——将民谣推向主流，和声的极致示范。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🪗</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">万晓利</div>
+              <div class="knowledge-card-sub">中国 · 当代民谣之父</div>
+              <div class="knowledge-card-work">《这一切没有想象的那么糟》——中国城市民谣奠基人，把胡同、流浪、日常写进歌里。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">李志</div>
+              <div class="knowledge-card-sub">中国 · 独立民谣偶像</div>
+              <div class="knowledge-card-work">《天空之城》《关于郑州的记忆》——极度个人化的写作，拥有狂热的独立音乐圈粉丝群体。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">✨</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">陈粒</div>
+              <div class="knowledge-card-sub">中国 · 新生代跨界</div>
+              <div class="knowledge-card-work">《奇妙能力歌》《易燃易爆炸》——从民谣切入，融合电子与古风，民谣出圈最具代表性路径之一。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          今天的民谣与平台大事件的关系：当你看到品牌在户外活动现场放一把木吉他、请歌手弹唱——那个「真实感」的调性选择，背后就是民谣美学的基因在作用。理解这个传统，才能理解为什么"去精致化"的内容在情绪共鸣上有时比精品制作更有力量。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+</body>
+</html>
