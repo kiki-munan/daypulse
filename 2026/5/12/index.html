@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/12</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #003087 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/5/12/index.html" class="active">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+      <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 12</div>
+      <div class="day-week">星期二 · 国际护士节</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">中美日内瓦关税协议一周年：协议已成拐点，但结构性博弈仍在进行</div>
+            <div class="news-item-desc">去年5月12日，中美在日内瓦发布联合声明，双方同意90天内各降关税115个百分点，被视为贸易战最重要的缓和节点。一年后的今天，尽管关税暂停期已延续数次，深层的科技脱钩、供应链重构、汇率博弈仍在演进中。市场的"确定性溢价"正在消退，企业的战略应对能力才是真正的竞争力所在。</div>
+            <a class="news-item-link" href="https://www.bbc.com/zhongwen/articles/cly36jjqpx4o/simp" target="_blank">→ BBC中文·日内瓦协议回顾</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI豪掷逾40亿美元成立部署公司，收购AI咨询公司Tomoro，企业AI进入"现场交付"竞争</div>
+            <div class="news-item-desc">OpenAI宣布设立独立的OpenAI Deployment Company（DeployCo），初始投资超40亿美元，专门为企业派驻AI落地工程师，帮助机构将大模型从演示转化为真实生产力。Anthropic同步宣布在AWS上线完整Claude平台，模型厂商已从"卖API"全面进入"卖结果"的实施层竞争。</div>
+            <a class="news-item-link" href="https://www.cls.cn/detail/2368427" target="_blank">→ 财联社·OpenAI部署公司</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">谷歌确认：黑客已用AI工具发现并利用真实漏洞，AI降低攻击门槛不再是理论</div>
+            <div class="news-item-desc">谷歌威胁分析小组披露，犯罪黑客借助AI显著提升了漏洞挖掘的效率与精准度，并成功利用广泛使用的开源软件漏洞发起攻击。目前漏洞细节未公开，相关软件已发布更新。这是AI被确认用于真实网络攻击的重要证据，安全从业者需要全面重新评估威胁模型。</div>
+            <a class="news-item-link" href="https://www.nytimes.com/2026/05/11/us/politics/google-hackers-attack-ai.html" target="_blank">→ NYT·Google AI安全披露</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">ChatGPT用户结构变迁：35岁以上成增长主力，性别比例趋于均衡，AI正跳出极客圈</div>
+            <div class="news-item-desc">OpenAI发布2026年Q1用户报告显示，ChatGPT的35岁以上用户群体增长最为迅速，男女比例正在接近5:5。这意味着以ChatGPT为代表的AI工具正加速融入主流社会，面向大众的AI产品需要重新定义用户画像——"技术早期采用者"不再是唯一目标群体。</div>
+            <a class="news-item-link" href="https://openai.com/signals/research/2026q1-update" target="_blank">→ OpenAI·2026 Q1用户洞察</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Claude Code v2.1.139更新：Agent视图上线，/goal命令让AI自主完成复杂任务直至达标</div>
+            <div class="news-item-desc">Anthropic发布新版本，最受关注的两个功能：集中管理多会话的Agent视图（研究预览）、可设置目标并持续自主运行的/goal命令——后者意味着用户只需说明目标，AI会自己拆解任务并迭代执行直到满足条件。AI Agent的"操控权"正在向用户端转移。</div>
+            <a class="news-item-link" href="https://github.com/anthropics/claude-code/releases/tag/v2.1.139" target="_blank">→ GitHub·Claude Code Release</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">2026营销11大趋势：AI重塑分工、场景化叙事崛起、品牌出海进入在地化深水区</div>
+            <div class="news-item-desc">广告门梳理2026年度营销核心趋势：AI让"一人抵一队"成为可能，代理公司内部分工从固定岗位走向弹性融合；大品牌的叙事从宏大走向具象场景，京东骑手日常故事比宏观slogan更有穿透力；情绪营销进入细分阶段，荒诞、敬畏、怀旧都可以是品牌语言；品牌出海在新兴市场布局提速，泡泡玛特开欧洲总部，SHEIN押注中东KOL。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4837827.html" target="_blank">→ 虎嗅·2026营销11大趋势</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">MiniMax成立"10x团队"，邀各领域专家直接参与AI模型研发，提供全球竞争力薪酬</div>
+            <div class="news-item-desc">MiniMax宣布成立10x Team，目标是吸引各领域顶尖专家直接参与问题定义、评估构建和工作流设计，成果将融入模型并贡献于开源benchmark。与"挂名顾问"不同，这是真正的"专家下场"模式，上海、北京、旧金山、伦敦均设岗位。</div>
+            <a class="news-item-link" href="https://x.com/MiniMax_AI/status/2053860184532066737" target="_blank">→ X·MiniMax 10x团队招募</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">第79届戛纳电影节今日盛大开幕，中国军团阵容强大，张艺兴任"全球宣传大使"</div>
+            <div class="news-item-desc">5月12日至23日，第79届戛纳国际电影节在法国南部海滨城市正式拉开帷幕，韩国导演朴赞郁担任评审团主席。中国军团阵容夯实：巩俐、李冰冰出席开幕红毯，张艺兴获任本届"全球宣传大使"，赵涛、穆祉丞等主导中国馆系列活动。微博热搜话题"戛纳电影节华语艺人出席名单"持续发酵。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260508A080OI00" target="_blank">→ 腾讯新闻·第79届戛纳华语阵容</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">微信"状态访客记录"功能引爆热搜，263万讨论量，社交平台"可见性焦虑"再升温</div>
+            <div class="news-item-desc">微博热搜第一"微信状态访客记录"（263万讨论），引发全网对社交平台"被看见"与"隐私边界"的深度探讨。微信公关总监曾明确回应"不会做访客功能"，此次话题或因新版本功能测试外泄而起。社交媒体上的"可见性焦虑"是当代用户关系的核心命题，也是内容平台产品设计的长期灵感来源。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%BE%AE%E4%BF%A1%E7%8A%B6%E6%80%81+%E8%AE%BF%E5%AE%A2%E8%AE%B0%E5%BD%95" target="_blank">→ 微博热搜·微信状态访客记录</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">Karpathy：AI输出应从Markdown迁移向HTML，交互式神经视频是终极形态</div>
+            <div class="news-item-desc">AI技术先驱Andrej Karpathy提出，AI人机交互界面正从Markdown默认输出演进向更丰富的HTML格式，能提供更好的图形、布局与交互性。他给出一个立刻可用的实操建议：让LLM以HTML格式结构化其回复。对内容创作者和品牌而言，这预示着AI生成内容的"展示层"即将发生质的变化。</div>
+            <a class="news-item-link" href="https://x.com/karpathy/status/2053872850101285137" target="_blank">→ X·Karpathy AI界面演进论</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">本地35B模型完成50%日常任务，响应速度是Claude Opus的2倍，"本地优先"趋势浮现</div>
+            <div class="news-item-desc">VC分析师Tomer Tunguz历时5周实验发现，本地35B参数模型（如Qwen 3.6 35B）可处理约50%的日常工作任务，平均响应时间2.8秒，比云端Claude Opus快2.1倍。对成本敏感的中小企业和个人创作者而言，"本地部署优先"的AI策略可能从边缘走向主流，重塑AI工具的采购和使用逻辑。</div>
+            <a class="news-item-link" href="https://www.tomtunguz.com/localmaxxing" target="_blank">→ Tunguz博客·本地模型实验报告</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#戛纳电影节 今日开幕，中国军团话题持续发酵</div>
+            <div class="trend-meta">娱乐赛道 · 时尚内容高峰期</div>
+            <div class="trend-obs">💡 趋势观察：戛纳开幕是每年5月中下旬最密集的娱乐流量窗口之一。对小红书而言，红毯穿搭解析、品牌联名曝光、艺人状态追踪，是三条同步爆发的内容赛道。大事件策划可参考：如何在戛纳这类"全球焦点事件"期间，找到与自身IP相关的内容切入角，搭上流量便车又不显突兀。</div>
+            <div class="trend-source"><a href="https://news.qq.com/rain/a/20260508A080OI00" target="_blank">→ 腾讯新闻·第79届戛纳华语艺人名单</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#微信状态访客记录 全网争议，隐私与连接的边界讨论</div>
+            <div class="trend-meta">社交话题 · 情绪型内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：微博263万讨论量在上午快速涌入，这类"产品功能猜想"型话题在小红书上往往衍生出大量"深度用户分析"和"个人情感表达"内容。平台大事件如果有社交互动属性的设计，可以借鉴这类话题的底层逻辑：让用户感到"被看见的边界由我定义"，是最能触发主动参与的产品情绪点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%BE%AE%E4%BF%A1%E7%8A%B6%E6%80%81+%E8%AE%BF%E5%AE%A2%E8%AE%B0%E5%BD%95" target="_blank">→ 微博热搜·微信状态访客记录</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#国际护士节 5·12 情感类内容高峰</div>
+            <div class="trend-meta">节日节点 · 职业情感赛道</div>
+            <div class="trend-obs">💡 趋势观察：今日是第115个国际护士节，主题"赋能护士，守护生命"。小红书上的护士群体是一个真实存在却长期被主流视野忽略的创作者生态——他们的日常故事、职业困惑、生活状态，是平台最有温度的内容类型之一。节日节点是关注这类"沉默声音"的窗口，也是IP大事件思考"破圈叙事对象"的参考坐标。</div>
+            <div class="trend-source"><a href="https://www.facebook.com/CentreforHealthProtection/posts/" target="_blank">→ 国际护士节2026主题</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI购物助手 种草与决策的边界正在模糊</div>
+            <div class="trend-meta">电商内容赛道 · AI消费场景</div>
+            <div class="trend-obs">💡 趋势观察：随着淘宝、京东等平台AI购物助手的普及，"内容种草→搜索比价→下单"的传统路径正被压缩。对小红书平台而言，这既是压力也是机会——当AI可以代替用户"货比三家"，种草内容的核心价值将更集中于情感共鸣和真实体验传递，而非参数罗列。大事件的内容种草策略应往更"感性化"方向演进。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%8A%E6%B7%98%E5%AE%9DAI%E8%B4%AD%E7%89%A9" target="_blank">→ 微博热搜·上淘宝AI购物</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书全面AI化 Dots一级部门正式运转，内容生态加速重构</div>
+            <div class="trend-meta">平台动态 · AI基础设施建设</div>
+            <div class="trend-obs">💡 趋势观察：小红书Dots部门的全面AI化布局正在加速落地。对策划同学而言，这意味着平台的推荐算法、搜索逻辑、内容生产工具都将在未来12-18个月发生质变。大事件策划需要提前思考：当平台内容生产由AI辅助参与时，如何保证IP活动内容的"人味"和差异化，将是核心竞争点。</div>
+            <div class="trend-source"><a href="https://finance.sina.cn/stock/jdts/2026-05-08/detail-inhxefhi2233735.d.html" target="_blank">→ 新浪财经·小红书Dots部门</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI重塑营销</div>
+        <div class="learning-title">当AI成为基础设施：2026年营销人应该重新问自己什么？</div>
+        <div class="learning-subtitle">从"AI辅助内容"到"AI重构分工"，品牌营销的底层逻辑正在迁移</div>
+        <div class="learning-body">
+          <p>2026年最值得关注的一个营销现象，不是某个爆款案例，而是一个结构性变化：<strong>AI正在从工具变成基础设施</strong>。</p>
+          <p>广告门和虎嗅的年度趋势报告都指向同一个方向——代理公司内部的固定分工（文案、设计、策略）正在被"创意+AI"复合型小组取代。一个人配上正确的AI工具，可以完成过去需要5个人的工作量。这不是未来，这是今年已经在发生的事。</p>
+          <p>对品牌方而言，这意味着什么？两件事同时发生：<strong>日常运营内容生产的成本在下降</strong>（AI批量生产、数据分析、效果优化都可内化）；<strong>但真正有价值的创意洞察门槛在上升</strong>——因为当所有人都能用AI生成内容，只有那些基于真实用户情感、真实场景洞察的创意，才能从信息洪流中脱颖而出。</p>
+          <p>这里有一个微妙的悖论值得细想：<strong>AI让生产变得容易，但它同时让"脱颖而出"变得更难</strong>。内容数量将以指数级增长，用户注意力不会。能穿透噪声的内容，往往是那些"只有这个人才能说出来的话"——真实的职业困惑、具体的生活场景、无法被模板复制的情感密度。</p>
+          <p>对IP大事件策划的启发：大事件的核心资产，不是可以被AI复制的形式（视觉风格、文案模板），而是<strong>无法被AI替代的体验设计和情感连接</strong>——参与者在活动现场感受到的那一秒，是AI生成内容永远无法提供的东西。这才是线下大事件在AI时代真正的护城河。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.huxiu.com/article/4837827.html" target="_blank">虎嗅·2026影响品牌的11个营销趋势</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2011042190399399381" target="_blank">知乎·2026数字营销"变与不变"</a> ·
+          <a href="https://aihot.virxact.com/" target="_blank">AIHOT·AI科技热点聚合</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 戛纳国际电影节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎬🌴✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">电影盛事</span>
+          <span class="festival-tag">法国·戛纳</span>
+          <span class="festival-tag">每年5月</span>
+          <span class="festival-tag">全球三大电影节</span>
+          <span class="festival-tag">始于1946年</span>
+        </div>
+        <div class="festival-name">戛纳国际电影节</div>
+        <div class="festival-name-en">Festival de Cannes · 第79届 · 2026年5月12日正式开幕</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从战后复兴的艺术梦，到全球文化坐标</div>
+          <div class="festival-block-body">
+            <p>1939年，第一届戛纳国际电影节原本已经筹备完毕——开幕前一天，二战爆发，电影节就此搁置。直到1946年，在战争的废墟上，戛纳重新点燃放映机的光。那一届没有竞赛，只有展映，主旨朴素而坚定：<strong>用电影宣告文明的复苏</strong>。</p>
+            <p>金棕榈奖（Palme d'Or）于1955年正式设立，成为戛纳的最高荣誉象征。此后数十年，它先后颁给了费里尼、科波拉、黑泽明、阿巴斯……每一枚金棕榈背后，都是一个时代的视觉记忆。</p>
+            <p>戛纳有几个让其他电影节难以复制的特质：<strong>最严格的选片委员会</strong>（主竞赛每年仅20部出头）；<strong>最彻底的"电影人优先"文化</strong>（Netflix等流媒体电影曾因院线发行问题被拒门外）；以及那条世界上最著名的<strong>红毯</strong>——那不只是明星秀场，是影像工业的年度仪式。</p>
+            <p>历年主题往往在无声中呼应时代：1968年戛纳被学生运动中断，戈达尔、特吕弗亲手拉下银幕；2017年#MeToo运动在颁奖典礼上爆发；2020年因疫情延期到10月；每一个历史节点，戛纳都是那面照见时代的镜子。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】规模数据、文化影响力与商业运作</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">12天</div>
+                <div class="festival-stat-label">本届时长（5.12-23）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">22部</div>
+                <div class="festival-stat-label">主竞赛长片数量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">4,000+</div>
+                <div class="festival-stat-label">认证媒体记者数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">79届</div>
+                <div class="festival-stat-label">历史年份（2026届）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">€2亿+</div>
+                <div class="festival-stat-label">估算年度经济贡献</div>
+              </div>
+            </div>
+            <p>第79届由韩国导演<strong>朴赞郁</strong>（《寄生虫》联合创作、《老男孩》导演）担任评审团主席，法国导演Pierre Salvadori的《电动维纳斯》为开幕影片。22部竞赛长片中有5部由女性导演执导，创近年新高。</p>
+            <p>戛纳的商业生态高度复杂：<strong>官方片市（Marché du Film）</strong>是全球最大的电影交易市场，每届成交版权数千部；同期举办的<strong>广告音乐电视节（Cannes Lions）</strong>则是另一个独立的创意产业峰会（每年6月）。两者共享戛纳这个城市坐标，却面向截然不同的产业生态。</p>
+            <p>奢侈品牌、汽车、化妆品，每届戛纳都是全球最密集的<strong>高端品牌赞助战场</strong>。L'Oréal巴黎独家赞助开幕红毯逾30年，将"你值得拥有"与电影节的光影气质深度绑定；卡地亚、宝格丽在游艇上举办品鉴晚宴；苹果则悄悄将每年最重要的影视制作能力展示安排在戛纳期间。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】下届预期与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>AI与电影的关系</strong>将是未来数届戛纳不得不正面回应的议题：AI生成影像算不算"电影"？AI辅助剧本创作是否改变"作者性"的定义？第79届已有多部竞赛影片涉及AI主题，评审团如何界定边界，将成为全球影像行业的风向标。</p>
+            <p>中国电影在戛纳的参与正在从"走红毯"向<strong>"进竞赛"</strong>深化。中国馆系列活动的规格每年提升，"中国电影之夜"成为固定外交性文化活动，这也意味着中国品牌在戛纳的赞助与曝光机会正在增加。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>戛纳的品牌价值核心在于"仪式感的可见性"——红毯本身什么都不生产，却是整个电影节最强的媒介资产。IP大事件可以借鉴这个逻辑：<strong>仪式设计本身就是内容</strong>，不需要等产品说话，入场那一刻的画面感、参与感、被记录感，就是大事件最有价值的传播素材。另外，戛纳能同时服务于艺术和商业两个维度而不显割裂，靠的是明确的"内核守护"（绝不妥协的选片标准）——这对IP大事件同样是个提醒：<strong>商业化的边界感，来自对核心价值主张的坚持</strong>，而不是来自限制合作方数量。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://zh.wikipedia.org/zh-cn/%E6%88%9B%E7%BA%B3%E7%94%B5%E5%BD%B1%E8%8A%82" target="_blank">维基百科·戛纳国际电影节</a> ·
+          <a href="https://baike.baidu.com/item/%E6%88%9B%E7%BA%B3%E5%9B%BD%E9%99%85%E7%94%B5%E5%BD%B1%E8%8A%82/187315" target="_blank">百度百科·戛纳国际电影节</a> ·
+          <a href="https://www.rfi.fr/cn/%E4%B8%93%E6%A0%8F%E6%A3%80%E7%B4%A2/%E7%89%B9%E5%88%AB%E8%8A%82%E7%9B%AE/20260511-%E6%88%9B%E7%BA%B3%E7%94%B5%E5%BD%B1%E8%8A%82-%E7%BE%A4%E6%98%9F%E4%BA%91%E9%9B%86%E5%89%8D%E7%9A%84%E6%9C%80%E5%90%8E%E5%87%86%E5%A4%87" target="_blank">RFI中文·第79届戛纳开幕预览</a> ·
+          <a href="https://m.jiemian.com/article/6618060.html" target="_blank">界面新闻·戛纳75周年深度</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 电影人图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 戛纳的六张脸</div>
+        <div class="knowledge-headline">从帕尔马到朴赞郁：那些在戛纳留下印记的人</div>
+        <div class="knowledge-tagline">「电影节不是颁奖，是一种集体的做梦方式。」</div>
+
+        <div class="knowledge-intro">
+          戛纳的传奇，不只是那枚金棕榈，而是那些每次走上红毯都带来新问题的导演们。他们的电影或许让你困惑，让你不安，让你沉默良久——但这恰好是好的艺术应有的效果。<br><br>
+          今日恰逢第79届戛纳开幕，以六位在此留下印记的电影人为引，构建一张关于"作者电影"的入门图谱。对营销策划而言，理解"作者性"——即一个创作者如何建立辨识度极高的个人语言——本身就是一门可迁移的功课。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Park_Chan-wook.jpg/440px-Park_Chan-wook.jpg"
+              alt="朴赞郁"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">朴赞郁</div>
+              <div class="knowledge-card-sub">Park Chan-wook · 韩国 · 第79届评审团主席</div>
+              <div class="knowledge-card-work">《老男孩》《蝙蝠》《小姐》。以复仇三部曲确立全球声望，用极度精准的构图和强烈的暗色系美学，探索人性的扭曲与救赎。2022年以《分手的决心》获戛纳最佳导演。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Jane_Campion_2014.jpg/440px-Jane_Campion_2014.jpg"
+              alt="简·坎皮恩"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏆</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">简·坎皮恩</div>
+              <div class="knowledge-card-sub">Jane Campion · 新西兰 · 史上首位夺金棕榈女导演</div>
+              <div class="knowledge-card-work">1993年以《钢琴课》成为戛纳史上首位独得金棕榈的女导演。2022年以《犬之力》获奥斯卡最佳导演，成为史上第三位获此殊荣的女性。她的电影始终关注女性内在的权力与欲望。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Gong_Li_%2836928770590%29.jpg/440px-Gong_Li_%2836928770590%29.jpg"
+              alt="巩俐"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">巩俐</div>
+              <div class="knowledge-card-sub">中国 · 本届开幕红毯出席</div>
+              <div class="knowledge-card-work">中国最具国际影响力的女演员，曾与张艺谋合作《红高粱》《大红灯笼高高挂》，多次亮相戛纳红毯。本届以宣传大使身份出席，是中国文化软实力在戛纳最具辨识度的符号之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Abbas_Kiarostami_at_the_39th_NIFF.jpg/440px-Abbas_Kiarostami_at_the_39th_NIFF.jpg"
+              alt="阿巴斯·基亚罗斯塔米"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">阿巴斯·基亚罗斯塔米</div>
+              <div class="knowledge-card-sub">Abbas Kiarostami · 伊朗 · 金棕榈得主</div>
+              <div class="knowledge-card-work">1997年凭《樱桃的滋味》获金棕榈。用非职业演员、纪录片质感，拍出对生命与死亡的追问。戈达尔评价："电影始于格里菲斯，止于基亚罗斯塔米。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Pedro_Almodovar_2012.jpg/440px-Pedro_Almodovar_2012.jpg"
+              alt="佩德罗·阿莫多瓦"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">佩德罗·阿莫多瓦</div>
+              <div class="knowledge-card-sub">Pedro Almodóvar · 西班牙 · 欧洲最具个人风格导演之一</div>
+              <div class="knowledge-card-work">《关于我母亲的一切》《对她说》均获戛纳最佳导演。以鲜艳配色、女性视角、弗拉门戈情绪构建独特美学体系。2024年以《隔壁房间》首部英语长片再获戛纳金狮。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎞️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王家卫</div>
+              <div class="knowledge-card-sub">中国香港 · 戛纳首位亚洲评审团主席</div>
+              <div class="knowledge-card-work">《春光乍泄》获1997年戛纳最佳导演。2023年担任戛纳评审团主席，成为首位担此职务的华人导演。《花样年华》《重庆森林》建立的时间性美学和城市孤独叙事，至今是电影研究中文献最多的亚洲案例之一。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          每一个在戛纳留下印记的导演，都在用一种"只有他们才说得出的方式"表达这个世界。朴赞郁的复仇有几何美感，阿莫多瓦的悲剧有西班牙阳光的色温，王家卫的爱情永远差一秒就及时。<strong>这种高度辨识的"个人语言"，是所有创意人应该追求的终极目标</strong>——不是"我的风格是什么"，而是"当人们看到它，就知道只有我才能做出来"。这对IP大事件的视觉体系、内容调性和互动设计，同样是一个值得反复追问的问题。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
