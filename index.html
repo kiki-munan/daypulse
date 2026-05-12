@@ -28,7 +28,6 @@
       min-height: 100vh;
     }
 
-    /* ── Header ── */
     .site-header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -49,9 +48,7 @@
       color: var(--text-primary);
     }
 
-    .site-title span {
-      color: var(--accent);
-    }
+    .site-title span { color: var(--accent); }
 
     .header-date {
       font-size: 13px;
@@ -59,7 +56,6 @@
       letter-spacing: 0.06em;
     }
 
-    /* ── Layout ── */
     .layout {
       display: flex;
       max-width: 1200px;
@@ -68,10 +64,27 @@
       gap: 32px;
     }
 
-    /* ── Sidebar ── */
+    /* Sidebar */
     .sidebar {
       width: 200px;
       flex-shrink: 0;
+    }
+
+    .sidebar.collapsed { width: 32px; overflow: hidden; }
+    .sidebar.collapsed .sidebar-label,
+    .sidebar.collapsed .date-list { display: none; }
+
+    .sidebar-toggle {
+      display: block;
+      width: 28px;
+      height: 28px;
+      background: var(--tag-bg);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
     }
 
     .sidebar-label {
@@ -83,14 +96,8 @@
       margin-bottom: 12px;
     }
 
-    .date-list {
-      list-style: none;
-    }
-
-    .date-list li {
-      margin-bottom: 4px;
-    }
-
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
     .date-list a {
       display: block;
       padding: 8px 12px;
@@ -100,21 +107,15 @@
       text-decoration: none;
       transition: background 0.15s, color 0.15s;
     }
-
-    .date-list a:hover,
-    .date-list a.active {
+    .date-list a:hover, .date-list a.active {
       background: var(--accent-light);
       color: var(--accent);
       font-weight: 500;
     }
 
-    /* ── Main content ── */
-    .main-content {
-      flex: 1;
-      min-width: 0;
-    }
+    /* Main */
+    .main-content { flex: 1; min-width: 0; }
 
-    /* ── Day header ── */
     .day-header {
       display: flex;
       align-items: baseline;
@@ -136,7 +137,16 @@
       color: var(--text-muted);
     }
 
-    /* ── Section ── */
+    .day-tag {
+      font-size: 11px;
+      background: var(--accent-light);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* Section */
     .section {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -153,36 +163,14 @@
       gap: 10px;
     }
 
-    .section-icon {
-      font-size: 16px;
-    }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
 
-    .section-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary);
-      letter-spacing: 0.03em;
-    }
-
-    .section-subtitle {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-left: auto;
-    }
-
-    .section-body {
-      padding: 20px 24px;
-    }
-
-    /* ── News panel ── */
-    .news-panel {
-      margin-bottom: 20px;
-    }
-
-    .news-panel:last-child {
-      margin-bottom: 0;
-    }
-
+    /* News */
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
     .news-panel-title {
       font-size: 11px;
       font-weight: 700;
@@ -196,418 +184,195 @@
       padding: 10px 0;
       border-bottom: 1px solid var(--border);
     }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
 
-    .news-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .news-item-title {
-      font-size: 13.5px;
-      font-weight: 500;
-      color: var(--text-primary);
-      line-height: 1.5;
-      margin-bottom: 4px;
-    }
-
-    .news-item-desc {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin-bottom: 6px;
-    }
-
-    .news-item-link {
-      font-size: 11px;
-      color: var(--accent);
-      text-decoration: none;
-      opacity: 0.8;
-    }
-
-    .news-item-link:hover {
-      opacity: 1;
-      text-decoration: underline;
-    }
-
-    /* ── Trend items ── */
+    /* Trends */
     .trend-item {
       display: flex;
       gap: 14px;
       padding: 12px 0;
       border-bottom: 1px solid var(--border);
     }
-
-    .trend-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
     .trend-rank {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--tag-bg);
-      color: var(--text-secondary);
-      font-size: 11px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 2px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--tag-bg); color: var(--text-secondary);
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
     }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--bg); padding: 8px 10px; border-radius: 6px; border-left: 2px solid var(--accent); }
 
-    .trend-rank.hot {
-      background: var(--accent);
-      color: white;
-    }
+    /* Learning */
+    .learning-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); line-height: 1.4; margin-bottom: 6px; }
+    .learning-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; line-height: 1.85; color: var(--text-secondary); }
+    .learning-body p { margin-bottom: 12px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { font-size: 11px; color: var(--text-muted); margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
 
-    .trend-content {
-      flex: 1;
-    }
+    /* Knowledge */
+    .knowledge-theme { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 8px; }
+    .knowledge-headline { font-size: 18px; font-weight: 700; font-family: var(--font-serif); line-height: 1.4; margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--text-muted); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.7; background: var(--accent-light); border-radius: 8px; padding: 14px 16px; border-left: 3px solid var(--accent); }
 
-    .trend-title {
-      font-size: 13.5px;
-      font-weight: 500;
-      margin-bottom: 4px;
-      line-height: 1.4;
-    }
-
-    .trend-meta {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 5px;
-    }
-
-    .trend-obs {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-      background: var(--tag-bg);
-      padding: 6px 10px;
-      border-radius: 6px;
-      margin-top: 6px;
-    }
-
-    /* ── Learning card ── */
-    .learning-label {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      background: var(--accent);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-bottom: 12px;
-    }
-
-    .learning-title {
-      font-size: 18px;
-      font-weight: 700;
-      font-family: var(--font-serif);
-      color: var(--text-primary);
-      margin-bottom: 6px;
-      line-height: 1.4;
-    }
-
-    .learning-subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-    }
-
-    .learning-body {
-      font-size: 13.5px;
-      color: var(--text-secondary);
-      line-height: 1.8;
-    }
-
-    .learning-body p {
-      margin-bottom: 10px;
-    }
-
-    .learning-body strong {
-      color: var(--text-primary);
-    }
-
-    .learning-source {
-      margin-top: 16px;
-      font-size: 11px;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
-
-    /* ── Knowledge card ── */
-    .knowledge-theme {
-      display: inline-block;
-      font-size: 11px;
-      color: var(--text-muted);
-      background: var(--tag-bg);
-      padding: 3px 10px;
-      border-radius: 20px;
-      margin-bottom: 14px;
-      letter-spacing: 0.04em;
-    }
-
-    .knowledge-headline {
-      font-size: 20px;
-      font-weight: 700;
-      font-family: var(--font-serif);
-      color: var(--text-primary);
-      margin-bottom: 6px;
-    }
-
-    .knowledge-tagline {
-      font-size: 13px;
-      color: var(--accent);
-      font-style: italic;
-      margin-bottom: 16px;
-    }
-
-    .knowledge-intro {
-      font-size: 13.5px;
-      color: var(--text-secondary);
-      line-height: 1.8;
-      margin-bottom: 18px;
-    }
-
-    .knowledge-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .knowledge-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-    }
-
-    .knowledge-card-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .knowledge-card-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-
-    .knowledge-card-work {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
-
-    .knowledge-coda {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.8;
-      border-left: 3px solid var(--accent);
-      padding-left: 14px;
-      font-style: italic;
-    }
-
-    /* ── Footer ── */
+    /* Footer */
     .site-footer {
       text-align: center;
       padding: 32px;
       font-size: 12px;
       color: var(--text-muted);
       border-top: 1px solid var(--border);
-      margin-top: 24px;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      .layout { flex-direction: column; padding: 16px; }
-      .sidebar { width: 100%; }
-      .site-header { padding: 16px 20px; }
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
 
 <header class="site-header">
-  <div class="site-title">DayPulse <span>🌱</span></div>
-  <div class="header-date">每个工作日 09:45 更新</div>
+  <div class="site-title">Day<span>Pulse</span> 🌱</div>
+  <div class="header-date">2026 · 05 · 12 · TUE</div>
 </header>
 
 <div class="layout">
-  <!-- Sidebar -->
+
   <aside class="sidebar" id="sidebar">
-    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
-    <div class="sidebar-inner">
-    <div class="sidebar-label">归档日期</div>
-    <ul class="date-list" id="dateList">
-      <li><a href="2026/5/11/index.html" class="active">2026 / 5 / 11</a></li>
-      <li><a href="2026/5/9/index.html">2026 / 5 / 9</a></li>
-      <li><a href="2026/5/8/index.html">2026 / 5 / 8</a></li>
-      <li><a href="2026/5/7/index.html">2026 / 5 / 7</a></li>
-      <li><a href="2026/5/6/index.html">2026 / 5 / 6</a></li>
-      <li><a href="2026/5/5/index.html">2026 / 5 / 5</a></li>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="收起日期栏">◀</button>
+    <div class="sidebar-label">归档</div>
+    <ul class="date-list">
+      <li><a href="#" class="active">05 / 12 · 今天</a></li>
+      <li><a href="#">05 / 11 · 周日</a></li>
     </ul>
-    </div>
   </aside>
 
-  <!-- Main -->
-  <main class="main-content" id="mainContent">
+  <main class="main-content">
+
     <div class="day-header">
-      <div class="day-date">2026 · 05 · 07</div>
-      <div class="day-week">星期三</div>
+      <div class="day-date">5月12日</div>
+      <div class="day-week">星期二</div>
+      <span class="day-tag">🏥 国际护士节</span>
+      <span class="day-tag">🕯️ 汶川地震18周年</span>
     </div>
 
-    <!-- ① 新闻拼盘 -->
+    <!-- ① 今日要知 -->
     <section class="section">
       <div class="section-header">
-        <span class="section-icon">🗞</span>
-        <span class="section-title">新闻拼盘</span>
-        <span class="section-subtitle">今日精选 · 5 板块</span>
+        <span class="section-icon">📰</span>
+        <span class="section-title">今日要知</span>
+        <span class="section-subtitle">平台 · 行业 · 文化</span>
       </div>
       <div class="section-body">
 
         <div class="news-panel">
-          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-panel-title">🔴 平台动态</div>
+
           <div class="news-item">
-            <div class="news-item-title">"五一"消费全面爆发，餐饮销售额同比暴涨31.4%</div>
-            <div class="news-item-desc">国家税务总局增值税发票数据显示，五一假期全国消费相关行业销售收入同比增长14.3%，旅游游览和娱乐服务增长21.2%，餐饮销售额增长31.4%，消费信心显著回升。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+            <div class="news-item-title">小红书「种草进入效果化时代」——平台商业逻辑正在加速重构</div>
+            <div class="news-item-desc">2025年底WILL商业大会后，小红书商业生态在2026年进入深水区：蒲公英3.0上线、"市集"成为一级入口、种草转化链路可度量化。对IP大事件而言，这意味着线下活动的线上种草价值将被更精准地量化，活动设计从"好看能拍"升级为"拍了能转化"。</div>
           </div>
+
           <div class="news-item">
-            <div class="news-item-title">五一跨区域流动15.17亿人次，创历史同期新高</div>
-            <div class="news-item-desc">全国边检机关保障1127.9万人次出入境，外国人入境同比增长12.5%，出境游与入境游双向升温。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
-          </div>
-          <div class="news-item">
-            <div class="news-item-title">一季度机器人出口达113.2亿元，覆盖全球148国</div>
-            <div class="news-item-desc">中国机器人出口规模持续扩张，产品远销148个国家，制造业"出海"韧性凸显。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+            <div class="news-item-title">桂林文旅局因拉黑投诉博主引发舆论风波，随后道歉</div>
+            <div class="news-item-desc">游客莫女士因投诉演唱会座椅卫生问题被官方账号拉黑，事件迅速发酵。对文旅IP营销的启示：官方与用户的互动方式正在被高度审视，"花式吸引流量"与"回应用户"之间的落差，是品牌公信力的软肋。</div>
           </div>
         </div>
 
         <div class="news-panel">
-          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-panel-title">📢 行业热点</div>
+
           <div class="news-item">
-            <div class="news-item-title">国家大基金拟主导DeepSeek首轮融资，估值约450亿美元</div>
-            <div class="news-item-desc">消息人士称，双方确在洽谈，估值尚未最终确认。同时参与谈判的还有多家互联网巨头和国资基金，DeepSeek商业化路径受到广泛关注。</div>
-            <a class="news-item-link" href="https://juejin.cn/post/7635832321267482674" target="_blank">→ 稀土掘金</a>
+            <div class="news-item-title">五一「景区NPC」爆火：文旅IP从"看景"转向"入景"</div>
+            <div class="news-item-desc">河南嵩山景区网红标语、天津杨柳青沉浸式NPC巡游……五一假期，景区通过特色角色扮演演员与趣味标语打造沉浸体验，用户从旁观者变成参与者。这一趋势对慢人节3.0有直接参考价值：线下活动的核心竞争力，正在从"有什么可看"转向"有什么可进入"。</div>
           </div>
+
           <div class="news-item">
-            <div class="news-item-title">DeepSeek新模型转向国产芯片，配合华为昇腾950供货</div>
-            <div class="news-item-desc">新模型将全面适配国产芯片，定价预计大幅下调，国产AI生态自主化进程加速，算力国产替代叙事持续强化。</div>
-            <a class="news-item-link" href="https://juejin.cn/post/7635832321267482674" target="_blank">→ 稀土掘金</a>
-          </div>
-          <div class="news-item">
-            <div class="news-item-title">量子计算被指"下一个DeepSeek时刻"，十五五规划重点布局</div>
-            <div class="news-item-desc">随着"十五五"规划落地，算力革命叙事升温，量子计算被多方机构视为下一个爆发点。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c0019055ys4.html" target="_blank">→ 新浪科技</a>
+            <div class="news-item-title">2026世界数字教育大会在杭州举办（5月11-13日）</div>
+            <div class="news-item-desc">教育数字化是当下的热点叙事场域。对IP营销而言，教育类IP（知识、技艺、传承）的内容价值在上升，与慢人节"非遗守艺人""东巴文字"等文化内容有潜在话题共振空间。</div>
           </div>
         </div>
 
         <div class="news-panel">
-          <div class="news-panel-title">资本 · 市场</div>
+          <div class="news-panel-title">📅 今日节点</div>
           <div class="news-item">
-            <div class="news-item-title">A股放量大涨，科创50涨5.47%，算力半导体爆发</div>
-            <div class="news-item-desc">5月6日，上证指数涨1.17%报4160.17点，科创50涨5.47%，寒武纪续创历史新高，海光信息触及涨停。分析认为市场切换为盈利与政策驱动逻辑。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+            <div class="news-item-title">🏥 国际护士节（5月12日，南丁格尔诞辰纪念日）</div>
+            <div class="news-item-desc">今年是第115个国际护士节，话题天然带有"默默付出""在场关怀"等情感底色。各品牌（医疗、快消、美妆）通常借此做情感类内容，如果慢人节有医疗/健康类合作方向，可考虑今日借势。</div>
           </div>
           <div class="news-item">
-            <div class="news-item-title">AMD大涨18%创历史新高，英伟达市值重回5万亿美元</div>
-            <div class="news-item-desc">美股三大指数集体收涨，纳指涨2.02%，英伟达涨超5%，AMD总市值超6800亿美元，AI算力龙头行情持续。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
-          </div>
-        </div>
-
-        <div class="news-panel">
-          <div class="news-panel-title">品牌 · 营销</div>
-          <div class="news-item">
-            <div class="news-item-title">白鹿代言蓝月亮，明星营销如何助力国民品牌高端化</div>
-            <div class="news-item-desc">2026年白鹿已拿下王者荣耀、李宁、香缇卡、蓝月亮四大头部品牌代言，成为当下最具商业价值的女艺人之一。蓝月亮借势头部IP推动产品溢价，明星×品牌共振模式引发行业讨论。</div>
-            <a class="news-item-link" href="https://news.qq.com/rain/a/20260429A08NUY00" target="_blank">→ 腾讯新闻</a>
-          </div>
-          <div class="news-item">
-            <div class="news-item-title">体验经济、IP联名持续升温，五一消费市场结构性变化显现</div>
-            <div class="news-item-desc">五一假期"赛事+演艺"流量向本地生活精准转化，兴趣驱动型出行爆发，"以旧换新"惠及8620万人次，消费场景分化加剧。</div>
-            <a class="news-item-link" href="http://jjckb.xinhuanet.com/20260505/93266276bd0c4b71bf6535a1581a99ba/c.html" target="_blank">→ 经济参考报</a>
-          </div>
-        </div>
-
-        <div class="news-panel">
-          <div class="news-panel-title">国际 · 地缘</div>
-          <div class="news-item">
-            <div class="news-item-title">特朗普称美伊"很有可能"达成协议，原油跌超7%</div>
-            <div class="news-item-desc">特朗普表示24小时内双方对话"非常富有成效"，伊朗已同意不拥有核武器。受此影响，WTI原油期货跌7.03%至95.08美元/桶，金银大涨。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
-          </div>
-          <div class="news-item">
-            <div class="news-item-title">王毅与伊朗外长会谈，就霍尔木兹海峡问题交换意见</div>
-            <div class="news-item-desc">5月6日，王毅在北京会见阿拉格齐，伊方表示将通过和平谈判寻求全面、永久解决方案，中方积极斡旋立场持续。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20260507/herald/bfd0856901700b68f047858442e6c227.html" target="_blank">→ 21经济网</a>
+            <div class="news-item-title">🕯️ 汶川地震18周年（5月12日）</div>
+            <div class="news-item-desc">全国防灾减灾日。今日公众情绪整体偏沉稳庄重，不宜大力推娱乐内容；可做轻量的"珍惜当下""慢下来感受生活"类叙事，与慢人节的情感基调有天然契合。</div>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- ② 站内要闻 -->
+    <!-- ② 趋势雷达 -->
     <section class="section">
       <div class="section-header">
-        <span class="section-icon">📊</span>
-        <span class="section-title">站内要闻</span>
-        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+        <span class="section-icon">📡</span>
+        <span class="section-title">趋势雷达</span>
+        <span class="section-subtitle">IP营销 · 内容风向</span>
       </div>
       <div class="section-body">
 
         <div class="trend-item">
           <div class="trend-rank hot">1</div>
           <div class="trend-content">
-            <div class="trend-title">#五一出行 × 小红书 × 飞猪联合报告</div>
-            <div class="trend-meta">话题热度持续 · 旅行内容赛道</div>
-            <div class="trend-obs">💡 趋势观察：小红书与飞猪联合发布《"五一"出行趋势报告》，数据显示69%用户的旅行决策由"人群分化+主题出行"驱动——这意味着内容种草对旅行决策的影响已远超传统搜索广告。对平台大事件而言，旅行类IP绑定优质内容创作者，可能是下半年的高确定性增量场景。</div>
+            <div class="trend-title">#情绪营销进入深水区——荒诞、敬畏、抽象感正在取代单一温情</div>
+            <div class="trend-meta">品牌营销趋势 · 虎嗅/广告门报告</div>
+            <div class="trend-obs">💡 趋势观察：瑞幸×张兴朝的"尴尬抽象"广告、伊利/美团跟进，品牌信息"隐身"成道具，越看不懂越讨论。对大事件IP而言：慢人节不需要解释慢是什么——创造一个让人"看不懂却想聊"的现场时刻，可能比千字文案更有传播力。</div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank hot">2</div>
           <div class="trend-content">
-            <div class="trend-title">#体验式消费 #IP联名 节后热搜延续</div>
-            <div class="trend-meta">消费内容赛道 · 品牌合作话题</div>
-            <div class="trend-obs">💡 趋势观察：五一期间"体验经济+IP联名"的讨论持续在小红书发酵，老字号、非遗、夜经济内容曝光量同步上升。这是一个信号：用户对"有文化厚度的消费体验"产生强烈共鸣，平台大事件在策划IP活动时，可将文化叙事作为差异化锚点。</div>
+            <div class="trend-title">#线下场景回流：品牌把实体店/快闪/策展重新定义为内容发生地</div>
+            <div class="trend-meta">线下营销趋势 · 虎嗅2026品牌趋势报告</div>
+            <div class="trend-obs">💡 趋势观察：LV上海"THE路易号"巨轮概念店——不只是门店，是打卡内容本身。线上流量见顶的背景下，线下场景正在成为最稀缺的"原生内容发生器"。慢人节3.0作为实体活动，天然具备这个优势；关键在于每一个空间节点都要设计成"可拍摄的故事场景"。</div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank">3</div>
           <div class="trend-content">
-            <div class="trend-title">#白鹿 #内娱综艺审美 微博跨平台联动热搜</div>
-            <div class="trend-meta">艺人话题 · 跨平台传播</div>
-            <div class="trend-obs">💡 趋势观察：白鹿相关话题从微博热搜向小红书传导，"内娱综艺审美巨变"讨论带动了大量内容创作。艺人代言×平台话题的联动效应正在加速，对商业化营销而言，找准艺人话题的自然生长期窗口，往往比直投贵片效率更高。</div>
+            <div class="trend-title">#AI重构营销分工：一人团队崛起，复合型"创意+AI"小组成标配</div>
+            <div class="trend-meta">营销行业结构变化 · 广告门Adquan</div>
+            <div class="trend-obs">💡 趋势观察：大品牌采用"内部核心+外部头部"混合模式，AI打通设计/文案/策略的跨职能边界。对IP策划同学而言：善用AI工具（如Ki）快速产出初稿、做竞品研究、批量生成文案方向，是2026年工作方式的标配，而非加分项。</div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank">4</div>
           <div class="trend-content">
-            <div class="trend-title">#来中国玩的外国人更多了 入境游内容热潮</div>
-            <div class="trend-meta">文旅内容赛道 · 国际传播话题</div>
-            <div class="trend-obs">💡 趋势观察：入境游同比增长12.5%，外国人在小红书上的内容创作与中文粉丝互动同步升温。这一趋势对平台国际化内容生态有直接价值，也是品牌探索"华流出海"叙事的好时机。</div>
+            <div class="trend-title">#叙事从宏观转向具象场景：京东外卖刘强东穿外卖服送餐的逻辑</div>
+            <div class="trend-meta">品牌叙事趋势 · 虎嗅</div>
+            <div class="trend-obs">💡 趋势观察：科技公司不再描述"未来宏大愿景"，转而演示"点一杯咖啡"的具体一秒。品牌叙事越来越小、越来越真实。对慢人节：不要说"我们创造了一场慢的节日"，而是说"你在阿美泽某个下午捏了一块泥土，然后它变成了你带走的碗"。</div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank">5</div>
           <div class="trend-content">
-            <div class="trend-title">#伦敦世乒赛 体育内容赛道持续活跃</div>
-            <div class="trend-meta">体育赛事话题</div>
-            <div class="trend-obs">💡 趋势观察：体育赛事期间，小红书上的实时观赛打卡、赛后讨论内容往往能在24小时内形成自然流量峰值。体育IP绑定是当下大事件营销的成熟路径，值得持续关注。</div>
+            <div class="trend-title">#用户心流运营：让内容进入停留状态，而非被动接受推送</div>
+            <div class="trend-meta">内容运营方法论 · 广告门/虎嗅</div>
+            <div class="trend-obs">💡 趋势观察：平台算法加重互动权重，品牌内容需要从"曝光驱动"转向"心智沉淀"。评论、收藏、停留时长比单纯曝光量更值钱。对大事件传播：预热阶段设计能引发"我也有过这种感受"讨论的内容，是冷启蓄水的关键。</div>
           </div>
         </div>
 
@@ -619,20 +384,20 @@
       <div class="section-header">
         <span class="section-icon">📚</span>
         <span class="section-title">行业学习</span>
-        <span class="section-subtitle">广告 · 商业 · 营销</span>
+        <span class="section-subtitle">营销 · 方法论</span>
       </div>
       <div class="section-body">
-        <div class="learning-label">今日主题 · 明星营销</div>
-        <div class="learning-title">明星代言的逻辑变了：从「曝光载体」到「价值共鸣体」</div>
-        <div class="learning-subtitle">一次读懂2026年明星代言的底层范式迁移</div>
+        <div class="learning-label">今日主题 · 沉浸式体验营销</div>
+        <div class="learning-title">「从看景到入景」：为什么景区NPC火了，大多数品牌活动却死气沉沉</div>
+        <div class="learning-subtitle">一次读懂2026年线下体验营销的底层逻辑迁移</div>
         <div class="learning-body">
-          <p>过去，品牌签代言人的逻辑很直接：流量大、颜值高、覆盖面广。代言人的核心价值是「曝光」——把品牌信息打到更多人眼前。</p>
-          <p>但2026年的数据告诉我们，这套逻辑正在失效。<strong>Z世代消费者64%对产品本身的忠诚度高于品牌</strong>，31%对社交媒体推荐的信任度超过传统广告。明星的作用，已经不再是「传声筒」，而是一个「价值认同锚点」。</p>
-          <p>以白鹿×蓝月亮为例：蓝月亮本是一个偏大众、偏母婴形象的清洁品牌，签约白鹿后的操作并不是简单的TVC投放，而是绑定产品科技话题、在直播间挂五个购买链接、让代言人参与产品叙事。结果是：销量短期爆发，品牌形象完成年轻化迁移。</p>
-          <p><strong>这背后的方法论是：明星代言不是广告位，是品牌叙事的共同作者。</strong>品牌要找的，不只是"谁的粉丝多"，而是"谁的人设，和我要讲的品牌故事，有天然的化学反应"。</p>
-          <p>对平台大事件而言，这意味着：在策划IP活动时，引入艺人的方式应该从"出现在海报上"升级为"成为活动叙事的一部分"——让艺人的个人标签为活动赋意，而不只是赋流量。</p>
+          <p>五一假期，天津杨柳青古镇的NPC巡游、河南嵩山的网红标语、各地景区的沉浸式互动，成了线上传播的爆款素材。为什么？</p>
+          <p>答案不是因为"有趣"，而是因为<strong>角色设计让游客从旁观者变成了故事的参与者</strong>。NPC不是一个演员在表演，而是一个触发器——游客靠近它，就进入了一个可以被讲述的故事里。然后他们会拍下来，发出去，邀请下一个人来。</p>
+          <p>传统品牌活动的失败逻辑是：精心设计一个"美好场景"，然后把人放进去，期待他们"自然拍照"。但人在一个美好但与自己无关的场景里，只是路过，不是在场。</p>
+          <p><strong>在场感的核心，是"我参与了什么"，而不是"我看见了什么"。</strong>景区NPC给人的是参与感——我被这个角色认识了、挑逗了、邀请了，我做出了反应，这件事发生过，而且只属于我。</p>
+          <p>对慢人节3.0的启发直接明了：三大板块（部落/音乐节/艺术展）每一个都需要设计若干个"触发点"——不是打卡装置，而是让人主动参与、做出选择、留下痕迹的交互设计。一块等待被画的石头，一首等待被点的歌，一件等待被摸的手工作品——<strong>慢，必须是一个动词，不能是一个名词。</strong></p>
         </div>
-        <div class="learning-source">📖 参考来源：腾讯新闻《请白鹿当天就挂5个购物链接，蓝月亮这场翻身仗》· 网易《2026明星代言5大趋势》· 数英网《2026网红营销八大趋势》</div>
+        <div class="learning-source">📖 参考来源：文汇时评《花式互动聚流量，当守"三气"行致远》· 新华网《五一文旅消费观察》· 虎嗅《2026影响品牌的11个营销趋势》</div>
       </div>
     </section>
 
@@ -641,52 +406,54 @@
       <div class="section-header">
         <span class="section-icon">🌐</span>
         <span class="section-title">知识增长</span>
-        <span class="section-subtitle">今日策展 · 音乐</span>
+        <span class="section-subtitle">今日策展 · 节气与时间</span>
       </div>
       <div class="section-body">
-        <div class="knowledge-theme">🎸 主题策展 · 民谣的根</div>
-        <div class="knowledge-headline">从鲍勃·迪伦到李志：民谣是什么？为什么重要？</div>
-        <div class="knowledge-tagline">「民谣不是风格，是一种说话的方式。」</div>
+        <div class="knowledge-theme">🕰️ 主题策展 · 时间的质地</div>
+        <div class="knowledge-headline">从「快」到「慢」：人类是怎么失去时间的，又怎么找回来的</div>
+        <div class="knowledge-tagline">「从前的日色变得慢，车、马、邮件都很慢，一生只够爱一个人。」——木心</div>
 
         <div class="knowledge-intro">
-          民谣（Folk Music）的本质，是用最简单的乐器讲最诚实的故事。它起源于美国1950-60年代的抗议运动，在鲍勃·迪伦手里成了文学，在琼·贝兹嘴里成了运动，在比利·布拉格那里变成了左翼政治……然后被无数人拆解、重组、本土化——最终在中国，长出了万晓利、李志、马条、陈粒这些完全不同的面孔。<br><br>了解民谣的脉络，是理解"真实感"内容为何在当下持续有生命力的密钥。在一个人人都在做精致内容的时代，那个拿着吉他坐在凳子上讲故事的人，依然拥有穿透力。
+          时间加速，是现代文明的核心议题之一。工业革命之前，时间是"日出而作，日落而息"——以自然为刻度。工业化之后，时间被精确到秒，被管理、被出售、被耗尽。<br><br>
+          但有一批人，一直在反抗这件事。梭罗跑去瓦尔登湖，不是逃跑，是实验——他想看看，慢下来之后，生活里还剩什么。昆德拉问：慢的乐趣怎么失传了呢？那些在路边打盹的流浪者去哪儿了？木心回忆：从前慢，一生只够爱一个人。<br><br>
+          这不是怀旧，是一个持续的文化反叛——对速度意识形态的拒绝。
         </div>
 
         <div class="knowledge-cards">
           <div class="knowledge-card">
-            <div class="knowledge-card-name">鲍勃·迪伦</div>
-            <div class="knowledge-card-sub">Bob Dylan · 美国 · 民谣鼻祖</div>
-            <div class="knowledge-card-work">2016年诺贝尔文学奖。代表作《Blowin' in the Wind》《The Times They Are A-Changin'》——他让民谣成为诗。</div>
+            <div class="knowledge-card-name">梭罗 Thoreau</div>
+            <div class="knowledge-card-sub">美国 · 《瓦尔登湖》1854</div>
+            <div class="knowledge-card-work">「我步入丛林，因为我希望有意识地生活，只面对生活的基本事实……以免当我生命终结，才发现自己从没有活过。」</div>
           </div>
           <div class="knowledge-card">
-            <div class="knowledge-card-name">琼·贝兹</div>
-            <div class="knowledge-card-sub">Joan Baez · 美国 · 民权运动之声</div>
-            <div class="knowledge-card-work">迪伦的挚友与情人，用歌声参与了马丁·路德·金的游行。民谣与社会运动绑定的起点。</div>
+            <div class="knowledge-card-name">昆德拉 Kundera</div>
+            <div class="knowledge-card-sub">捷克/法国 · 《慢》1995</div>
+            <div class="knowledge-card-work">「慢的乐趣怎么失传了呢？速度是出神的形式——你跑得越快，你越感受不到自己的存在。」</div>
           </div>
           <div class="knowledge-card">
-            <div class="knowledge-card-name">Simon & Garfunkel</div>
-            <div class="knowledge-card-sub">美国 · 民谣流行化</div>
-            <div class="knowledge-card-work">《The Sound of Silence》《Mrs. Robinson》——将民谣推向主流，和声的极致示范。</div>
+            <div class="knowledge-card-name">木心</div>
+            <div class="knowledge-card-sub">中国 · 《从前慢》1982</div>
+            <div class="knowledge-card-work">「从前的日色变得慢，车、马、邮件都很慢，一生只够爱一个人。」——最有共鸣基础的现代汉语"慢"的情感符号。</div>
           </div>
           <div class="knowledge-card">
-            <div class="knowledge-card-name">万晓利</div>
-            <div class="knowledge-card-sub">中国 · 当代民谣之父</div>
-            <div class="knowledge-card-work">《这一切没有想象的那么糟》——中国城市民谣的奠基人，把胡同、流浪、日常写进歌里。</div>
+            <div class="knowledge-card-name">陶渊明</div>
+            <div class="knowledge-card-sub">东晋 · 《归去来兮辞》</div>
+            <div class="knowledge-card-work">「此中有真意，欲辨已忘言。」——有些东西只能置身其中，无法言说，说出来就失真了。</div>
           </div>
           <div class="knowledge-card">
-            <div class="knowledge-card-name">李志</div>
-            <div class="knowledge-card-sub">中国 · 独立民谣偶像</div>
-            <div class="knowledge-card-work">《天空之城》《关于郑州的记忆》——极度个人化的写作，拥有狂热的独立音乐圈粉丝群体。</div>
+            <div class="knowledge-card-name">赵州禅师</div>
+            <div class="knowledge-card-sub">唐代 · 禅宗公案</div>
+            <div class="knowledge-card-work">「吃茶去。」——无论你问什么，答案都是：先坐下来，喝一杯茶。存在感，只在此刻。</div>
           </div>
           <div class="knowledge-card">
-            <div class="knowledge-card-name">陈粒</div>
-            <div class="knowledge-card-sub">中国 · 新生代跨界</div>
-            <div class="knowledge-card-work">《奇妙能力歌》《易燃易爆炸》——从民谣切入，融合电子与古风，是民谣出圈最具代表性的路径之一。</div>
+            <div class="knowledge-card-name">东巴象形文</div>
+            <div class="knowledge-card-sub">纳西族 · 丽江</div>
+            <div class="knowledge-card-work">时间不是算出来的，是画出来的——纳西族用象形文字描绘日出、白昼、星繁，每一个字都是对时间的一次放大。</div>
           </div>
         </div>
 
         <div class="knowledge-coda">
-          今天的民谣与平台大事件的关系：当你看到品牌在户外活动现场放一把木吉他、请歌手弹唱——那个「真实感」的调性选择，背后就是民谣美学的基因在作用。理解这个传统，才能理解为什么"去精致化"的内容在情绪共鸣上有时比精品制作更有力量。
+          和慢人节3.0的关联：这六个关于"慢"的文化参照，既是KM方向的素材库，也是活动叙事的精神坐标。当一个用户在阿美泽的草甸上坐了一个下午，他其实正在和梭罗、木心、东巴文字做同一件事——用时间证明自己活过。
         </div>
       </div>
     </section>
@@ -695,9 +462,8 @@
 </div>
 
 <footer class="site-footer">
-  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+  DayPulse 🌱 · 由 Ki 生成 · 2026.05.12 更新
 </footer>
-
 
 <script>
   function toggleSidebar() {
@@ -708,7 +474,6 @@
     btn.title = collapsed ? '展开日期栏' : '收起日期栏';
     try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
   }
-  // 恢复上次状态
   try {
     if (localStorage.getItem('daypulse-sidebar') === '1') {
       const sidebar = document.getElementById('sidebar');
