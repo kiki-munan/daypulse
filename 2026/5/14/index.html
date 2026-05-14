@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/14</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 52px; background: linear-gradient(135deg, #0a1628 0%, #1a4a2e 40%, #2d7a4f 70%, #5ba67d 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/5/14/index.html" class="active">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+      <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 14</div>
+      <div class="day-week">星期四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 方向</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普抵京展开国事访问，中美领导人会晤聚焦关税、台海与伊朗三大议题</div>
+            <div class="news-item-desc">微博热搜"特朗普抵京"今晨冲至19万热度。此次访问系特朗普第二任期首次正式访华，原定3月因美对伊军事打击推迟，最终落定5月13-15日。中美双方预计就关税暂停协议的延续条件、台海稳定及伊核问题进行实质磋商。外交语境的每一次松动，都是消费信心的晴雨表。</div>
+            <a class="news-item-link" href="https://www.news.cn/world/20260511/5b2f61662a2748978165eb78eaac3702/c.html" target="_blank">→ 新华网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">一季度中国经济超预期：外需稳中有升，投资大幅改善，消费压舱石作用凸显</div>
+            <div class="news-item-desc">新浪财经5月报告显示，2026年开年经济表现整体超出市场预期，再通胀步伐加快。投资增速大幅改善带来增量带动，消费保持稳定。货币政策层面，央行大概率维持结构性宽松，降准降息窗口仍在观察中。宏观底色向好，品牌营销扩张意愿随之升温。</div>
+            <a class="news-item-link" href="http://stock.finance.sina.com.cn/stock/go.php/vReport_Show/kind/lastest/rptid/831380047713/index.phtml" target="_blank">→ 新浪财经·宏观报告</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic B2B企业采用率首超OpenAI，Ramp支出数据实锤：34.4% vs 32.3%</div>
+            <div class="news-item-desc">来自企业支付平台Ramp的AI指数数据显示，Anthropic在美国企业客户中的覆盖率一年内增长四倍，首次压过OpenAI。这对企业AI采购决策是一个真实信号——Claude系列在代码生成、长文本处理等B端场景中的实用性正获得认可。但分析指出，价格波动和产品发布节奏意味着这一优势仍然脆弱。</div>
+            <a class="news-item-link" href="https://the-decoder.com/anthropic-overtakes-openai-in-b2b-adoption-for-the-first-time-according-to-ramp-spending-data" target="_blank">→ The Decoder</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Runway Agent正式发布：对话十分钟生成一支完整品牌视频，内容生产成本结构面临重写</div>
+            <div class="news-item-desc">Runway最新发布的Agent工具支持用自然语言描述创意需求，自主完成概念提案、故事节奏、视觉规划并输出含多场景旁白、对话与音乐的成片。传统一个团队干一周的工作，缩短至个人聊十分钟。品牌和内容团队的视频成本结构将被深刻重写——这不是预测，而是现在进行时。</div>
+            <a class="news-item-link" href="https://runwayml.com/news/introducing-runway-agent" target="_blank">→ Runway 官网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">马化腾微博热搜"AI掉队"回应：腾讯AI有自己节奏，正在各业务板块仔细思考持续点亮</div>
+            <div class="news-item-desc">今晨微博热搜"马化腾回应AI掉队"引发6万讨论。腾讯在AI战略上一直保持相对低调，马化腾在年初员工大会曾表示"每个企业穿越周期的节奏不一样，过往业务的长青保证了腾讯在AI上可以长期投入"。微信生态与AI Agent的深度结合，或许才是腾讯的真正下注方向。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%A9%AC%E5%8C%96%E8%85%BE%E5%9B%9E%E5%BA%94AI%E6%8E%89%E9%98%9F" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">欧莱雅收购开云美妆、雅诗兰黛2025财年净亏损11亿美元——全球美妆版图加速重构</div>
+            <div class="news-item-desc">全球美妆行业正在经历近十年最大规模整合：欧莱雅扩张版图收购开云美妆，雅诗兰黛在新任CEO改革下仍深陷亏损，LVMH旗下美妆与奢侈品跨界竞争态势加剧。中国市场成为各品牌争夺的核心战场，国货美妆品牌借势"情绪化种草"正在蚕食份额。</div>
+            <a class="news-item-link" href="https://pdf.dfcfw.com/pdf/H3_AP202604091821103598_1.pdf?1775806259000.pdf" target="_blank">→ 东方财富·美妆行业周报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026年美国创作者营销支出将达439亿美元，同比增18%，中小品牌仍是主力买家</div>
+            <div class="news-item-desc">创作者经济正从"补充渠道"完成身份迁移到"主战场"。大品牌提高了单次合作预算，但从合作数量看，中小品牌才是达人经济的主要买家。这一结构对小红书的商业化路径有直接启示：KOC生态的价值将继续提升，不只因为"便宜"，而是因为"可信"。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-04-28/doc-inhvykns8891529.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">天舟十号货运飞船发射任务全回顾，微博热搜5万，航天叙事持续激活国家自豪感内容场</div>
+            <div class="news-item-desc">天舟十号成功完成在轨对接，相关视频与幕后故事在小红书引发大量转载与二创。中国航天已形成稳定的"国家科技成就→情感叙事→平台传播"链路。此类内容的扩散逻辑值得品牌借鉴：不是因为"爱国"，而是因为"具体且真实的人类壮举"触发了情感共鸣。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%A9%E8%88%9F%E5%8D%81%E5%8F%B7%E8%B4%A7%E8%BF%90%E9%A3%9E%E8%88%B9%E5%8F%91%E5%B0%84%E4%BB%BB%E5%8A%A1%E5%85%A8%E5%9B%9E%E9%A1%BE" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Kling AI将亮相戛纳电影节市场，可灵与好莱坞级制作的整合案例首次公开演示</div>
+            <div class="news-item-desc">可灵AI宣布5月18日在戛纳电影节电影市场举办专场活动，展示其在《House of David》等好莱坞项目中的实际应用。AI在影视工业的渗透比公众想象快得多——从辅助特效到参与叙事策划，影视内容生产的权力结构正在被重新定义。对小红书平台大事件而言，AI辅助内容生产已是现在时，而非未来式。</div>
+            <a class="news-item-link" href="https://x.com/Kling_ai/status/2054577409064911330" target="_blank">→ Kling AI 官方</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">百威集团三度斩获戛纳国际创意节"年度杰出创意营销主"，创意一致性比单次爆款更难</div>
+            <div class="news-item-desc">戛纳国际创意节2026年宣布百威集团荣获年度杰出创意营销主，这是其第三次获此殊荣。连续获奖的背后，是一套跨品牌、跨市场的创意体系——不依赖单次天才灵感，而是建立可复制的创意方法论。对IP营销策划的启发：大事件的价值，不在于每年"爆一次"，而在于积累可传承的创意资产。</div>
+            <a class="news-item-link" href="https://finance.ifeng.com/c/8t2b1Ibj4tr" target="_blank">→ 凤凰财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">奥美发布《2026意见领袖营销趋势》：五大核心洞察，KOL价值评估从流量向"信任资产"迁移</div>
+            <div class="news-item-desc">奥美中国最新报告指出，2026年达人营销的核心评估维度正从粉丝量、转发量向"信任资产"和"圈层影响力"迁移。品牌开始关注：这个人说什么，他的粉丝信不信，而不只是"有多少人看"。这与小红书种草逻辑高度吻合——真实性是最稀缺的种草货币。</div>
+            <a class="news-item-link" href="https://www.ogilvy.com/cn/ideas/baogao2026nianyijianlingxiuyingxiaoqushi" target="_blank">→ 奥美中国官网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#特朗普抵京 中美关系走向引发站内热议</div>
+            <div class="trend-meta">国际政治话题 · 时事内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：微博热搜19万热度的政治事件，在小红书平台往往以"关税影响我的生活""美妆代购会不会涨价"等视角二次落地。用户并不消费"宏观外交"，他们消费"这件事跟我有什么关系"。品牌与IP营销应关注：大政治事件如何被具象化为用户的生活感知，这是内容种草的切入口，而非风险点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%89%B9%E6%9C%97%E6%99%AE%E6%8A%B5%E4%BA%AC" target="_blank">→ 微博热搜·特朗普抵京</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#一代人有一代人的带娃邪修 育儿内容持续破圈</div>
+            <div class="trend-meta">育儿生活话题 · 母婴内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：微博热搜5万+"带娃邪修"这类话题，核心传播力来自"我也这样"的群体共鸣。用轻松甚至自嘲的视角呈现育儿日常，是小红书母婴赛道内容持续破圈的底层逻辑。对品牌而言，这意味着母婴内容不需要"正确"——需要"真实"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%80%E4%BB%A3%E4%BA%BA%E6%9C%89%E4%B8%80%E4%BB%A3%E4%BA%BA%E7%9A%84%E5%B8%A6%E5%A8%83%E9%82%AA%E4%BF%AE" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#天舟十号发射 科技成就内容二次创作热度延续</div>
+            <div class="trend-meta">科技·航天话题 · 国家自豪感叙事</div>
+            <div class="trend-obs">💡 趋势观察：航天话题在微博的传播窗口通常是24-48小时，但在小红书上，幕后故事、科普解析、参与者视角的内容往往在一周内持续累积互动。这类"具体的人做了了不起的事"的叙事结构，是IP大事件选题时值得借鉴的内容范式——不讲"多么伟大"，讲"这个人经历了什么"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A4%A9%E8%88%9F%E5%8D%81%E5%8F%B7" target="_blank">→ 微博热搜·天舟十号</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书AI Dots部门 站内AI内容生产趋势加速</div>
+            <div class="trend-meta">平台动态 · AI内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：小红书成立Dots一级部门押注AI Agent，正在从底层重构内容生态。对创作者而言，AI辅助创作的门槛越来越低；对品牌方而言，种草内容的生产效率将被大幅提升，但同时"真实性"的稀缺价值也在上升。AI可以快速生产内容，但无法复制"一个真实的人的亲身体验"。</div>
+            <div class="trend-source"><a href="https://www.woshipm.com/operate/6336917.html" target="_blank">→ 人人都是产品经理·小红书AI趋势</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#戛纳电影节 萧邦品牌植入 奢品营销红毯进行时</div>
+            <div class="trend-meta">奢品营销 · 大事件赞助内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：戛纳电影节5月12日已开幕，萧邦作为官方合作品牌再度绑定金棕榈奖杯赞助与红毯珠宝植入。WWD分析指出，这种"持续长期合作"的赞助模式比单次冠名更有效——它把品牌融进了节日的文化记忆，而不只是露出logo。对大事件IP策划：合作品牌的选择和长期化运营，比单次曝光价值高一个维度。</div>
+            <div class="trend-source"><a href="https://www.wwdgreaterchina.com/detail.html?pid=68&id=14605" target="_blank">→ WWD国际时尚特讯</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 大事件赞助逻辑</div>
+        <div class="learning-title">为什么萧邦绑定戛纳三十年，而你的品牌赞助了活动却没人记得？</div>
+        <div class="learning-subtitle">从文化节点赞助到"品牌成为节日记忆"的底层逻辑差</div>
+        <div class="learning-body">
+          <p>戛纳电影节每年五月如期而至，最稳定出现在红毯照片里的，不是任何一位明星，而是萧邦（Chopard）的珠宝。这不是偶然——萧邦从1998年起成为戛纳电影节官方合作品牌，迄今已近三十年。</p>
+          <p>大多数品牌赞助活动的逻辑是：<strong>买露出，等结束，算ROI</strong>。活动结束后，问用户"那个活动的赞助商是谁"，十有八九答不上来。因为"logo出现在某个地方"这件事，不会在人的记忆里留下任何有意义的钩子。</p>
+          <p>萧邦做对了什么？<strong>它不是在买曝光，而是在买参与感</strong>。金棕榈奖杯由萧邦制作——每一届获奖时，它都成为画面的一部分；萧邦有专属"萧邦奖"颁奖典礼，是节日结构的组成部分；红毯上女演员佩戴的珠宝来自萧邦，每一张照片都是一次植入……这些不是广告，而是文化叙事的一部分。用户记住萧邦，是因为萧邦"在那个时刻存在"，而不是因为它"出现了"。</p>
+          <p>对平台大事件策划，这个逻辑极其重要。合作品牌的植入，不应该是"logo贴在哪里"，而是"品牌在这个节日里扮演了什么角色"——它是工具（萧邦制作奖杯）？是体验提供者（某品牌赞助了最好的互动装置）？还是情感的放大器（某品牌赞助了让用户留下最多照片的空间）？</p>
+          <p><strong>记忆，发生在参与的那一刻，而不是在看到logo的那一秒。</strong>这是所有大事件赞助设计的核心命题。2026年数英网的营销趋势报告也印证了这一点：广告业正在从"购买注意力"转向"赢得参与感"，品牌赞助的评估维度正在深刻迁移。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.wwdgreaterchina.com/detail.html?pid=68&id=14605" target="_blank">WWD·萧邦戛纳合作深度分析</a> ·
+          <a href="https://www.digitaling.com/articles/1446969.html" target="_blank">数英网《2026年的10个营销趋势》</a> ·
+          <a href="https://life.dayoo.com/money/202604/27/154565_54953146.htm" target="_blank">大洋网·2026数字广告观察</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 格拉斯顿伯里音乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎸🌧️🌿</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">英国 · 音乐节</span>
+          <span class="festival-tag">萨默塞特郡 · 农场</span>
+          <span class="festival-tag">每年6月（5年休耕一次）</span>
+          <span class="festival-tag">全球最大户外音乐节</span>
+        </div>
+        <div class="festival-name">格拉斯顿伯里音乐节</div>
+        <div class="festival-name-en">Glastonbury Festival of Contemporary Performing Arts · 始于1970年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】一个农场，一场文化革命</div>
+          <div class="festival-block-body">
+            <p>1970年，英国萨默塞特郡皮尔顿农场。奶农Michael Eavis受到前一年美国伍德斯托克音乐节的感召，花1500英镑签下了Marc Bolan和T.Rex，在自家农场举办了第一届格拉斯顿伯里音乐节。门票1英镑，包含一品脱牛奶。当时有1500人到场，没有人想到这会成为日后影响全球流行文化的传奇。</p>
+            <p>1970年代，它是反主流文化的聚集地；1980年代，绿色和平组织与核裁军运动进入，音乐节开始具有政治与社会议题的底色；1990年代，随着Oasis、Blur的加盟，格拉斯顿伯里完成了从嬉皮圣地到英伦流行核心舞台的身份迁移。2003年，它将正式名称更新为"<strong>格拉斯顿伯里当代表演艺术节</strong>"——宣示它早已不只是一个摇滚音乐节。</p>
+            <p>历届记忆点：David Bowie 2000年的压轴表演被《卫报》称为"英国流行史上最伟大的现场"；Radiohead 1997年在主舞台的雨夜演出因设备故障变成传奇；2015年Kanye West登台引发争议，反而成就了最高流量；2022年Beyoncé的回归登台至今被反复播放研究。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一块泥地，一个运转的文化小宇宙</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">21万+</div>
+                <div class="festival-stat-label">年度参与人数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">100+</div>
+                <div class="festival-stat-label">个演出舞台</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">3.6km²</div>
+                <div class="festival-stat-label">场地面积</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">£335+</div>
+                <div class="festival-stat-label">最低票价（2025年）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">£4.2M</div>
+                <div class="festival-stat-label">2025年慈善捐助</div>
+              </div>
+            </div>
+            <p>格拉斯顿伯里不只是音乐——它是一个运转5天的社会实验。100多个舞台囊括音乐、喜剧、剧场、舞蹈、马戏、装置艺术，还有完整的餐饮、冥想、公共澡堂和临时医疗体系。每年售出的21万张门票，在官方开售后数分钟内告罄，实名注册制度防止倒卖。</p>
+            <p><strong>"休耕制度"是格拉斯顿伯里最独特的商业决策</strong>：每隔五年停办一年，让农场土地和组织团队恢复。1982年、1988年、1996年、2001年、2012年、2018年……每一次暂停，都在重新累积渴望与期待。下一个休耕年——<strong>就是2026年</strong>，今年格拉斯顿伯里不举办。而这本身，成了一种文化注脚：缺席，也是节日的一部分。</p>
+            <p>品牌赞助方面，EE（英国移动运营商）是长期战略合作伙伴，负责提供现场网络；Worthy Farm官方不接受硬广，所有品牌必须以"体验提供者"而非"露出买家"的身份参与——这与戛纳萧邦的参与逻辑如出一辙。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2027年归来 + 对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2027年的期待：</strong>经历2026休耕年后，格拉斯顿伯里的2027年将在积累的渴望中重新开幕。Michael Eavis在2025年底公开表示，"休息之后，我们对下一届有很多新想法"。主舞台规模、可持续发展承诺（音乐节已于2019年宣布全面禁止一次性塑料）和女性艺人比例将是关注焦点。</p>
+            <p>有趣的是，2026年停办本身成为了一条新闻——官网公告、粉丝社区的"等你回来"帖子，构成了一种反向传播。格拉斯顿伯里的粉丝不需要节日举办，就能保持对它的讨论热度。这是最高级的品牌依恋。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>格拉斯顿伯里的"休耕制度"背后，是一个深刻的运营哲学——<strong>稀缺性是最强的钩子，而稀缺性需要节制才能维持</strong>。IP大事件如果每年都办、都类似，用户会审美疲劳。偶尔"缺席"一年，或创造某个只在特定周期出现的内容，反而能重新激活期待感。另外，格拉斯顿伯里不接受硬广赞助的策略给了很好的示范：当你把节日体验保护得足够纯粹，品牌才愿意为这种"干净感"的关联价值付更高的溢价。<strong>IP的文化含金量，来自对商业化的必要节制。</strong>
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.glastonburyfestivals.co.uk/" target="_blank">Glastonbury Festival 官网</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E6%A0%BC%E6%8B%89%E6%96%AF%E9%A1%BF%E4%BC%AF%E9%87%8C%E9%9F%B3%E4%B9%90%E8%8A%82" target="_blank">维基百科·格拉斯顿伯里音乐节</a> ·
+          <a href="https://baike.baidu.com/item/%E6%A0%BC%E6%8B%89%E6%96%AF%E9%A1%BF%E4%BC%AF%E9%87%8C%E9%9F%B3%E4%B9%90%E8%8A%82/3515732" target="_blank">百度百科</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 英伦摇滚群像</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎸 主题策展 · 英伦摇滚的六张面孔</div>
+        <div class="knowledge-headline">从披头士到Radiohead：一部英国摇滚简史的精神地图</div>
+        <div class="knowledge-tagline">「音乐不是你听的，是它穿过你。」—— Thom Yorke</div>
+
+        <div class="knowledge-intro">
+          英国摇滚是20世纪最重要的文化出口之一。从1960年代利物浦的四个工人阶级青年改变世界流行音乐的DNA，到1990年代"Britpop"让英国流行文化进入最后一次全球鼎盛，再到2000年代互联网时代的北极猴子用博客和免费下载击穿传统唱片工业……<br><br>
+          这些乐队的音乐在格拉斯顿伯里的泥地里被反复演唱，也在小红书这样的平台上被新一代用户重新发现。理解他们，是理解一代人情感结构的捷径——而理解情感结构，是做好内容种草的前提。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Beatles_arrival_1964_colorized.jpg/440px-Beatles_arrival_1964_colorized.jpg"
+              alt="The Beatles"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">The Beatles 披头士</div>
+              <div class="knowledge-card-sub">1960-1970 · 利物浦</div>
+              <div class="knowledge-card-work">用12年重写了流行音乐的全部可能性。从《Love Me Do》到《A Day in the Life》，他们证明了"流行"不等于"肤浅"。至今仍是全球销量最高的乐队。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Freddie_Mercury_performing_in_New_Haven%2C_CT%2C_August_1977_%28cropped%29.jpg/440px-Freddie_Mercury_performing_in_New_Haven%2C_CT%2C_August_1977_%28cropped%29.jpg"
+              alt="Queen"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">👑</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Queen 皇后乐队</div>
+              <div class="knowledge-card-sub">1970-1991 · 伦敦</div>
+              <div class="knowledge-card-work">Freddie Mercury是史上最伟大的现场表演者之一。1985年Live Aid那21分钟的表演，在没有耳返、没有提示屏的情况下，让8万现场观众和16亿电视观众完全臣服。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Radioheadat_glastonbury_2017.jpg/440px-Radioheadat_glastonbury_2017.jpg"
+              alt="Radiohead"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📻</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Radiohead</div>
+              <div class="knowledge-card-sub">1985至今 · 牛津</div>
+              <div class="knowledge-card-work">1997年《OK Computer》成为数字焦虑时代的预言书。他们在格拉斯顿伯里雨夜的表演成为传奇；2007年专辑《In Rainbows》"随意定价"发行，是音乐行业史上最重要的商业实验之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Oasis_Manchester_2005.jpg/440px-Oasis_Manchester_2005.jpg"
+              alt="Oasis"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌟</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Oasis 绿洲乐队</div>
+              <div class="knowledge-card-sub">1991-2009 / 2024重组 · 曼彻斯特</div>
+              <div class="knowledge-card-work">Gallagher兄弟的互相嫌弃和Britpop的巅峰双双写入流行史。2024年宣布重组，2025年巡演票秒空。25年后他们的回归依然是全球娱乐头条——这是最高级别的IP生命力。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Arctic_Monkeys_2018_02.jpg/440px-Arctic_Monkeys_2018_02.jpg"
+              alt="Arctic Monkeys"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐒</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Arctic Monkeys 北极猴</div>
+              <div class="knowledge-card-sub">2002至今 · 谢菲尔德</div>
+              <div class="knowledge-card-work">互联网时代第一支靠免费下载在MySpace打出名气的乐队。首张专辑英国史上首周销量纪录保持者。2022年《The Car》延续了他们每张专辑都颠覆上一张的创作哲学。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/David_Bowie_-_TopPop_1974_05.png/440px-David_Bowie_-_TopPop_1974_05.png"
+              alt="David Bowie"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚡</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">David Bowie 大卫·鲍伊</div>
+              <div class="knowledge-card-sub">1964-2016 · 伦敦</div>
+              <div class="knowledge-card-work">Ziggy Stardust、Aladdin Sane、Thin White Duke……他用角色扮演和身份流动挑战了性别、阶级与商业的边界。2016年辞世前两天发行《Blackstar》，是史上最优雅的告别之一。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六支乐队构成了一张英伦摇滚的精神地图，也是格拉斯顿伯里舞台上最重要的记忆。对IP策划而言，他们每一个都有值得借鉴的叙事方式：披头士的"真实感"，鲍伊的"人格化IP"，Radiohead的"用作品本身颠覆发行规则"，Oasis的"缺席25年之后重组的爆发力"……最长寿的IP，不是不变的，而是每次改变都能让老粉说"这才是他们该有的样子"。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
