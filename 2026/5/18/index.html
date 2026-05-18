@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/18</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a2a3a 0%, #c4653a 55%, #f5e8c8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/5/18/index.html" class="active">2026 / 5 / 18</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 18</div>
+      <div class="day-week">星期一 · 国际博物馆日</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">习近平将今秋访美，中美元首外交重启，普京19日访华——大国博弈进入"接触期"</div>
+            <div class="news-item-desc">外交部长王毅宣布习近平应特朗普邀请今秋访美；同期，普京5月19-20日国事访华。两大外交事件高度叠加，标志大国关系从对抗姿态向管控竞争转型。这一宏观背景将深刻影响全球资本与消费信心走向。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260518/herald/ddf6aaa075303b80002e5f43490ce2db.html" target="_blank">→ 21经济网·财经早餐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中美经贸五项成果落地：成立贸易理事会、中国采购波音200架、农产品壁垒松动</div>
+            <div class="news-item-desc">商务部确认双方在关税、农产品准入、飞机采购等五个维度形成实质共识，贸易理事会与投资理事会机制将常态化运作。波音中国订单重启是最具象征意义的信号——商业合作在地缘摩擦中依然找到了出口。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260518/herald/ddf6aaa075303b80002e5f43490ce2db.html" target="_blank">→ 21经济网·财经早餐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《求是》发文：把新质生产力列为"十五五"最突出战略，AI、生物技术、绿色能源为新增长引擎</div>
+            <div class="news-item-desc">习近平署名文章《做强做优做大实体经济》明确"十五五"路线图，将AI、高端装备、新能源等新兴产业升至顶层战略。政策信号清晰：接下来五年，科技与产业的交叉地带是资本与人才的最优配置区间。</div>
+            <a class="news-item-link" href="https://money.163.com/special/00252G50/macro.html" target="_blank">→ 网易财经·宏观新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">微软AI CEO Mustafa Suleiman：18个月内AI将自动化所有白领工作，"坐电脑前的工作"全面替代</div>
+            <div class="news-item-desc">Suleiman在Fortune访谈中划下时间线：会计、法律、营销、项目管理将被AI全面接管。这不是学者的思想实验，而是负责全球最大AI产品矩阵的人的路线预判。白领职业焦虑进入新高度，组织数字化转型提速已是必然。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT · 科技热点聚合</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Claude Mythos 5天破解苹果M5内核防护：耗时5年、数十亿美元的MIE硬件防线被AI攻穿</div>
+            <div class="news-item-desc">Anthropic安全团队Calif用Claude Mythos Preview在5天内构建出首个针对苹果M5芯片的内核级提权利用链，从普通用户权限直达root。苹果已在后续版本修复，但事件本身重新定义了AI辅助安全研究的速度边界——攻防两侧都在加速。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT · 科技热点聚合</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Figure人形机器人F.03连续四天24/7自主仓库作业，具身智能从"能动"迈入"能干"</div>
+            <div class="news-item-desc">F.03在真实仓储环境不间断运行96小时进行抓取、搬运、分拣，测试的核心不是单次动作而是持续耐力与故障恢复机制。对制造业和零售物流来说，这是一个比任何PPT演示都有说服力的里程碑。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT · 科技热点聚合</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">中国品牌出海从"卖全球"到"立全球"：71%企业已实施出海战略，进入品牌全球化运营深水区</div>
+            <div class="news-item-desc">新浪财经报道显示，2025年七成以上中国企业在贸易摩擦压力下将出海从"选项"变成"必选项"。制造业主导的产品出海正在向品牌运营、本地化内容、用户资产积累演进——这正是小红书内容生态的核心价值杠杆点。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/jjxw/2026-05-18/doc-inhyfsuy4389426.shtml" target="_blank">→ 新浪财经·品牌出海深水区</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">SIAL世界食品展今日上海开幕：75国5000+展商，全球食饮行业年度风向标正式启动</div>
+            <div class="news-item-desc">作为与科隆、巴黎并列的世界三大食品展之一，2026年SIAL上海5月18-20日盛大开幕，覆盖20万㎡展馆。食饮行业在消费信心修复期迎来重要采购节点，健康化、功能化、国潮化三大趋势将集中呈现。</div>
+            <a class="news-item-link" href="https://www.sialchina.cn/media/pressrelease/2026-04-10/4367.html" target="_blank">→ SIAL中国官网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">柳州发生地震，微博热搜59万讨论——自然灾害信息在社交平台的"第一时间"效应再次验证</div>
+            <div class="news-item-desc">柳州地震登上微博热搜榜首，讨论量在数小时内突破59万。社交平台依然是突发事件信息传播的首要触达渠道，微博、小红书、抖音三大平台的响应速度与内容质量，已成为公众认知灾情的核心依赖。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%9F%B3%E5%B7%9E%E5%9C%B0%E9%9C%87" target="_blank">→ 微博·柳州地震热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">樊振东欧冠夺冠：23万微博讨论，乒乓球顶流的流量续集正在小红书情感内容区持续发酵</div>
+            <div class="news-item-desc">继世乒赛后，樊振东在欧冠赛事再获冠军，微博23万讨论量带动小红书内容二次创作热潮。体育明星"情绪出口"内容依然是小红书社区的持续热点——真实的运动精神叙事，比任何营销更能触动平台用户的共鸣。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%A8%8A%E6%8C%AF%E4%B8%9C%E6%AC%A7%E5%86%A0%E5%86%A0%E5%86%9B" target="_blank">→ 微博·樊振东欧冠冠军</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美伊核谈判僵局：美国拒绝伊朗"14点方案"，提出浓缩铀移交等5项强硬条件</div>
+            <div class="news-item-desc">据《德黑兰时报》报道，美方拒绝了伊朗书面提案并列出5项前提条件，包括转移400kg浓缩铀、仅保留单一核设施、不解冻资产。中东核局势的僵持将持续给全球能源市场注入不确定性，能源通胀进一步发酵。</div>
+            <a class="news-item-link" href="https://www.cnfin.com/macro/" target="_blank">→ 新华财经·宏观要闻</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#国际博物馆日 文博打卡内容大爆发</div>
+            <div class="trend-meta">文化生活赛道 · 国际节日 · 5月18日</div>
+            <div class="trend-obs">💡 趋势观察：今天是5·18国际博物馆日，小红书"博物馆打卡"内容在近年来呈指数级增长，已成为年轻人"文化消费"的核心表达之一。从"故宫妆"到博物馆文创盲盒，文博IP正在成为大众消费的情绪出口。今日话题涌入量预计为常规周一的3-5倍，是大事件营销嫁接文化叙事的天然节点。</div>
+            <div class="trend-source"><a href="https://www.chinamuseum.org.cn/cma/detailss.html?id=18&contentId=14564" target="_blank">→ 中国博物馆协会·2026主题解读</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书Redshop 6月出海倒计时，海外版"非遗商店"成关注焦点</div>
+            <div class="trend-meta">平台商业化 · 出海战略 · 内容电商</div>
+            <div class="trend-obs">💡 趋势观察：Redshop聚焦非遗手工和特色手工艺品，走差异化路线，刻意区隔于Temu的低价逻辑。这一定位与平台"品质种草"基因高度吻合。对大事件业务而言，文化IP类合作内容在出海场景下有额外的"国家名片"加持效应，是值得提前布局的新增量场景。</div>
+            <div class="trend-source"><a href="https://letschuhai.com/ef6c39e7" target="_blank">→ 36氪出海·小红书Redshop出海路</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI白领替代焦虑 职场内容出现新一轮共鸣浪潮</div>
+            <div class="trend-meta">职场内容赛道 · AI话题 · 情绪出口</div>
+            <div class="trend-obs">💡 趋势观察：微软AI CEO"18个月替代白领"言论在站内引发新一轮职场焦虑讨论。小红书用户对"AI与职场"这一议题的处理方式越来越个人化——从"我该怎么办"到"我已经在用AI做了什么"，情绪从恐慌向主动适应分化。这是品牌做AI赋能类内容种草的最佳情绪窗口。</div>
+            <div class="trend-source"><a href="https://aihot.virxact.com/" target="_blank">→ AIHOT·AI热点聚合</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#博物馆文创IP经济 文创产品成小红书"种草新宠"</div>
+            <div class="trend-meta">文创消费 · IP联名 · 新消费赛道</div>
+            <div class="trend-obs">💡 趋势观察：中国文创产品行业2024年规模接近1000亿元，博物馆文创IP 5年复合增长率6.6%。小红书是博物馆文创"线下买到、线上晒"的核心传播场。从故宫到三星堆，爆款文创的传播路径几乎都离不开小红书内容扩散——文博IP与平台的共生关系正在深化，这对大事件业务选题具有强烈参考价值。</div>
+            <div class="trend-source"><a href="https://finance.cnr.cn/jjgd/20260214/t20260214_527527178.shtml" target="_blank">→ 央广网财经·文创IP经济观察</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#SIAL食品展今日开幕 食饮行业内容种草提速</div>
+            <div class="trend-meta">食饮行业 · 品类趋势 · B2B传播</div>
+            <div class="trend-obs">💡 趋势观察：作为全球三大食品展，SIAL上海的开幕通常是食饮品牌集体在社交媒体"刷存在感"的窗口期。今年健康化、功能化成为主旋律，新锐国货与国际大牌的同台竞技，为小红书食饮内容创作者提供了天然的选题素材池。这类"展会探店种草"内容在平台历来有稳定的高互动表现。</div>
+            <div class="trend-source"><a href="https://www.sialchina.cn/media/pressrelease/2026-04-10/4367.html" target="_blank">→ SIAL中国·2026展会信息</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 出海营销</div>
+        <div class="learning-title">从"卖全球"到"立全球"：中国品牌出海的营销范式迁移</div>
+        <div class="learning-subtitle">71%中国企业已在出海，但真正的差距从现在才开始——内容、本地化、品牌资产的三重战场</div>
+        <div class="learning-body">
+          <p>今天的报道有一句话值得反复琢磨：<strong>"品牌出海从锦上添花变为关乎生死"</strong>。这不是夸张——中美贸易摩擦让以往"国内市场为主，海外为辅"的策略彻底失效，出海变成企业维持增长的结构性选择。</p>
+          <p>但出海有两种：一种是<strong>产品出海</strong>，你卖货，别人认货不认你的名字；另一种是<strong>品牌出海</strong>，你在目标市场积累了用户认知、情感偏好，甚至社区资产。前者随时可以被替代，后者才是护城河。</p>
+          <p>当下中国品牌的普遍困境，恰恰是从第一阶段向第二阶段跨越时的"卡关期"：<strong>有流量，没心智；有销售，没故事；有产品力，没传播语言。</strong>这也是为什么小红书内容生态在出海品牌建设中扮演的角色越来越关键——它既是华人圈层的内容传播场，也正在通过Redshop走向真正的跨境渗透。</p>
+          <p>对营销策划来说，出海品牌最需要的不是"怎么投广告"，而是<strong>"用什么故事在陌生市场建立第一印象"</strong>。这个问题，与大事件IP策划的核心命题高度重叠：如何把一个活动或一次联名，变成用户愿意主动传递的文化符号？无论是国内还是出海，真正的营销都是在争夺人心中那块有限的"记忆位置"。</p>
+          <p><strong>给IP策划的一个实践启发：</strong>评估任何一个出海品牌合作案例时，问自己这三个问题——这个品牌在目标市场有没有"本地化的情感锚点"？合作内容是否能在中国社区（小红书）和目标市场同时形成有效传播？活动结束后，用户脑子里留下的是什么？这三个问题的答案，就是判断一个出海大事件合作是否值得做的核心标准。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://finance.sina.com.cn/jjxw/2026-05-18/doc-inhyfsuy4389426.shtml" target="_blank">新浪财经《"卖全球"到"立全球"，中国企业进入品牌全球化运营深水区》</a> ·
+          <a href="https://pdf.dfcfw.com/pdf/H3_AP202601271818450051_1.pdf" target="_blank">秒针营销科学院《2026中国数字营销趋势报告》</a> ·
+          <a href="https://www.adquan.com/article/358438" target="_blank">广告门·2026数字营销趋势报告解读</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 国际博物馆日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🏛️🌍🔑</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">全球文化节日</span>
+          <span class="festival-tag">ICOM发起</span>
+          <span class="festival-tag">每年5月18日</span>
+          <span class="festival-tag">今日就是</span>
+        </div>
+        <div class="festival-name">国际博物馆日</div>
+        <div class="festival-name-en">International Museum Day · 始于1977年 · 今年主题「博物馆：联结世界的桥梁」</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从学术仪式到全球文化运动</div>
+          <div class="festival-block-body">
+            <p>1946年，刚从二战废墟中站起来的世界，成立了国际博物馆协会（ICOM，International Council of Museums）——它隶属于联合国教科文组织，是全球博物馆领域最高权威机构。建立初衷朴素而坚定：<strong>在废墟之上，用文化重建人类的共同记忆。</strong></p>
+            <p>1977年5月18日，ICOM正式宣布将这一天定为"国际博物馆日"，第一届活动低调举办，参与国寥寥，但主旨已经写下了影响深远的一句话：<em>"博物馆是文化交流、相互了解以及各国人民之间合作的重要手段。"</em></p>
+            <p>此后每年，ICOM都会发布一个当年主题，像年度备忘录一样折射时代关切——<strong>1978年"博物馆与文化交流"，1992年"博物馆与环境"，2007年"博物馆与普世遗产"，2020年"平等：博物馆的多样性与包容性"，2023年"博物馆、可持续发展与社会福祉"，2025年"快速变化社会中的博物馆未来"</strong>。每一年的主题，都是在用"博物馆的语言"回应最紧迫的人类议题。</p>
+            <p>2026年，面对全球政治极化、战争、地缘撕裂，ICOM将本年主题定为：<strong>「Museums Uniting a Divided World（博物馆：联结世界的桥梁）」</strong>。这不是乐观主义，而是博物馆作为中立文化场域能做到别处做不到的事的一次宣言。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球文博生态的规模与商业影响力</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">104,000+</div>
+                <div class="festival-stat-label">全球博物馆总数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1亿+</div>
+                <div class="festival-stat-label">卢浮宫历年游客累计参观数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1000亿元</div>
+                <div class="festival-stat-label">中国文创产品行业2024年规模</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">6.6%</div>
+                <div class="festival-stat-label">博物馆文创IP 5年复合增长率</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">140+</div>
+                <div class="festival-stat-label">今年参与博物馆日的国家数</div>
+              </div>
+            </div>
+            <p>今天的博物馆早已不是那个灰扑扑的"收藏仓库"。<strong>全球最顶流的博物馆，是文化经济的超级引擎。</strong>卢浮宫仍蝉联2025年全球参观人数最多的博物馆；大英博物馆、大都会艺术博物馆在IP授权上每年创造数亿美元收入；故宫通过文创产品、联名、沉浸体验，将自身从文物仓库变成了中国最具话题力的文化IP之一。</p>
+            <p>在中国，博物馆热的崛起有三个清晰的时间节点：<strong>2010年代</strong>，"博物馆免费开放"政策落地，触达门槛消失；<strong>2020年代初</strong>，《国家宝藏》《我在故宫修文物》等内容让博物馆成为年轻人的文化自信出口；<strong>2024-2026年</strong>，博物馆+旅游、博物馆+文创、博物馆+IP联名的商业组合式爆发，让文博经济成为新消费版图里最具增长势能的赛道之一。</p>
+            <p>运作模式上，领先的博物馆早已不靠门票存活：<strong>永久藏品IP授权、限定文创联名、数字会员体系、沉浸体验展、城市文旅合作</strong>构成多元收入来源。其中最值得关注的是与品牌的联名逻辑——博物馆IP提供的不只是"形象背书"，而是一种稀缺的<strong>文化正当性</strong>：用户愿意为印着三星堆面具的咖啡杯多付溢价，因为"好像更有历史感、更有意思"。这种感知是金钱买不到的，是几千年时间积累的。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】博物馆日的进化方向与小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>未来趋势方向：</strong>ICOM已将数字化、可及性与社区参与列为下一阶段核心议题。越来越多的博物馆开始建立"数字孪生"——在线可游览的3D场馆，AI导览，AR文物复原体验。同时，博物馆的"社区锚点"功能正在被重新发掘：它不只是旅游目的地，更是社区居民的文化公共空间，这让地方政府、文旅部门的合作积极性持续升温。</p>
+            <p>对小红书平台而言，"博物馆"这个词在站内的内容量和互动量仍在高速增长。每逢博物馆日，都会出现一波"我的博物馆清单""这些文物你见过吗"式的内容爆发，正是<strong>用户主动为平台贡献文化内容的最佳场景</strong>。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书大事件业务的启发：</strong>博物馆IP的核心逻辑是"时间赋予价值"——你无法快速复制一件几千年的文物，但你可以选择站在它旁边借到那份庄重感。大事件IP策划同理：<strong>找到那些"时间沉淀了什么"的文化场域</strong>，比自造热点更有话题的稳定性和用户信任度。今年博物馆日主题"联结分裂的世界"，对IP策划还有一层隐喻——<strong>最好的活动不是在圈层内自嗨，而是成为不同人群愿意聚合的"文化中间地带"</strong>。博物馆是这样，真正的大事件IP也应该是这样。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.chinamuseum.org.cn/cma/detailss.html?id=18&contentId=14564" target="_blank">中国博物馆协会·2026国际博物馆日主题</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E5%9B%BD%E9%99%85%E5%8D%9A%E7%89%A9%E9%A6%86%E6%97%A5" target="_blank">维基百科·国际博物馆日</a> ·
+          <a href="https://finance.cnr.cn/jjgd/20260214/t20260214_527527178.shtml" target="_blank">央广网·博物馆文创IP经济观察</a> ·
+          <a href="https://artforum.com.cn/news/16194" target="_blank">Artforum中国·2025全球博物馆参观人数报告</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 全球博物馆图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🏛️ 主题策展 · 你应该知道的六座博物馆</div>
+        <div class="knowledge-headline">从卢浮宫到故宫：博物馆如何成为最强的文化IP？</div>
+        <div class="knowledge-tagline">「博物馆的本质，是让死去的时间重新有呼吸。」</div>
+
+        <div class="knowledge-intro">
+          全球现有超过104,000座博物馆。但只有少数几座，真正做到了"成为文化本身"——它们不只收藏文物，更定义了一座城市、一种文化甚至一个时代的自我认知方式。今天博物馆日，用六座各有个性的博物馆，串起一张全球文化地图。<br><br>
+          对营销策划者而言，研究这些博物馆的IP运作逻辑，就是在研究<strong>"如何让古老的东西与当下的人产生真实连接"</strong>——这正是所有大事件、品牌联名和文化营销试图解决的核心命题。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/P1040714.JPG/640px-P1040714.JPG"
+              alt="卢浮宫"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🗼</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">卢浮宫</div>
+              <div class="knowledge-card-sub">Musée du Louvre · 法国巴黎 · 1793年</div>
+              <div class="knowledge-card-work">全球参观人次最多的博物馆，年均700万+。《蒙娜丽莎》的一个微笑，撑起了整条圣日耳曼大街的咖啡馆经济。IP授权遍及全球，是"古老IP现代运营"的终极标杆。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Frontage_of_the_British_Museum.jpg/640px-Frontage_of_the_British_Museum.jpg"
+              alt="大英博物馆"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🇬🇧</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">大英博物馆</div>
+              <div class="knowledge-card-sub">The British Museum · 英国伦敦 · 1753年</div>
+              <div class="knowledge-card-work">全球最早的公共博物馆之一，收藏横跨200万年人类史。常设展免费，靠特展、IP授权与品牌合作创收。罗塞塔石碑原件至今是互联网最高频的博物馆梗图来源。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Metropolitan_Museum_of_Art_%28The_Met%29_-_Central_Park%2C_NYC.jpg/640px-Metropolitan_Museum_of_Art_%28The_Met%29_-_Central_Park%2C_NYC.jpg"
+              alt="大都会艺术博物馆"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🗽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">大都会艺术博物馆</div>
+              <div class="knowledge-card-sub">The Met · 美国纽约 · 1870年</div>
+              <div class="knowledge-card-work">The Met Gala的主办方，每年五月一夜之间成为全球最高密度的时尚+艺术文化事件。把博物馆变成时尚营销场域的极致案例，主题策展即传播战役。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏯</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">故宫博物院</div>
+              <div class="knowledge-card-sub">The Palace Museum · 北京 · 1925年</div>
+              <div class="knowledge-card-work">从"高冷历史建筑"到"最会玩表情包的文化IP"。彩妆、联名、盲盒、纪录片……故宫用内容运营重新定义了中国博物馆与年轻人的关系，是文化IP商业化的中国范本。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Moma2021.jpg/640px-Moma2021.jpg"
+              alt="MoMA"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎨</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">MoMA 现代艺术博物馆</div>
+              <div class="knowledge-card-sub">Museum of Modern Art · 美国纽约 · 1929年</div>
+              <div class="knowledge-card-work">定义了"现代"是什么。MoMA设计商店已成独立品牌，自营产品年销售额过亿。它证明了博物馆可以是最高级的"生活方式零售商"，而不只是文物展示柜。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">三星堆博物馆</div>
+              <div class="knowledge-card-sub">Sanxingdui Museum · 四川广汉 · 1997年</div>
+              <div class="knowledge-card-work">2021年新一轮挖掘让三星堆重回全球聚光灯，神秘的青铜纵目面具成为Z世代最具辨识度的历史符号。用"惊奇感"驱动的博物馆传播，是小红书内容爆发最典型的文博案例。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          博物馆最像什么？它像一座城市的记忆宫殿——你不必记住每一件展品，但走进去、走出来，你会带走某种难以言说的"被时间校准过"的感觉。对IP策划者来说，这种体验设计的逻辑，和一场成功的大事件活动并没有本质区别：都是在用环境、叙事和感官，制造一个让人愿意"在这里停留、在这里感受"的理由。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 每个工作日 09:45 更新 · 为木南的每日晨读而生
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    if (sidebar.classList.contains('collapsed')) {
+      sidebar.classList.remove('collapsed');
+      toggle.textContent = '◀';
+    } else {
+      sidebar.classList.add('collapsed');
+      toggle.textContent = '▶';
+    }
+  }
+</script>
+
+</body>
+</html>
