@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/21</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0d1b2a 0%, #1b4f72 40%, #c4653a 80%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .festival-source { font-size: 11px; color: var(--text-muted); margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .festival-source a { color: var(--accent); text-decoration: none; }
+    .festival-source a:hover { text-decoration: underline; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">2026 · 05 · 21 · THU</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/5/21/index.html" class="active">2026 / 5 / 21</a></li>
+        <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+        <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+        <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+        <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+        <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+        <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+        <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 21</div>
+      <div class="day-week">星期四</div>
+      <span class="day-tag">🎬 特里贝卡电影节倒计时</span>
+      <span class="day-tag">🤖 英伟达财报季</span>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">习普会签署联合声明，中俄双边贸易前4月增速近20%</div>
+            <div class="news-item-desc">普京于5月19-20日访华，两国元首正式会谈并发布《中俄全面战略协作伙伴关系联合声明》。双边贸易额已连续3年突破2000亿美元，今年前4月再增近20%。科技、金融领域合作被明确列为下一阶段重点，中俄经济纽带在全球多极化格局中持续加深。</div>
+            <a class="news-item-link" href="http://paper.people.com.cn/rmrb/pc/content/202605/21/content_30158053.html" target="_blank">→ 人民日报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中东资本豪掷218亿重仓A股，QFII持股市值一季度大幅攀升</div>
+            <div class="news-item-desc">据东方财富数据，2026年一季度末QFII持股市值较去年末显著增长，中东资本集中押注中国高端制造板块。外资对中国资产的信心在贸易形势缓和背景下持续修复，成为当前A股增量资金的重要观察变量。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/" target="_blank">→ 东方财富</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达Q1净利润583亿美元、同比+211%，数据中心单季营收752亿创纪录</div>
+            <div class="news-item-desc">英伟达2027财年第一季度财报交出史上最强成绩单：总营收816亿美元(+85%)，净利润583亿美元(+211%)，毛利率升至74.9%，并宣布800亿美元股票回购计划。数据中心业务同比+92%，算力需求远未见顶。英伟达正成为全球AI军备竞赛的终极账单收款方。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/953/088.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI最快本周五递交IPO招股书，目标9月上市，估值超8500亿美元</div>
+            <div class="news-item-desc">据CNBC，OpenAI将联合高盛、摩根士丹利推进上市，马斯克诉讼败诉后障碍消除。若顺利推进，将成公开市场史上最大IPO之一。内部治理已向上市公司标准转型，AI时代最关键的资本事件正在倒计时。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/953/090.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">腾讯发布系统级AI助手「马维斯」，Windows/Mac/安卓三端同步，离线也能用</div>
+            <div class="news-item-desc">腾讯张军宣布马维斯（Mavis）正式上线，深度集成操作系统层，可调度本地模型处理文档、图片及系统维护任务，部分功能无需联网。继工作台、龙虾矩阵之后，腾讯将AI压进系统层，意在把"电脑"变成可对话的智能终端。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/953/096.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI模型推翻80年未解离散几何猜想，AI数学研究能力突破里程碑</div>
+            <div class="news-item-desc">OpenAI研究人员报告，其AI模型独立证伪了"单元距离问题"核心猜想，这一难题困扰数学界逾80年。数学家们开始重新定义人类研究的贡献边界——"能做AI做不到的事"或将成为新标准。</div>
+            <a class="news-item-link" href="https://openai.com/index/model-disproves-discrete-geometry-conjecture" target="_blank">→ OpenAI 官网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小米YU7 GT及17 Max今日正式发布，新能源车型战事再升温</div>
+            <div class="news-item-desc">小米YU7 GT版本今日亮相，高性能SUV赛道正面迎战特斯拉与问界。雷军已明确2026年55万辆交付目标，小米汽车"性能+科技"双叙事策略在发布节点持续制造话题，是当日微博热搜前列的强势消费品事件。</div>
+            <a class="news-item-link" href="https://chejiahao.autohome.com.cn/info/24849163" target="_blank">→ 汽车之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">万辰集团叫停上亿募投项目，老铺黄金控股股东增持，零食与黄金两极分化</div>
+            <div class="news-item-desc">"零食大王"万辰集团宣布终止原计划上亿元的品牌营销网络募投项目，内部收缩信号明显；同期老铺黄金控股股东逆势增持，消费赛道在情绪波动中继续分化。品牌扩张与保守收缩的路线选择，正成为当前消费企业的核心命题。</div>
+            <a class="news-item-link" href="https://www.nbd.com.cn/articles/2026-05-20/4401516.html" target="_blank">→ 每日经济新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">为什么520朋友圈秀恩爱的变少了？微博25万人讨论背后的情感生态变迁</div>
+            <div class="news-item-desc">520当日微博热搜第一，讨论热度25万+。"不是不爱了，是不需要被看见了"——这句话成为最高赞回复。情感表达的私域化趋势，折射出年轻人对公开表演型亲密关系的集体疲倦，也给品牌情感节点营销提出了新命题：当用户不再晒，品牌如何创造共鸣？</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B8%BA%E4%BB%80%E4%B9%88520%E6%9C%8B%E5%8F%8B%E5%9C%88%E7%A7%80%E6%81%A9%E7%88%B1%E7%9A%84%E5%8F%98%E5%B0%91%E4%BA%86" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">抖音正式禁止录播伪装直播，18万人热议内容监管新边界</div>
+            <div class="news-item-desc">抖音明确规定录播内容不得以"直播"形式呈现，平台进一步收紧对直播生态的真实性管控。这对MCN机构和内容电商的运营模式影响直接，"真人实时"将成为直播赛道的核心竞争力筹码。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%8A%96%E9%9F%B3%E7%A6%81%E6%AD%A2%E5%BD%95%E6%92%AD%E4%BC%AA%E8%A3%85%E4%B8%BA%E7%9B%B4%E6%92%AD" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">腾讯Q1营销服务收入381亿(+20%)，AI广告推荐模型升级驱动微信生态闭环提速</div>
+            <div class="news-item-desc">腾讯Q1财报显示营销服务业务同比增长20%，明确点名AI广告推荐模型升级和微信生态闭环能力扩展是核心驱动。视频号、搜索广告、小程序形成三角协同，广告主的私域转化路径更短、可量化性更强，平台系广告生意的格局加速重塑。</div>
+            <a class="news-item-link" href="https://www.chinastarmarket.cn/detail/2370603" target="_blank">→ 科创板日报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Meta万人重组：裁员8000+转岗7000至AI，广告转化率因AI模型提升5%</div>
+            <div class="news-item-desc">Meta宣布大规模人事调整，同步披露AI广告模型JEM已使Instagram广告转化率提升超5%、Facebook动态广告提升3%。"AI让广告更有效"不再是PPT，是可量化的财务结果。大平台的AI广告系统正在与创作者内容生态深度融合，种草时代的效果衡量正在被彻底改写。</div>
+            <a class="news-item-link" href="https://x.com/rohanpaul_ai/status/2057177976492720363" target="_blank">→ X (Twitter)</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">xAI 2025年亏损64亿美元，SpaceX IPO文件首次披露马斯克AI帝国的真实账单</div>
+            <div class="news-item-desc">SpaceX上市招股书罕见曝光xAI财务状况：2025年亏损高达64亿美元。与此同时，软银对OpenAI承诺投资已超600亿美元，内部高管质疑孙正义"如追星般"信任奥尔特曼。AI军备竞赛的烧钱本质在两份文件中同步显形，AI泡沫叙事开始与IPO周期产生交叉。</div>
+            <a class="news-item-link" href="https://techcrunch.com/2026/05/20/xai-burned-6-4b-last-year-spacexs-ipo-filing-shows-why-the-spending-is-far-from-over" target="_blank">→ TechCrunch</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 5条精选</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#520朋友圈秀恩爱越来越少了</div>
+            <div class="trend-meta">情感社交趋势 · 全站热搜飙升</div>
+            <div class="trend-obs">💡 趋势观察：年轻用户情感表达从「展示给所有人看」转向「只给特定的人看」。小红书私信、收藏夹里的悄悄恋爱内容正在替代朋友圈表演型秀恩爱。对品牌节点营销而言，情感类内容应该从"晒出来"的视角转向"感受到"的视角，制造共鸣而非参与感。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%BA%E4%BB%80%E4%B9%88520%E6%9C%8B%E5%8F%8B%E5%9C%88%E7%A7%80%E6%81%A9%E7%88%B1%E7%9A%84%E5%8F%98%E5%B0%91%E4%BA%86" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书AI搜索升级，种草链路更短更精准</div>
+            <div class="trend-meta">平台动态 · AI种草体验变革</div>
+            <div class="trend-obs">💡 趋势观察：小红书AI搜索持续迭代，用户从"刷到内容"到"找到内容"的路径被压缩。对品牌种草策略的影响：高质量的长尾内容权重上升，泛曝光型笔记的ROI相对下降。搜索场景下的内容设计将成为2026年H2的核心命题。</div>
+            <div class="trend-source"><a href="https://www.21jingji.com/article/20260126/herald/4cb81c4c08e1e67ccbb0ba87f5bfd1f7.html" target="_blank">→ 21经济网</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#小米YU7发布，博主测评内容爆发</div>
+            <div class="trend-meta">消费科技 · 汽车垂类内容热度飙升</div>
+            <div class="trend-obs">💡 趋势观察：高端新能源汽车发布节点已成为小红书垂类内容的爆发时间窗口。美感设计+科技测评+生活方式融合的内容矩阵，是吸引非汽车圈用户进入的关键。对大事件IP：发布节点+生活方式叙事的组合，能快速突破垂类破圈。</div>
+            <div class="trend-source"><a href="https://chejiahao.autohome.com.cn/info/24849163" target="_blank">→ 汽车之家</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#营销人必备「新三样」：策略脑、数智眼、AI手</div>
+            <div class="trend-meta">职场学习内容 · 广告营销圈热议</div>
+            <div class="trend-obs">💡 趋势观察：中传讲座提出营销人转型框架在站内引发广泛讨论——从"做海报"升级到"解商业题"、从感性文案到数据驱动、从人工执行到AI提效。这一叙事在职场类内容圈层迅速扩散，也是对新入行策划的一次集体焦虑与能力重塑的写照。</div>
+            <div class="trend-source"><a href="https://icuc.cuc.edu.cn/2026/0511/c2651a270171/page.htm" target="_blank">→ 中国传媒大学</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#抖音禁止录播假装直播，平台真实性战争打响</div>
+            <div class="trend-meta">平台规则 · 内容生态合规</div>
+            <div class="trend-obs">💡 趋势观察：平台对"虚假呈现"的容忍度正在全面降低。这不只是抖音的动作——所有直播平台都在强化真实性壁垒。对小红书直播生态：真实分享基因本就是平台优势，这一行业收紧反而是差异化机会；品牌和达人可主打"真实在场"叙事，强调不剪辑、不预演的真实生活质感。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8A%96%E9%9F%B3%E7%A6%81%E6%AD%A2%E5%BD%95%E6%92%AD%E4%BC%AA%E8%A3%85%E4%B8%BA%E7%9B%B4%E6%92%AD" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 营销 · 商业方法论</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI广告时代的效果革命</div>
+        <div class="learning-title">「让算法出题，让创意答题」：当AI重写广告转化逻辑，策划人的价值在哪里？</div>
+        <div class="learning-subtitle">从腾讯JEM模型到Meta广告AI，读懂2026年品效合一的新底层</div>
+        <div class="learning-body">
+          <p>今天有两条财报数据值得并排来读：腾讯Q1营销收入同比+20%，明确由AI广告推荐升级驱动；Meta披露AI模型JEM让Instagram广告转化率提升超5%。这不是巧合，而是一个时代信号——<strong>广告正在从"创意人出题"变成"算法出题、创意答题"。</strong></p>
+          <p>过去的广告逻辑是：策划人想好创意，投放人选好媒体，然后等待结果。现在的逻辑是：平台算法持续扫描用户行为，实时决定"这条内容在这个时间推给这个人的概率"，策划人的工作是<strong>提供足够丰富的素材矩阵，让算法有得选。</strong></p>
+          <p>这带来一个根本性的变化：<strong>创意的颗粒度在变细，供给量在变大，而"一条爆款走天下"的时代正在过去。</strong>腾讯的AI广告推荐，本质是在微信庞大的用户行为数据中找到每一个人的"最佳触达时刻"；Meta的JEM，则是在分析了数十亿次互动后，判断哪种素材对哪类人群的转化率最高。</p>
+          <p>那么，策划人还有什么？<strong>有算法做不到的三件事：读懂人，创造情感弧，制造记忆点。</strong>算法可以优化CTR（点击率），但它不知道什么是"让人看完之后想起来想和朋友说"的那种内容。那是策划人的领地。</p>
+          <p>对IP大事件营销的启发：大型事件内容不是一条精品视频，而是一个能被算法反复选择的内容生态——活动前有预热情绪牵引内容、活动中有UGC原生素材、活动后有沉淀式种草长尾。<strong>不是设计一个爆点，而是种下一片内容的田。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.chinastarmarket.cn/detail/2370603" target="_blank">腾讯Q1财报 · 科创板日报</a> ·
+          <a href="https://www.cls.cn/detail/2205700" target="_blank">英伟达财报会实录 · 财联社</a> ·
+          <a href="https://www.itopmarketing.com/info21857" target="_blank">2026年AI+营销产品全貌 · TopMarketing</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">全球文化节事 · 今日条目</span>
+      </div>
+      <div class="section-body">
+        <div class="festival-banner-placeholder">🎬</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">电影节</span>
+          <span class="festival-tag">美国 · 纽约</span>
+          <span class="festival-tag">独立电影</span>
+          <span class="festival-tag">2026年6月3–14日</span>
+          <span class="festival-tag">年度盛事</span>
+        </div>
+
+        <div class="festival-name">特里贝卡电影节</div>
+        <div class="festival-name-en">Tribeca Festival · 2002年创立于纽约</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">📜 过去 — 用一场电影节，重建一座城</div>
+          <div class="festival-block-body">
+            <p>2001年9月11日，世贸中心双子塔倒塌，曼哈顿下城的特里贝卡社区一片沉寂。好莱坞演员<strong>罗伯特·德尼罗</strong>和制片人<strong>简·罗森泰尔</strong>决定：用一场电影节唤回人气，让街道重新充满声音。</p>
+            <p>2002年，第一届翠贝卡电影节诞生，首年便吸引15万观众。那是一次由艺术驱动的城市复苏实验——电影不只是娱乐，而是一个社区重新凝聚的仪式。<strong>这个起点，是迄今为止最有力的"IP大事件"案例之一。</strong></p>
+            <p>历年主题随文化气候演变：从早期强调"多元声音"，到近年聚焦互动游戏、VR沉浸体验、播客首发，特里贝卡始终在追问：<em>「电影是什么？故事可以以什么形式被讲述？」</em> 这个问题，让它成为独立电影圈最具实验性的孵化器之一。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">📈 现在 — 纽约最具包容性的多媒介艺术节</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">100+</div>
+                <div class="festival-stat-label">国家参展影片来源</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">500+</div>
+                <div class="festival-stat-label">放映场次（含游戏/VR）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">12天</div>
+                <div class="festival-stat-label">2026年节期（6月3–14日）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">150K+</div>
+                <div class="festival-stat-label">年均参与观众</div>
+              </div>
+            </div>
+            <p>与戛纳、圣丹斯相比，特里贝卡更平民、更跨界。它是<strong>唯一将游戏、播客、VR体验与传统电影并列展映</strong>的国际A类电影节，且票价对普通观众友好（单场约25美元）。</p>
+            <p>运作模式上，节日收入来自赞助、票务与工作坊，企业合作伙伴（如AT&T、Audible）提供主要冠名资金，换取品牌与"独立创作精神"的深度绑定。<strong>这套模式本质上是：文化基础设施 × 企业品牌需求 × 公众参与</strong>的三角协同，小红书大事件IP的商业逻辑与此高度相似。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🔭 未来 — 对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p>2026年特里贝卡（6月3-14日）已宣布扩大沉浸体验单元，全球多个城市同步放映，数字展映平台继续扩张。<strong>节日的边界正在从纽约向全球延伸，从影院向生活场景延伸。</strong></p>
+            <div class="festival-insight">
+              <strong>对平台大事件策划的三点启发：</strong><br>
+              1️⃣ <strong>起点即故事</strong>：特里贝卡诞生于9·11废墟，这个故事让所有内容天然带有"重建"的情感共鸣。IP大事件同样需要一个能被讲述的起点——不是"平台联合品牌做了什么"，而是"这件事为什么在这里、这个时间、由这些人来做"。<br>
+              2️⃣ <strong>多媒介入场</strong>：电影节已经不只放电影了，游戏、VR、播客全都是故事的载体。品牌大事件也不该只有"一个主视觉+一场活动"，而是让用户可以从任何他们习惯的媒介进入。<br>
+              3️⃣ <strong>城市作为舞台</strong>：特里贝卡最成功的一点，是把纽约街道变成了电影节的延伸空间。IP大事件的线下落地，应当追求的也是这种感觉——走进那个区域，就已经进入了节日语境。
+            </div>
+          </div>
+        </div>
+
+        <div class="festival-source">
+          📎 来源：
+          <a href="https://tribecafilm.com/" target="_blank">Tribeca Film Festival 官网</a> ·
+          <a href="https://en.wikipedia.org/wiki/Tribeca_Festival" target="_blank">Wikipedia · Tribeca Festival</a> ·
+          <a href="https://baike.baidu.com/item/%E7%BA%BD%E7%BA%A6%E7%BF%A0%E8%B4%9D%E5%8D%A1%E7%94%B5%E5%BD%B1%E8%8A%82/2178582" target="_blank">百度百科</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 影像美学图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎞️ 主题策展 · 「用画面讲话的人」</div>
+        <div class="knowledge-headline">当代独立电影六面镜：从韦斯·安德森的对称美学到阿彼察邦的梦境丛林</div>
+        <div class="knowledge-tagline">「电影是什么？是一个陌生人用他的眼睛，让你看见从未到过的世界。」</div>
+
+        <div class="knowledge-intro">
+          特里贝卡电影节倒计时之际，今日策展聚焦当代独立电影的六位导演。他们都拒绝了好莱坞工业的语法，各自建立了辨识度极高的影像语言——有人用对称构图和莫兰迪色盘制造童话感，有人用长镜头和呼吸节奏拍出时间的质地，有人用一片热带丛林谈论生死与梦境。读懂这六个人，就读懂了现代独立电影里"视觉即叙事"的核心密码。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Wes_Anderson_at_the_39th_Toronto_International_Film_Festival.jpg/440px-Wes_Anderson_at_the_39th_Toronto_International_Film_Festival.jpg"
+              alt="韦斯·安德森"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">韦斯·安德森</div>
+              <div class="knowledge-card-sub">Wes Anderson · 美国 · 1969—</div>
+              <div class="knowledge-card-work">《布达佩斯大饭店》《犬之岛》《法兰西特派》。对称构图+莫兰迪色盘+精确的正面镜头，他的电影像一幅运动着的插画，每帧都可以打印出来挂在墙上。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sofia_Coppola_Cannes_2017.jpg/440px-Sofia_Coppola_Cannes_2017.jpg"
+              alt="索菲亚·科波拉"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">索菲亚·科波拉</div>
+              <div class="knowledge-card-sub">Sofia Coppola · 美国 · 1971—</div>
+              <div class="knowledge-card-work">《迷失东京》《处女之死》。善用空景、静默和漂亮但孤独的女性视角，她拍的是"富裕的空洞"——什么都有，却什么都不对劲的那种感觉。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Apichatpong_Weerasethakul_%28cropped%29.jpg/440px-Apichatpong_Weerasethakul_%28cropped%29.jpg"
+              alt="阿彼察邦·韦拉斯哈古"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌿</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">阿彼察邦·韦拉斯哈古</div>
+              <div class="knowledge-card-sub">Apichatpong W. · 泰国 · 1970—</div>
+              <div class="knowledge-card-work">《热带疾病》《华特尔卡》戛纳金棕榈得主。丛林、梦境、轮回——他的电影在现实与记忆之间无缝切换，时间在里面是湿的、有重量的。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Greta_Gerwig_2018.jpg/440px-Greta_Gerwig_2018.jpg"
+              alt="格蕾塔·葛韦格"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">格蕾塔·葛韦格</div>
+              <div class="knowledge-card-sub">Greta Gerwig · 美国 · 1983—</div>
+              <div class="knowledge-card-work">《伯德小姐》《芭比》。从独立电影新浪潮走向商业大片，却保留了对"女性在期待与自我之间撕裂"的精准表达，《芭比》用粉色糖衣包裹了一枚存在主义手雷。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎞️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">贾樟柯</div>
+              <div class="knowledge-card-sub">中国 · 1970—</div>
+              <div class="knowledge-card-work">《小武》《山河故人》《江湖儿女》。用粗糙的影像记录中国社会变迁中被遗忘的普通人，长镜头是他的武器——让时间在画面里自然流逝，不做任何修饰。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Barry_Jenkins_2017.jpg/440px-Barry_Jenkins_2017.jpg"
+              alt="巴里·詹金斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">巴里·詹金斯</div>
+              <div class="knowledge-card-sub">Barry Jenkins · 美国 · 1979—</div>
+              <div class="knowledge-card-work">《月光男孩》奥斯卡最佳影片。极度亲密的特写镜头、蓝色与金色的光影对比——他的电影是用皮肤感受到的，不是用眼睛看到的，讲的是身份、爱与成为自己的漫长旅程。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六位导演有一个共同点：他们都让观众在电影结束后，仍然留在那个世界里多待了一会儿。IP大事件策划追求的，也是这种"散场之后依然在场"的感觉——活动结束了，但故事还在人心里继续。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 2026.05.21 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
