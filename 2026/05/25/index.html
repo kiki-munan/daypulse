@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/5/25</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --weekend-bg: #f7f3ec; --weekend-border: #d4c9b8;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-badge { display: inline-block; font-size: 10px; font-weight: 600; background: var(--weekend-bg); border: 1px solid var(--weekend-border); color: var(--accent); padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .weekend-card { display: flex; gap: 16px; padding: 16px; margin-bottom: 12px; background: var(--weekend-bg); border: 1px solid var(--weekend-border); border-radius: 10px; transition: box-shadow 0.15s; }
+    .weekend-card:last-child { margin-bottom: 0; }
+    .weekend-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .weekend-emoji { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+    .weekend-body { flex: 1; min-width: 0; }
+    .weekend-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; line-height: 1.4; }
+    .weekend-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .weekend-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 8px; }
+    .weekend-comment { font-size: 11.5px; color: var(--accent); font-style: italic; line-height: 1.5; padding-left: 10px; border-left: 2px solid var(--accent); }
+    .weekend-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+    .weekend-tag.tag-business { background: #fef0e7; color: #b45309; }
+    .weekend-tag.tag-tech { background: #e8f0fe; color: #1a73e8; }
+    .weekend-tag.tag-society { background: #fce8e6; color: #d93025; }
+    .weekend-tag.tag-ent { background: #f3e8fd; color: #8430ce; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } .weekend-card { flex-direction: column; gap: 8px; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/5/25/index.html" class="active">2026 / 5 / 25 · 周一</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 05 · 25</div>
+      <div class="day-week">星期一
+        <span class="day-badge">📌 含上周末补录</span>
+      </div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 含周末回顾</span>
+      </div>
+      <div class="section-body">
+
+        <!-- 周末概览（周一补录模块） -->
+        <div class="news-panel">
+          <div class="news-panel-title">🕐 周末回顾 · 5/23–5/24</div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">⚖️</div>
+            <div class="weekend-body">
+              <div class="weekend-title">长安汽车内幕交易案：双方5名员工精准买入，被罚1669万元</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-business">品牌</span>
+                <span class="weekend-tag tag-tech">科技</span>
+                5月22日披露 · 5/23-24全网热议
+              </div>
+              <div class="weekend-desc">证监会披露，长安汽车与华为签署智能汽车战略合作备忘录前，双方5名员工利用内幕信息合计买入6100万元，获利400余万元。证监会没收全部违法所得并处以1669万元罚款，涉案人员涉嫌犯罪线索已移送公安机关。韩某单人获利210万元、被罚1050万元。</div>
+              <div class="weekend-comment">「华为+长安」级别的合作信息都未能守住内幕信息红线，对大厂合规内控是持续的警示。内幕交易成本远低于潜在收益的时代正在结束。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🌏</div>
+            <div class="weekend-body">
+              <div class="weekend-title">APEC贸易部长会议在苏州举行，何立峰出席致辞</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-business">商业</span>
+                <span class="weekend-tag tag-society">国际</span>
+                5/22-24 · 苏州
+              </div>
+              <div class="weekend-desc">2026年亚太经合组织贸易部长会议在苏州召开，何立峰出席并致辞。商务部数据显示1-4月全国吸收外资2876.9亿元人民币。中国与巴布亚新几内亚签署《提升经济伙伴关系框架协定》。</div>
+              <div class="weekend-comment">在全球贸易摩擦加剧的背景下，APEC贸易部长会议的召开释放了亚太地区维护多边贸易体系的信号。中国吸收外资数据平稳，但增速值得关注。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🤖</div>
+            <div class="weekend-body">
+              <div class="weekend-title">2026第一届人工智能与智慧经济创新发展大会在济南闭幕</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-tech">AI</span>
+                <span class="weekend-tag tag-business">品牌</span>
+                5/22-24 · 济南
+              </div>
+              <div class="weekend-desc">大会以"智融经济，慧创未来"为主题，汇聚行业精英探讨AI与智慧经济的融合路径。同期浙江省科技活动周在杭州启动，发布《2026年暨"十四五"浙江省高新技术报告》。</div>
+              <div class="weekend-comment">AI正在从"技术叙事"转向"经济叙事"——不再讨论AI能做什么，而是AI能创造多少经济价值。这与IBM提出的2026年AI作为"利润引擎"的判断一致。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🚨</div>
+            <div class="weekend-body">
+              <div class="weekend-title">白宫附近发生枪击事件，特勤局击毙嫌疑人</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-society">社会热点</span>
+                5月23日 · 华盛顿
+              </div>
+              <div class="weekend-desc">美国特勤局周六在白宫附近发现可疑人员，执法人员随后击毙嫌疑人。同日，俄罗斯对基辅发动大规模导弹袭击，或包含超音速导弹。国际局势周末持续紧张。</div>
+              <div class="weekend-comment">美国国内安全与国际地缘风险在同一个周末叠加，市场对"不确定性溢价"的定价可能在下周一开盘有所体现。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🚀</div>
+            <div class="weekend-body">
+              <div class="weekend-title">SpaceX星舰V3首飞推迟 · 沃尔玛新CEO上任改组</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-tech">科技</span>
+                <span class="weekend-tag tag-business">品牌</span>
+              </div>
+              <div class="weekend-desc">SpaceX星舰V3的首次飞行测试再次推迟，具体日期待定。零售巨头沃尔玛新CEO上任后进行管理层改组，数名高管离职。</div>
+              <div class="weekend-comment">SpaceX的推迟节奏反映了深空探索的高不确定性。沃尔玛改组则暗示零售行业正面临结构性调整——AI化转型与供应链重组可能成为新任CEO的核心议程。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">1-4月全国吸收外资2876.9亿元，APEC贸易部长会议聚焦亚太增长</div>
+            <div class="news-item-desc">商务部数据：2026年1-4月全国实际使用外资2876.9亿元人民币。APEC第三十二届贸易部长会议在苏州举行，各国代表围绕亚太经济增长、贸易便利化、数字经济等议题展开讨论。</div>
+            <a class="news-item-link" href="https://www.mofcom.gov.cn/xwfb/rcxwfb/art/2026/art_420906b502c24be68b800620817a2621.html" target="_blank">→ 商务部</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国与巴布亚新几内亚签署《提升经济伙伴关系框架协定》</div>
+            <div class="news-item-desc">中巴新两国于5/22签署经济伙伴关系框架协定并发表联合声明，进一步深化双边经贸合作，拓展在基础设施、资源开发、数字经济等领域的务实合作。</div>
+            <a class="news-item-link" href="https://www.mofcom.gov.cn/xwfb/rcxwfb/art/2026/art_ae4737b1a8014966954075205f3b18ce.html" target="_blank">→ 商务部</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">2026人工智能与智慧经济创新发展大会在济南闭幕</div>
+            <div class="news-item-desc">大会以"智融经济，慧创未来"为主题，汇聚产、学、研各界代表，围绕AI与实体经济融合、大模型商业化落地、智慧城市建设等议题深入探讨。AI正从技术展示阶段迈向经济价值创造阶段。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/business/" target="_blank">→ 中新网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">长安汽车×华为内幕交易案曝光：合作备忘录泄密，5名员工被罚1669万</div>
+            <div class="news-item-desc">2023年长安汽车与华为签署《投资合作备忘录》前，双方多名员工提前突击买入长安汽车股票，合计买入6100万元、获利400余万元。证监会没收全部违法所得并处以1669万元罚款，涉案人员犯罪线索移送公安机关。</div>
+            <a class="news-item-link" href="https://www.bbtnews.com.cn/2026/0524/594242.shtml" target="_blank">→ 北京商报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">SpaceX星舰V3首飞再次推迟</div>
+            <div class="news-item-desc">SpaceX宣布星舰V3的首次轨道飞行测试再度延期，具体日期尚未公布。作为目前全球最强大的运载火箭，星舰V3的进展备受关注。</div>
+            <a class="news-item-link" href="https://cn.wsj.com/zh-hans/news/business" target="_blank">→ WSJ</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">沃尔玛新CEO上任后进行管理层改组</div>
+            <div class="news-item-desc">全球最大零售商沃尔玛新任CEO上任后启动高管层改组，数名核心高管离职。市场预期新管理层将加速推进AI驱动的供应链优化和全渠道零售转型。</div>
+            <a class="news-item-link" href="https://cn.wsj.com/zh-hans/news/business" target="_blank">→ WSJ</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">华为×长安智能汽车合作内幕交易案引行业关注</div>
+            <div class="news-item-desc">时隔两年多，长安汽车与华为智能汽车合作的内幕交易案细节被投服中心公开披露。此案不仅涉及证券违法，更折射出大厂间深度合作时信息隔离机制的脆弱性——对品牌公关与合规管理有直接警示意义。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_33223770" target="_blank">→ 澎湃新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">白宫附近发生枪击事件，特勤局击毙嫌疑人</div>
+            <div class="news-item-desc">5月23日（周六），美国特勤局在白宫附近发现可疑人员并采取行动，执法人员击毙嫌疑人。事件未造成其他人员伤亡。安全部门正在调查嫌疑人动机和背景。</div>
+            <a class="news-item-link" href="https://www.voachinese.com/z/1739" target="_blank">→ 美国之音</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">俄罗斯对基辅发动大规模导弹袭击</div>
+            <div class="news-item-desc">5月24日，乌克兰首都基辅遭到俄罗斯大规模导弹袭击，可能包含超音速导弹。俄乌冲突在国际社会持续关注下仍在升级。</div>
+            <a class="news-item-link" href="https://www.rfi.fr/cn/" target="_blank">→ RFI</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美军对伊朗海上封锁达"里程碑"：100艘商船被迫改道</div>
+            <div class="news-item-desc">美国中央司令部表示，对伊朗的海上封锁在5/23达到里程碑，成功迫使100艘商船改变航线。伊朗同时指控美军违反停火协议。中东局势持续紧张。</div>
+            <a class="news-item-link" href="https://www.epochtimes.com/gb/news412.htm" target="_blank">→ 大纪元</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#长安汽车华为内幕交易 大厂合规信任危机</div>
+            <div class="trend-meta">商业财经赛道 · 品牌治理方向</div>
+            <div class="trend-obs">💡 趋势观察：长安汽车与华为双方员工共同参与内幕交易，暴露出跨企业合作时"信息隔离墙"的系统性失效。在小红书商业财经内容赛道中，"大厂翻车""合规危机"类话题天然具有高传播力——用户对"内幕"叙事的好奇心极强。品牌方需要关注此类话题是否会波及用户对华为/长安品牌的信任度。</div>
+            <div class="trend-source"><a href="https://www.bbtnews.com.cn/2026/0524/594242.shtml" target="_blank">→ 北京商报·长安汽车内幕交易案</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI经济化 从技术叙事到价值叙事的内容转向</div>
+            <div class="trend-meta">科技内容赛道 · AI商业化方向</div>
+            <div class="trend-obs">💡 趋势观察：济南AI大会和IBM"AI利润引擎"报告共同指向一个趋势——AI内容正在从"技术猎奇"转向"经济影响"。小红书用户对"AI如何改变我的工作/生活"的兴趣远大于"AI技术参数"。品牌在AI相关内容的沟通策略应从"秀肌肉"转向"讲价值"。</div>
+            <div class="trend-source"><a href="https://www.chinanews.com.cn/business/" target="_blank">→ 中新网·AI大会</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#APEC苏州 贸易合作与地缘博弈的内容张力</div>
+            <div class="trend-meta">国际时事赛道 · 宏观经济方向</div>
+            <div class="trend-obs">💡 趋势观察：APEC贸易部长会议与中美伊多方地缘紧张在同一个周末叠加，形成了"合作 vs 对抗"的叙事张力。小红书国际内容赛道中，"苏州APEC"可作为正面叙事锚点，与冲突类话题形成对比，传递"全球化仍在继续"的信号。</div>
+            <div class="trend-source"><a href="https://www.mofcom.gov.cn/xwfb/rcxwfb/art/2026/art_420906b502c24be68b800620817a2621.html" target="_blank">→ 商务部·APEC会议</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#SpaceX推迟 航天叙事中的不确定性美学</div>
+            <div class="trend-meta">科技内容赛道 · 太空探索方向</div>
+            <div class="trend-obs">💡 趋势观察：星舰V3再次推迟在科技圈引发"期待疲劳"，但小红书的航天内容受众更关注"过程叙事"而非"结果叙事"。SpaceX的每一次尝试（包括失败和推迟）都是内容素材——"推迟"本身也可以成为"人类挑战极限"故事的一部分。</div>
+            <div class="trend-source"><a href="https://cn.wsj.com/zh-hans/news/business" target="_blank">→ WSJ·SpaceX</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 跨企业合规与品牌信任</div>
+        <div class="learning-title">当两家公司「牵手」，谁在守住信息的边界？</div>
+        <div class="learning-subtitle">从长安汽车×华为内幕交易案看品牌合作中的信息风险管理</div>
+        <div class="learning-body">
+          <p>5/22，投服中心披露了长安汽车与华为内幕交易案的完整细节——在2023年11月双方签署智能汽车战略合作备忘录前，<strong>合作双方的5名员工</strong>提前突击买入长安汽车股票，合计6100万元，获利400余万元，最终被罚1669万元。</p>
+          <p>这个案件有两个值得营销人关注的维度：</p>
+          <p><strong>第一，"信息隔离墙"在跨企业合作中形同虚设。</strong>当两家巨头签署战略合作协议，涉及的品牌、产品、技术、商业条款等敏感信息，天然具有市场影响力。如果连上市公司级别的内幕信息都无法守住隔离，那么品牌合作中更微观的营销信息（新品发布日期、代言人签约、联合campaign）的泄露风险更高。</p>
+          <p><strong>第二，"信任成本"正在成为品牌合作的核心变量。</strong>华为和长安汽车都是各自领域的头部品牌，但这次事件暴露出：品牌合作的深度与信任管理的难度成正比。当合作涉及资本层面（投资备忘录→合资公司），信息管控的复杂度呈指数级上升。</p>
+          <p><strong>对品牌营销的启示：</strong>在做品牌联合、跨界合作、明星代言等高敏项目时，建立"信息分级+最小知情+时间锁"的管控机制，比事后公关更有效。营销节奏的设计需要考虑"信息泄露的可能性"而非假设"所有信息都能按计划释放"。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.bbtnews.com.cn/2026/0524/594242.shtml" target="_blank">北京商报《被罚1669万元！长安汽车内幕交易案曝光》</a> ·
+          <a href="https://www.thepaper.cn/newsDetail_forward_33223770" target="_blank">澎湃新闻《长安汽车内幕交易案：与华为合作前双方员工精准买入》</a> ·
+          <a href="https://www.stcn.com/article/detail/3922855.html" target="_blank">证券时报《以案为鉴》系列案例</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 信息隔离</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🔒 主题策展 · "隔离墙"：从金融到AI的信息安全谱系</div>
+        <div class="knowledge-headline">信息如何在流动中守住边界</div>
+        <div class="knowledge-tagline">「最危险的信息泄露，往往来自最可信的合作者。」</div>
+
+        <div class="knowledge-intro">
+          "隔离墙"（Chinese Wall / Information Barrier）最初是金融行业的合规概念——投行在做IPO和二级市场交易之间建立信息隔离，防止内幕信息交叉流动。但今天，它的应用早已超越了金融：<br><br>
+          • <strong>品牌合作：</strong>联名产品、代言人签约、联合campaign的信息分级管控<br>
+          • <strong>AI安全：</strong>Anthropic本周发表的"自然语言审计"论文，本质上是在AI模型内部建立"思想隔离墙"<br>
+          • <strong>数据治理：</strong>企业内部不同部门间的数据权限隔离<br><br>
+          长安汽车案的核心教训不是"员工不该买股票"，而是"企业没有建立有效的信息隔离机制"。当两个组织的员工共享了同一层级的敏感信息，却没有相应的管控措施，违规就只是时间问题。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏛️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">金融隔离墙</div>
+              <div class="knowledge-card-sub">Chinese Wall · 合规概念</div>
+              <div class="knowledge-card-work">起源于华尔街，要求投行的承销部门和交易部门之间建立物理和信息隔离。SEC规定，违反隔离墙的金融机构可能面临巨额罚款甚至刑事指控。长安汽车案的1669万罚款在中国证券市场属于顶格处罚。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🤖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">AI模型"思想隔离"</div>
+              <div class="knowledge-card-sub">Anthropic · NLA方法 · 2026</div>
+              <div class="knowledge-card-work">Anthropic最新论文提出的"自然语言审计"（NLA），通过在AI模型内部建立"审计员"角色来检测隐藏动机。本质上是在AI的"思考过程"中建立信息隔离——哪些推理路径可以共享，哪些必须隔离。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏢</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">企业数据分级管控</div>
+              <div class="knowledge-card-sub">Data Governance · 最佳实践</div>
+              <div class="knowledge-card-work">有效的信息隔离不是"全封闭"，而是"分级流通"。核心原则：最小知情（Need-to-Know）、时间锁（Time-Lock Release）、物理隔离（不同系统/不同网络）、行为审计（访问日志追踪）。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">📋</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">品牌合作信息管控</div>
+              <div class="knowledge-card-sub">Marketing · 实战指南</div>
+              <div class="knowledge-card-work">品牌做联名/代言/联合营销时的信息分级建议：L0（绝密）—仅核心决策层知晓；L1（机密）—执行团队在项目启动时知晓；L2（内部）—全员在官宣前24小时知晓；L3（公开）—按节奏释放给媒体和用户。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          信息隔离的本质不是"不信任"，而是"设计信任"。好的隔离墙让合作者在安全的环境中自由协作，同时确保敏感信息不会溢出到不该触及的地方。无论是金融交易、AI安全还是品牌营销，这个原则是相通的。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新 · 今日含上周末补录内容
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
