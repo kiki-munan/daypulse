@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/1</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 52px; background: linear-gradient(135deg, #1a4a8a 0%, #c4653a 55%, #f5e86e 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/6/1/index.html" class="active">2026 / 6 / 1</a></li>
+        <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+        <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+        <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+        <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+        <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+        <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+        <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+        <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+        <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+        <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+        <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+        <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+        <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+        <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 01</div>
+      <div class="day-week">星期一</div>
+      <span class="day-tag">🎈 国际儿童节</span>
+      <span class="day-tag">🌿 十五五规划元年</span>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 方向</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">6月新规今日生效：离境退税2.0、102项国家标准、外卖"开门杀"赔偿规则同步落地</div>
+            <div class="news-item-desc">商务部等六部门联合发布"离境退税2.0版"，提升退税商店覆盖率、实行小额抽检、推行退税无纸化办理，预计撬动入境消费万亿级新增量。同日起，外卖骑手"开门杀"赔偿标准、疲劳驾驶认定细则等102项国家标准正式实施。"十五五"开局月，政策矩阵密集落地，入境消费与规范化治理同步提速。</div>
+            <a class="news-item-link" href="http://finance.china.com.cn/news/20260530/6309953.shtml" target="_blank">→ 中国网财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">前4月规上工业企业利润增18.2%，高技术制造业引领，外资持续加仓A股</div>
+            <div class="news-item-desc">国家统计局数据显示，1-4月全国规上工业企业利润同比增长18.2%，电子、有色金属等行业表现突出，价格与利润率形成"双支撑"。外资加仓中国信号强烈，国际投行看好A股科技、消费、新能源三大方向。"十五五"开局年的经济韧性正在被数据验证。</div>
+            <a class="news-item-link" href="http://finance.china.com.cn/news/20260528/6309658.shtml" target="_blank">→ 中国网财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">大模型进入"价值验证年"：百度文心5.1以6%成本达领先水平，国产AI效率竞赛白热化</div>
+            <div class="news-item-desc">5月，百度发布文心大模型5.1，凭借"多维弹性预训练"技术以同规模模型约6%的训练成本达到领先性能，总参数量大幅压缩。与此同时，GPT-5.5 Instant已成ChatGPT默认模型，NVIDIA Rubin平台发布，AI推理成本骤降。2026年的AI竞赛主战场，正从"谁的参数更大"转向"谁能用最少的算力做最多的事"——这是中国AI厂商的机会窗口。</div>
+            <a class="news-item-link" href="https://www.163.com/dy/article/KTA5D4D30556MKQ5.html" target="_blank">→ 网易·5月AI行业深度观察</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国AI日均词元调用量突破140万亿，较年末增40%+，规模化落地加速</div>
+            <div class="news-item-desc">今日头条科技日报数据显示，进入5月中国AI应用生态的日均调用规模已呈指数级攀升。Agent应用爆发、国产小模型效率提升、企业侧大规模部署是三大驱动力。对营销策划行业而言，AI工具从"辅助写作"到"全链路协同"的跃迁正在这个季度发生。</div>
+            <a class="news-item-link" href="https://www.toutiao.com/w/1864043067254810/" target="_blank">→ 今日头条·AI科技日报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">六一"全龄童心营销"大爆发：麦当劳×泡泡玛特星星人联名刷屏，餐饮IP联名争相"追童趣"</div>
+            <div class="news-item-desc">2026年六一，各大品牌集体押注"全龄向童心"——麦当劳与泡泡玛特旗下星星人推出限定套餐+联名周边，率先刷屏；必胜客联名疯狂动物城主题场景；长沙餐饮品牌扎堆IP套餐，线下门店客流爆满。艺恩营销智库报告显示"童趣经济"相关社媒声量同比攀升26%，小红书#大人也要玩玩具#话题超255万浏览。成年人的"童心消费"，已经是一个独立的细分市场。</div>
+            <a class="news-item-link" href="https://socialbeta.com/article/111120" target="_blank">→ SocialBeta·品牌营销案例一周</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">日系车"溃败"论持续发酵，中国自主品牌加速抢占存量市场</div>
+            <div class="news-item-desc">微博热搜"日系车溃败"话题31万讨论，折射出汽车行业格局的加速重构。新能源车渗透率持续走高，中国自主品牌凭借智能化优势大幅蚕食日系份额。这对汽车品牌的营销策略意味着：消费者教育的核心战场，已从"品质信任"转向"科技认知"。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%97%A5%E7%B3%BB%E8%BD%A6%E6%BA%83%E8%B4%A5" target="_blank">→ 微博热搜·日系车溃败</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">何猷君×奚梦瑶法国婚礼今日举行，谷爱凌、王嘉尔出席，"七年承诺"感动全网</div>
+            <div class="news-item-desc">何猷君与奚梦瑶的婚礼欢迎晚宴昨晚在法国多维勒庄园举行，今日正式婚礼。主题"承诺如约而至"，子女担任花童，谷爱凌专程飞赴出席。奚梦瑶此前自言社恐不想办婚礼，何猷君坚持"一定要办，而且要办得很好"——这段延迟七年的婚礼，反而成了微博30万+讨论的情感符号。六一儿童节+豪门婚礼的双线叙事，让这场婚礼的传播热度超出预期。</div>
+            <a class="news-item-link" href="https://www.163.com/dy/article/KUAN7FT70517E2SU.html" target="_blank">→ 网易娱乐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">天涯社区今日正式重启，"神帖"霸占微博热搜前四，互联网记忆大规模唤醒</div>
+            <div class="news-item-desc">关停近三年后，天涯社区于2026年6月1日正式恢复访问。"天涯神帖"话题311万讨论量冲上微博热搜第一，"天涯社区曾2次重启失败"67万、"天涯社区将正式恢复访问"26万同步上榜。对于一代中国互联网用户而言，天涯是微博、微信、抖音之前唯一的公共广场——它的归来，触发的是集体记忆的情感按钮，而非一个产品重新上线的功能性需求。</div>
+            <a class="news-item-link" href="https://www.cnbeta.com.tw/articles/tech/1564200.htm" target="_blank">→ cnBeta·天涯社区6月1日恢复访问</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">六一"内容长尾营销"成新共识：品牌从节日当天爆发转向追求"数字资产"沉淀</div>
+            <div class="news-item-desc">多家营销机构2026年六一报告显示，真正具备竞争力的儿童节内容，已不只追求节日当天热度爆发，而是追求"内容节后持续流通"。这与小红书平台内容的长尾属性高度契合——一条优质的儿童节种草内容，在节后1-3个月内依然可以持续带来搜索流量和转化。对IP大事件而言，活动内容的"可反复检索性"是评估标准之一。</div>
+            <a class="news-item-link" href="https://www.partnershare.cn/information/nox-ju-xing/6119" target="_blank">→ PartnerShare·六一内容长尾营销</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">央视曝光劣质驱蚊产品，品牌信任危机与消费者安全意识升温</div>
+            <div class="news-item-desc">六一儿童节当天，央视点名曝光劣质儿童驱蚊产品（无证生产、成分超标），微博话题32万讨论。在儿童消费旺季，这一信号具有双重含义：一方面是行业合规压力加剧；另一方面是消费者对"儿童用品"类目的安全敏感度持续走高——品牌的安全背书能力，正在成为此类产品的核心竞争力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%AE%E8%A7%86%E6%9B%9D%E5%85%89%E5%8A%A3%E8%B4%A8%E9%A9%B1%E8%9A%8A%E4%BA%A7%E5%93%81" target="_blank">→ 微博热搜·央视曝光劣质驱蚊产品</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">日本"拥抱印度"：安倍路线延续，印太战略下的外交重心加速向南亚倾斜</div>
+            <div class="news-item-desc">微博热搜"日本拥抱印度"105万讨论，指向日本在印太战略框架下持续深化与印度的安保、经贸关系。在中方宣布将反制日菲南海划界谈判的背景下，亚太地缘格局的裂变速度正在加快。对跨境营销策划而言，地缘政治的摩擦区正在影响品牌全球化的市场选择逻辑。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%97%A5%E6%9C%AC%E6%8B%A5%E6%8A%B1%E5%8D%B0%E5%BA%A6" target="_blank">→ 微博热搜·日本拥抱印度</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#六一儿童节 全龄"童心经济"爆发，大人比小孩更爱过节</div>
+            <div class="trend-meta">节日营销 · 情感消费赛道 · 46万微博讨论</div>
+            <div class="trend-obs">💡 趋势观察：六一的核心用户不是孩子，而是怀念童年的成年人。小红书上"成年人的六一"系列内容——买公仔、吃童年零食、重看动画片——比儿童向内容的互动率更高。品牌借势的关键：不要说"给孩子一个快乐的节日"，而是说"给自己一个回去的机会"。情感出发点是失落与弥补，不是纯粹的欢庆。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%84%BF%E7%AB%A5%E8%8A%82" target="_blank">→ 微博热搜·儿童节</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#天涯神帖重出江湖 互联网集体记忆引爆小红书怀旧潮</div>
+            <div class="trend-meta">互联网文化 · 怀旧内容赛道 · 311万微博讨论</div>
+            <div class="trend-obs">💡 趋势观察：天涯重启激活的是一代人的"互联网原住民"记忆。小红书上"我在天涯发过帖""天涯神帖盘点"类内容正在快速蓄水。这波情绪的核心是：对一个更慢、更有人情味的互联网时代的怀念。对IP大事件策划而言，这提示了一个趋势——"故旧感"（nostalgia）作为情感触发点，在当前内容过饱和的环境下具有极强的穿透力。</div>
+            <div class="trend-source"><a href="https://www.cnbeta.com.tw/articles/tech/1564200.htm" target="_blank">→ cnBeta·天涯6月1日恢复访问</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#樊振东德甲三冠王 乒乓球运动员的"退役后出走"叙事持续发酵</div>
+            <div class="trend-meta">体育赛事 · 运动员个人叙事赛道 · 31万微博讨论</div>
+            <div class="trend-obs">💡 趋势观察：樊振东助萨尔布吕肯夺得德甲联赛、杯赛、超级杯三冠，个人冠军总数达117个。"从国家队到德甲"的叙事，是2026年最有辨识度的运动员个人品牌故事之一——离开聚光灯后依然发光，是独立性和自我价值的体现。此类运动员叙事在小红书年轻女性用户中有强烈共鸣。</div>
+            <div class="trend-source"><a href="https://www.news.cn/20260601/ccb6a5aa93ee490f8ed3cdeb6df7eaec/c.html" target="_blank">→ 新华网·樊振东助萨尔布吕肯三冠王</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#拉丁舞爆火 运动内容赛道新燃点，"跳瘦8斤裁判"意外出圈</div>
+            <div class="trend-meta">运动健身赛道 · UGC内容爆发 · 28万微博讨论</div>
+            <div class="trend-obs">💡 趋势观察：拉丁舞的爆发不是偶然——它兼具"减脂效果可视化"和"好看可分享"两个小红书内容的核心竞争力。"裁判一个月跳瘦8斤"的切入角度，是典型的"真实数据+意外人物"的爆款公式。对运动类品牌和IP而言，这种带有具体成果的真实叙事，远比"热爱运动"的宏大叙事更容易形成种草。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8B%89%E4%B8%81%E8%88%9E%E7%88%86%E7%81%AB%E8%A3%81%E5%88%A4%E4%B8%80%E4%B8%AA%E6%9C%88%E8%B7%B3%E7%98%A68%E6%96%A4" target="_blank">→ 微博热搜·拉丁舞爆火</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#孩子越多养育成本越低 生育话题与"报告体内容"持续引发争议</div>
+            <div class="trend-meta">生育话题 · 家庭消费赛道 · 28万微博讨论</div>
+            <div class="trend-obs">💡 趋势观察：六一当天，一份"孩子越多平均养育成本越低"的报告登上热搜，迅速成为争议场域。在生育率焦虑的大背景下，任何与"养娃成本"相关的内容都自带话题引力。对小红书母婴/家庭类内容创作者而言，六一是深挖"养育真实成本"类内容的绝佳时机——真实、具体、有数字，才能在情绪化讨论中形成差异。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8A%A5%E5%91%8A%E7%A7%B0%E5%AD%A9%E5%AD%90%E8%B6%8A%E5%A4%9A%E5%B9%B3%E5%9D%87%E5%85%BB%E8%82%B2%E6%88%90%E6%9C%AC%E8%B6%8A%E4%BD%8E" target="_blank">→ 微博热搜·报告称孩子越多养育成本越低</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 全龄营销</div>
+        <div class="learning-title">六一不是孩子的节，是成年人的伤——"全龄童心营销"为何在2026年成为主流？</div>
+        <div class="learning-subtitle">从IP联名到情感叙事，品牌如何在儿童节触达真正的消费主力</div>
+        <div class="learning-body">
+          <p>一个观察：每年六一，在小红书上发布最多内容的，不是家长，不是孩子，是没有孩子的成年人——他们在买泡泡玛特、在吃大白兔奶糖、在重刷童年动画，然后发出一张图，配字"好想回去"。</p>
+          <p>这就是2026年六一营销的核心逻辑：<strong>表面上的服务对象是孩子，真正的消费主力是25-35岁的青年人</strong>。他们不是在给孩子买，他们是在用消费行为弥补某种缺失——或是因为童年并不如意，或是因为成年后积累的疲惫，让人想要一个"退出"键。</p>
+          <p>这也是为什么"童心经济"（Kidult Economy）在全球范围内都在高速增长。NPD集团数据显示，12岁以上成年人的玩具消费占全球玩具市场近半。泡泡玛特的核心用户从来不是小学生，是大学生和职场人。乐高最畅销的套装，是面向成年人的建筑收藏系列，而非儿童入门套。</p>
+          <p>对品牌营销的启示是明确的：<strong>不要在六一用"可爱萌系"去讨好孩子，要用"失去的童年"去共情成年人</strong>。最有效的切入角度不是"快乐"，而是"遗憾"——那些没有得到的玩具、没有去成的游乐园、因为长大而不得不放弃的某种轻盈。</p>
+          <p>对小红书平台大事件策划的直接参考：<strong>如果今后有儿童节主题IP活动，核心用户画像不应该设定为"家长+孩子"，而是"想要重新做孩子的成年人"</strong>。活动现场设计的关键词是"许可感"——在这里，你可以不装大人。这比任何明星阵容都更有传播力。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.cnad.com/index.php?mod=article&act=view&titleId=356578" target="_blank">广告传媒网《2026六一儿童节品牌营销案例》</a> ·
+          <a href="https://cn.noxinfluencer.com/blog/2026%E5%85%AD%E4%B8%80%E5%84%BF%E7%AB%A5%E8%8A%82tiktok%E8%BE%BE%E4%BA%BA%E8%90%A5%E9%94%80%E6%96%B0%E8%B6%8A%E5%8A%BF" target="_blank">Nox聚星《2026六一TikTok达人营销新趋势》</a> ·
+          <a href="https://mtz.china.com/touzi/2026/0513/233240.html" target="_blank">中华网《必胜客联名疯狂动物城》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 国际儿童节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎈🌍👧🏻👦🏽🎠</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">全球节日</span>
+          <span class="festival-tag">每年6月1日</span>
+          <span class="festival-tag">逾80个国家</span>
+          <span class="festival-tag">1949年设立</span>
+        </div>
+        <div class="festival-name">六一国际儿童节</div>
+        <div class="festival-name-en">International Children's Day · 始于1949年 · 今日第77届</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从战争废墟中诞生的节日，一个悼念的开始</div>
+          <div class="festival-block-body">
+            <p>六一儿童节的诞生，起点是一场屠杀。</p>
+            <p>1942年6月10日，纳粹德国在捷克斯洛伐克的利迪策村（Lidice）实施灭村式大屠杀——村中男性全部遇难，妇女儿童被押送集中营，房屋夷为平地。这场惨剧震惊全球，成为二战中儿童在战争中受难的最惨烈象征之一。</p>
+            <p>1949年，在苏联莫斯科召开的<strong>国际民主妇女联合会大会</strong>上，各国代表为悼念利迪策惨案及全球战争中死难的儿童，正式确立<strong>每年6月1日为国际儿童节</strong>（International Children's Day）。中华人民共和国于同年将6月1日定为儿童节，取代了此前民国时期的4月4日儿童节。</p>
+            <p>值得注意的是，联合国体系下存在两个"儿童节"：国际儿童节（6月1日，源自1949年，以中国、俄罗斯为代表的国家遵循）；以及<strong>世界儿童日</strong>（World Children's Day，11月20日，由联合国1954年设立，纪念《儿童权利公约》通过日，以美国、英国等西方国家为主）。两套体系并行了七十余年，折射出冷战历史的分叉痕迹。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】从政治纪念到万亿消费市场，儿童节的身份已彻底转型</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">80+</div>
+                <div class="festival-stat-label">国家设立6月1日儿童节</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">26%</div>
+                <div class="festival-stat-label">童趣经济社媒声量同比增幅</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">近50%</div>
+                <div class="festival-stat-label">全球玩具消费来自12岁以上成人</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">6月1日</div>
+                <div class="festival-stat-label">今年起14岁以下儿童享3天小长假</div>
+              </div>
+            </div>
+            <p>今天的六一儿童节，早已超越了最初的政治纪念意涵。在中国，它是继春节、618之后消费密度最高的节日之一；在全球，"童心经济"（Kidult Economy）作为一个独立的消费赛道，撑起了乐高、泡泡玛特、万代南宫、Hello Kitty等品牌的营收增长逻辑。</p>
+            <p>2026年六一的新变化：根据国务院《全国年节及纪念日放假办法》，<strong>今年起14岁以下未成年人在儿童节可享受半天假期</strong>（今年恰逢周一，实际形成3天小长假）。这一政策调整是六一节地位正式提升的信号，预计将进一步释放家庭和亲子类消费场景。</p>
+            <p>品牌的操盘方式，也发生了代际分化：<strong>老牌快消</strong>（旺旺、大白兔、雪糕）打怀旧复刻牌，用"儿时记忆"触达25-40岁成年消费者；<strong>新兴潮玩</strong>（泡泡玛特、寻找独角兽）打"成人童心"牌，将玩具重新定义为情绪出口和身份符号；<strong>餐饮</strong>（麦当劳、必胜客）打联名限定牌，以线下空间打造打卡内容。三种路径，服务的是同一个底层情绪：成年人对"被允许轻盈"的渴望。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】六一会成为下一个"情绪节"，而不只是"消费节"</div>
+          <div class="festival-block-body">
+            <p><strong>趋势预判：</strong>随着中国14岁以下人口结构的持续收缩（出生率下降），儿童节的"儿童用户"占比将继续下降，但"成年用户"的情感消费将持续扩张。六一正在走向一个新的定义：<strong>一个社会集体允许成年人"退行"的文化节点</strong>——就像圣诞节不只是基督徒的节日一样，六一也将成为一种普适的"童心许可"。</p>
+            <p>联合国儿童基金会（UNICEF）每年在世界儿童日（11月20日）发起全球范围的倡导活动，关注儿童权利、教育公平和战争中儿童的处境。这与六一的娱乐消费向越走越远，但也在提醒：节日的起点，是人道主义。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>六一是一个天然的大事件选题——它拥有全年最强的"情感许可"底色。在这一天，用户对"我还可以做孩子"的内容接受度达到峰值。如果要做六一主题IP活动，核心设计问题不是"怎么让它显得可爱"，而是"怎么让参与者感觉'这里不需要我假装大人'"。空间感、游戏感、偶发性的惊喜——这些线下体验的设计要素，比任何IP联名都更能触发成年人的真实情绪。活动如果让用户在现场发出一声"哇"，你就赢了。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://zh.wikipedia.org/zh-cn/%E5%85%AD%E4%B8%80%E5%9B%BD%E9%99%85%E5%84%BF%E7%AB%A5%E8%8A%82" target="_blank">维基百科·六一国际儿童节</a> ·
+          <a href="https://baike.baidu.com/item/%E5%9B%BD%E9%99%85%E5%84%BF%E7%AB%A5%E8%8A%82/321613" target="_blank">百度百科·国际儿童节</a> ·
+          <a href="https://www.unicef.org/zh/%E9%87%87%E5%8F%96%E8%A1%8C%E5%8A%A8/%E6%B4%BB%E5%8A%A8/%E4%B8%96%E7%95%8C%E5%84%BF%E7%AB%A5%E6%97%A5" target="_blank">UNICEF·世界儿童日</a> ·
+          <a href="https://www.nhc.gov.cn/jnr/etjjrjj/201406/a08cdc8b880348819ad291d321235116.shtml" target="_blank">国家卫健委·节日简介</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 童年与文学</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">📖 主题策展 · 写给孩子、也写给大人的书</div>
+        <div class="knowledge-headline">每一本童书，都是一个大人还没有解开的结</div>
+        <div class="knowledge-tagline">「所有大人都曾经是孩子，虽然只有少数人记得这一点。」——圣埃克苏佩里《小王子》</div>
+
+        <div class="knowledge-intro">
+          有一类书，封面上写着"儿童文学"，却在成年后读来才有滋味。不是因为童书简单，而是因为童书诚实——它们不假装成年人的烦恼是理所当然的，它们保留了一种直接、无畏、不讲世故的眼光。六一这天，不妨重新认识那些"给孩子写的、却属于所有人"的作品和创作者。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Antoine_de_Saint-Exup%C3%A9ry_%281935%29.jpg/440px-Antoine_de_Saint-Exup%C3%A9ry_%281935%29.jpg"
+              alt="圣埃克苏佩里"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">✈️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">圣埃克苏佩里</div>
+              <div class="knowledge-card-sub">Antoine de Saint-Exupéry · 法国 · 1900—1944</div>
+              <div class="knowledge-card-work">《小王子》1943年出版，全球销量逾2亿册，译为300余种语言。飞行员在沙漠中遇见一个来自小行星的孩子——他问成年人看见的是什么，成年人只看见数字。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Lewis_Carroll_1863.jpg/440px-Lewis_Carroll_1863.jpg"
+              alt="刘易斯·卡罗尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐇</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘易斯·卡罗尔</div>
+              <div class="knowledge-card-sub">Lewis Carroll · 英国 · 1832—1898</div>
+              <div class="knowledge-card-work">《爱丽丝梦游仙境》1865年出版，是荒诞文学的鼻祖。一个女孩追着兔子跳进洞里——那个洞是通往成人世界所有荒唐规则的镜像。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/J.M._Barrie_1916.jpg/440px-J.M._Barrie_1916.jpg"
+              alt="J.M.巴里"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🧚</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">J.M. 巴里</div>
+              <div class="knowledge-card-sub">James Matthew Barrie · 英国 · 1860—1937</div>
+              <div class="knowledge-card-work">《彼得·潘》1904年首演。"永不长大"的孩子——既是童话，也是恐惧：成年人最怕的不是老去，而是在长大的过程中失去了某种真实。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Astrid_Lindgren_1955.jpg/440px-Astrid_Lindgren_1955.jpg"
+              alt="阿斯特丽德·林格伦"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">👧</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">阿斯特丽德·林格伦</div>
+              <div class="knowledge-card-sub">Astrid Lindgren · 瑞典 · 1907—2002</div>
+              <div class="knowledge-card-work">《长袜子皮皮》1945年出版。皮皮是一个没有大人管束、自给自足、力大无穷的女孩——是每一个曾被规矩束缚的孩子（和大人）最深的白日梦。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🐉</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">曹文轩</div>
+              <div class="knowledge-card-sub">中国 · 1954年生 · 国际安徒生奖得主</div>
+              <div class="knowledge-card-work">《草房子》《青铜葵花》。中国第一位国际安徒生奖得主（2016），他的儿童文学从不回避苦难——草地、芦荡、贫穷、死亡，但生命的韧性始终透光。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">宫崎骏</div>
+              <div class="knowledge-card-sub">日本 · 1941年生 · 吉卜力工作室</div>
+              <div class="knowledge-card-work">《龙猫》《千与千寻》《哈尔的移动城堡》。他的动画从来不解释规则，却让你记住那只猫车、那个浴场的灯光、天空城的废墟。孩子能懂，大人更懂。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这些作品有一个共同点：它们不把孩子当需要被"教育"的对象，而是把孩子当成一种视角——一种成年人需要不断学习回去的眼光。六一这天，如果你能带着这种眼光工作、策划、开会，可能比任何一个儿童节活动都更有意义。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
