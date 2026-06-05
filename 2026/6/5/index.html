@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/5</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a3a2e 0%, #2d7a4f 50%, #7bc67e 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-tag.green { background: #2d7a4f; color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/6/5/index.html" class="active">2026 / 6 / 5</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 05</div>
+      <div class="day-week">星期五</div>
+      <div class="day-tag">🌍 世界环境日</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 方向</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行今日开展5000亿逆回购，连续4个月缩量续作，流动性调控信号明确</div>
+            <div class="news-item-desc">6月5日，央行以固定数量、利率招标方式开展5000亿元3个月期买断式逆回购，但6月有8000亿元到期，实际净回笼3000亿元。这是央行连续第4个月缩量续作，表明在流动性合理充裕的基础上，货币政策开始强调"精准"而非"宽松"。同日，国内成品油价年内第二次下调，92号汽油每升降0.41元。</div>
+            <a class="news-item-link" href="https://finance.china.com.cn/" target="_blank">→ 中国网财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">商务部将全年举办逾百场"出口中国"活动，6月11日德国专场为欧盟首场</div>
+            <div class="news-item-desc">商务部发言人何咏前宣布，2026年将举办超100场"出口中国"活动，7日白俄罗斯专场为境外首场，11日德国专场为欧盟首场，旨在帮助各国企业扩大对华出口。这与进博会战略一脉相承——在贸易摩擦背景下，中国正以"市场开放"姿态主动出击，为多边贸易格局找寻新支点。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260605/herald/ca8127d344670281c32d723353505ef1.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">SpaceX正式启动史上最大IPO路演，每股135美元、估值1.77万亿美元，马斯克或成首位万亿富翁</div>
+            <div class="news-item-desc">SpaceX公布IPO计划书，拟发行5.556亿股A类股，计划筹资750亿美元，将超越沙特阿美2019年的294亿美元纪录，定价日为6月11日，代码"SPCX"登陆纳斯达克。按发行价，马斯克个人财富将突破1万亿美元。与此同时，SpaceX为其Terafab半导体项目获得德州格里姆斯县税收减免，项目规模可能高达1190亿美元——SpaceX正从火箭公司向"芯片+太空"综合帝国演进。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/nictation/8015306.html" target="_blank">→ 钛媒体</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">微信联合华为、小米、OPPO等推出A2A助手能力，手机语音可直接发起微信通话</div>
+            <div class="news-item-desc">腾讯客服证实，微信正与华为、荣耀、小米、OPPO、vivo等厂商合作，基于A2A（Agent-to-Agent）协作机制，用户可通过手机系统AI助手直接发起微信音视频通话或向好友发消息，荣耀机型已率先接入。这是微信首次以合作形式向手机厂商开放Agent调用能力，意味着AI Agent正在从App层向系统层渗透，操作系统与应用的边界正在被重新定义。</div>
+            <a class="news-item-link" href="https://www.nbd.com.cn/articles/2026-06-04/4417689.html" target="_blank">→ 每日经济新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">工信部启动6G部省协同试点，2029年目标：一批自主创新方案、新型场景和终端产品</div>
+            <div class="news-item-desc">工业和信息化部发布《关于组织开展6G创新发展部省协同试点专项行动的通知》，明确到2029年形成自主6G技术方案，应用场景聚焦沉浸通信、低空经济、具身智能、智慧海洋。台积电股东会上，董事长魏哲家表示AI需求从生成式向代理式演进正推升算力需求，全年营收增长将超30%。两条信息合看：AI算力底座建设正进入全球竞速的关键窗口期。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/fm/8015506.html" target="_blank">→ 钛早·钛媒体</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书跨境电商平台Redshop本月正式上线，首批覆盖美英澳加新等9个市场</div>
+            <div class="news-item-desc">小红书Redshop计划6月正式上线，首站9个英语系核心市场，以时尚、美妆、家居为主要品类。不同于Temu、Shein的"低价白牌"路线，Redshop押注的是"内容种草+品牌出海"模式——小红书天然的图文种草基因，能否在海外市场复制"先种草、后转化"的闭环？这是一次商业模式输出的全球化试验。</div>
+            <a class="news-item-link" href="https://www.cls.cn/detail/2341942" target="_blank">→ 财联社</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美科技业5月裁员3.8万人创近两年新高，AI成为企业裁员首引原因</div>
+            <div class="news-item-desc">美国就业咨询公司"挑战者企业"数据显示，科技行业5月宣布裁员38,242人，为2024年8月以来最高，今年累计裁员超12万人，同比增65%。首席营收官Challenger表示"AI已成为企业裁员时提及的主要原因"。这与黄仁勋所说的"GitHub代码提交量抛物线式增长"形成鲜明对比——AI正在同时创造和消灭工作岗位，消费品牌的人力资源结构也将随之重构。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/nictation/8015280.html" target="_blank">→ 钛媒体</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">芒果TV《乘风2026》女性音乐竞演综艺热度持续，女性叙事内容赛道升温</div>
+            <div class="news-item-desc">《乘风2026》6月4日最新期播出，女性成长与音乐竞演结合的内容形态在芒果TV持续获得高关注。结合《妻子的浪漫旅行2026》同期热播，可以看到一个清晰的内容趋势：2026年的综艺市场正在回归"真实情感关系"赛道——不是奇观，而是日常；不是撕裂，而是成长。这与小红书平台"生活正在提案"的内容方向高度契合。</div>
+            <a class="news-item-link" href="https://www.mgtv.com/lib/" target="_blank">→ 芒果TV</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">今日世界环境日：全球50+国举办活动，阿塞拜疆主办今年主场，主题聚焦气候行动紧迫性</div>
+            <div class="news-item-desc">2026年世界环境日（6月5日）由阿塞拜疆主办全球庆典，国际主题聚焦气候行动的紧迫性；中国主题定为"全面绿色转型，共建美丽中国"，下午举办首届"美丽中国大讲堂"。多个品牌借势发布环保承诺，ESG营销在这一天密度最高——如何区分"真诚表态"和"绿色洗白"，正成为消费者的核心判断维度。</div>
+            <a class="news-item-link" href="https://www.worldenvironmentday.global/zh-hans" target="_blank">→ 世界环境日官网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书启动金融专业号专项治理，5月以来处置违规账号3.1万个</div>
+            <div class="news-item-desc">小红书6月3日起对金融类认证专业号开展专项治理，已处置非法诱导跨境投资笔记539条、外资投行研报倒卖笔记141篇、冻结违规商品132件。这是小红书平台治理"精细化"的又一动作——内容生态的健康程度，正成为品牌选择平台合作的关键考量之一。治理越严格，专业内容的价值溢价越高。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/nictation/8015030.html" target="_blank">→ 钛媒体</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">IBM与谷歌云达成战略合作，AI驱动交付平台整合Gemini企业版，代表数十亿美元市场机会</div>
+            <div class="news-item-desc">IBM与谷歌云宣布合作，扩展IBM Consulting Advantage平台并引入Gemini企业版行业智能代理，双方将结合"人类专业知识+AI驱动交付"共同落地企业级AI规模化。同日，Pinterest与AWS签署40亿美元云服务协议。两则消息共同印证：企业级AI采购已从"测试期"进入"规模化采购期"，品牌的数字基础设施投资逻辑正在快速重构。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/nictation/8015227.html" target="_blank">→ 钛媒体</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普表示不排除与伊朗最高领袖会晤，伊核谈判呈现缓和信号</div>
+            <div class="news-item-desc">美国总统特朗普6月4日公开表态，若美伊达成核协议，不排除与伊朗新任最高领袖举行会晤，但重申绝不允许伊朗拥有核武器。美伊关系若持续缓和，将对中东地区能源格局和品牌出海中东路线产生直接影响。结合商务部"出口中国"欧洲首场活动，中国正在多个方向同步布局国际贸易的新支点。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20260605/herald/ca8127d344670281c32d723353505ef1.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界环境日 绿色生活方式话题爆发</div>
+            <div class="trend-meta">环保生活赛道 · 品牌借势节点</div>
+            <div class="trend-obs">💡 趋势观察：今日世界环境日，小红书站内"可持续生活""低碳日常""零废弃"等话题在上午时段已出现明显热度峰值。这是近年来ESG内容在小红书最集中的单日爆发节点之一。品牌若有真实的环保实践，今日是高质量内容投放的黄金时窗——但空洞的"绿色宣言"会被用户迅速识别并反噬，策略选择需要高度审慎。</div>
+            <div class="trend-source"><a href="https://www.worldenvironmentday.global/zh-hans" target="_blank">→ 世界环境日官网</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书Redshop出海 跨境创作者机遇话题热议</div>
+            <div class="trend-meta">平台商业化 · 创作者出海机遇</div>
+            <div class="trend-obs">💡 趋势观察：Redshop本月上线的消息在小红书站内引发博主圈层热烈讨论，尤其是有海外受众的时尚、美妆和家居博主，正在讨论是否参与首批商家招募。对平台大事件策划而言，这是一个值得关注的信号：小红书从"内容平台"向"全球内容电商平台"的身份跃迁，IP事件的商业价值链条也将随之延长——内容可以在海外市场继续产生转化。</div>
+            <div class="trend-source"><a href="https://h5.ifeng.com/c/vivoArticle/v002cn-_okIn41WKs6pfzTMKUPmsolPlNUACNxTUABr9zwhs__" target="_blank">→ 凤凰财经·Redshop分析</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI工具替代普通白领 职场焦虑话题持续发酵</div>
+            <div class="trend-meta">职场焦虑赛道 · 情绪类内容高峰</div>
+            <div class="trend-obs">💡 趋势观察：美国科技业裁员数据曝光+黄仁勋"GitHub提交量抛物线增长"言论，触发了小红书站内职场焦虑讨论的新一轮高潮。"AI会替代我的工作吗""怎么学AI让自己不被淘汰"是当下最高频的搜索意图。这类情绪型话题，是内容教育类、职业培训类品牌的天然阵地，也是大事件IP做"个人成长"切口的内容机会。</div>
+            <div class="trend-source"><a href="https://www.tmtpost.com/nictation/8015280.html" target="_blank">→ 钛媒体·美科技业裁员</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#女性综艺内容回暖 《乘风2026》相关二创持续</div>
+            <div class="trend-meta">娱乐内容赛道 · 女性议题</div>
+            <div class="trend-obs">💡 趋势观察：《乘风2026》等以女性视角为核心的综艺节目，其相关切片、名场面、情感解读等二创内容在小红书的"长尾效应"极为显著——正片播出后3-7天，小红书内容热度往往才到峰值。这一规律对IP大事件内容策划有直接借鉴意义：主活动结束后，才是UGC内容爆发的真正开始，后置内容运营同样需要前期规划。</div>
+            <div class="trend-source"><a href="https://www.mgtv.com/lib/" target="_blank">→ 芒果TV</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#微信A2A助手能力 手机AI生态话题引发讨论</div>
+            <div class="trend-meta">科技生活赛道 · AI产品体验</div>
+            <div class="trend-obs">💡 趋势观察：微信与手机厂商A2A合作的消息在数码博主群体中快速扩散，已出现"实测体验"类笔记。AI功能的"可感知化"正在成为内容创作的新素材——用户不再只是旁观AI，而是开始在日常生活中使用并记录AI。对品牌来说，与AI场景结合的"生活方式内容"，将是下半年种草内容的重要新形态。</div>
+            <div class="trend-source"><a href="https://www.nbd.com.cn/articles/2026-06-04/4417689.html" target="_blank">→ 每日经济新闻</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 出海营销</div>
+        <div class="learning-title">从"商品出海"到"内容出海"：小红书Redshop的野心与中国品牌的新机会</div>
+        <div class="learning-subtitle">当Temu在拼价格、Shein在拼供应链，小红书选择了一条截然不同的路</div>
+        <div class="learning-body">
+          <p>2026年6月，小红书跨境电商平台Redshop正式上线。这不是中国平台的第一次出海尝试，却可能是<strong>逻辑最不一样的一次</strong>。</p>
+          <p>Temu的逻辑是：极致低价+极速物流，用成本优势打穿西方市场；Shein的逻辑是：快时尚供应链+算法流量，用上新速度制造消费成瘾。两者都是"卖货"逻辑。</p>
+          <p>但Redshop的底层假设不同：它相信<strong>内容是最好的销售员</strong>。小红书在国内经营了超过十年的"种草→拔草"闭环，培养了数以千万计具有内容消费习惯和品质偏好的用户。如果这套方法论能在海外市场找到一批拥有类似偏好的受众——那么小红书的护城河，将是算法和价格都无法轻易复制的"内容信任度"。</p>
+          <p>对中国品牌来说，这是一个值得认真思考的机会窗口。<strong>过去的出海路径，往往是"先有产品，再找渠道"</strong>；而Redshop提供的路径是"先有内容，再转化销售"——这意味着品牌在出海早期，就需要像经营内容资产一样经营品牌认知，而不只是铺货和砸投流。</p>
+          <p>对平台大事件策划来说，同样有一个有趣的视角：<strong>当小红书的IP大事件在国内引发热度，这些内容有没有可能通过Redshop的内容生态，在海外市场产生延伸影响？</strong> IP的影响力边界，正在随着平台出海的步伐被重新丈量。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.cls.cn/detail/2341942" target="_blank">财联社《多次试水后亮剑！小红书拟6月上线跨境电商平台》</a> ·
+          <a href="https://glosellers.com/71576.html" target="_blank">锦品出海《重磅！小红书Redshop将于6月上线》</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2027694597896249439" target="_blank">知乎专栏《小红书跨境电商redshop要来了》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 世界环境日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🌍🌿🌱</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag green">联合国发起</span>
+          <span class="festival-tag highlight">今日即是</span>
+          <span class="festival-tag">每年6月5日</span>
+          <span class="festival-tag">全球最大环保平台</span>
+          <span class="festival-tag">1973年首届</span>
+        </div>
+        <div class="festival-name">世界环境日</div>
+        <div class="festival-name-en">World Environment Day · 始于1972年联合国人类环境会议</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从斯德哥尔摩的一纸决议，到全球最大的环保行动日</div>
+          <div class="festival-block-body">
+            <p>1972年6月，斯德哥尔摩。这座北欧城市举办了人类历史上第一次真正意义上的全球环境峰会——联合国人类环境会议，113个国家的代表聚在一起，第一次将"地球的健康"列为国际政治议程。会议的口号简单而震撼：<strong>"只有一个地球"（Only One Earth）</strong>。</p>
+            <p>这次会议留下了两份重要遗产：一是成立了联合国环境规划署（UNEP）；二是确定每年6月5日为"世界环境日"。1973年举办了第一届，此后每年不间断至今，2026年迎来第54届。</p>
+            <p>历年主题折射人类对环境问题认知的演变：1970年代聚焦"资源消耗与人类居住"，1980年代转向"气候与土地退化"，1990年代关注"贫困与环境的关系"，2000年代开始强调"生物多样性"，2010年代聚焦"碳中和与绿色经济"，2020年代则旗帜鲜明地围绕<strong>气候紧急状态、塑料污染、生态系统修复</strong>三条主线展开。2022年，环境日"Only One Earth"的口号重新启用，向斯德哥尔摩会议50周年致敬。2025年聚焦终结塑料污染，<strong>2026年则聚焦气候行动的紧迫性——#为气候争分夺秒#</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球最大环保行动日的规模、影响与商业生态</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">143+</div>
+                <div class="festival-stat-label">参与国家数量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">数千万</div>
+                <div class="festival-stat-label">年度线上线下参与人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">54届</div>
+                <div class="festival-stat-label">2026年届次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">阿塞拜疆</div>
+                <div class="festival-stat-label">2026年主办国</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">UNEP</div>
+                <div class="festival-stat-label">联合国环境规划署牵头</div>
+              </div>
+            </div>
+            <p>每年6月5日，世界环境日是全球参与规模最大、话题覆盖最广的单日公益行动平台。主办国负责组织全球主场庆典活动，各国政府、企业、NGO、学校和个人则在本国发起各式各样的环保行动。</p>
+            <p>在商业层面，世界环境日是品牌ESG（环境、社会、公司治理）传播最集中的年度节点。玛氏、可口可乐、宜家、耐克、H&amp;M等全球消费品牌，每年都会在这一天发布可持续承诺进展或新产品。<strong>ESG营销在这一天的话题密度，是普通工作日的5-10倍。</strong></p>
+            <p>然而，世界环境日也是"绿色洗白"（Greenwashing）曝光风险最高的一天。消费者和媒体对品牌环保宣言的审视变得越来越严苛——缺乏数据支撑的"绿色承诺"往往比沉默更糟糕。这使得世界环境日的营销门槛不断提高：只有真正将可持续实践嵌入业务核心的品牌，才能在这一天安全地"说话"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】可持续议题的长期化与对小红书大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2027年展望：</strong>联合国环境规划署正在推动将世界环境日与COP（联合国气候大会）的议题更紧密地联动——未来的世界环境日，可能成为每年气候谈判的"民间动员日"，商业参与度将进一步提升。</p>
+            <p>对可持续消费内容的需求，在小红书内部已经形成了一个稳定的内容子生态：#可持续时尚##零废弃生活##绿色消费##国货环保品牌# 等话题下，有稳定的活跃博主群体和高质量内容。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>世界环境日是一个"现成的IP锚点"。与其在这一天做硬广，不如把大事件活动的可持续议题（哪怕只是一个体验环节或线下装置）和环境日的传播势能结合——让IP活动本身成为用户表达"我在乎地球"的载体。更进一步：小红书的内容生态天然适合"可持续生活方式"的传播，策划一个以"低碳/环保/可持续"为主题的年度大事件IP，既有联合国级别的公信力背书，又能精准命中平台内具有消费力和价值观驱动的核心用户群体。2026年，这个方向的竞争还远未到达饱和。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.worldenvironmentday.global/zh-hans" target="_blank">世界环境日官网</a> ·
+          <a href="https://www.un.org/zh/observances/environment-day" target="_blank">联合国·世界环境日</a> ·
+          <a href="https://www.mee.gov.cn/xxgk2018/xxgk/xxgk06/202605/t20260506_1150886.html" target="_blank">生态环境部·2026年六五环境日通知</a> ·
+          <a href="https://www.news.cn/world/20260604/ee26084692aa435c9a2b35f8b82411eb/c.html" target="_blank">新华网·践行气候之诺</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 环境艺术与可持续设计</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🌿 主题策展 · 用艺术唤醒地球的六位先驱</div>
+        <div class="knowledge-headline">当艺术家盯上地球：Land Art、生态设计与可持续美学的图谱</div>
+        <div class="knowledge-tagline">「自然不是背景，它是主角。」</div>
+
+        <div class="knowledge-intro">
+          世界环境日诞生于1970年代的生态危机意识觉醒，而几乎在同一时期，一批艺术家和设计师也开始用作品追问人与自然的关系。他们不在画廊里工作，而是走进沙漠、峡谷、海岸和森林，用大地为画布，用时间和腐朽作为媒介。<br><br>
+          这些"大地艺术"（Land Art）和生态设计的先驱，留下了关于美、责任和共存的深刻追问——而这些追问，今天仍然构成全球可持续商业叙事最有力的感性来源。理解它们，也是理解"可持续IP"的创意语法。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Robert_Smithson_Spiral_Jetty.jpg/440px-Robert_Smithson_Spiral_Jetty.jpg"
+              alt="螺旋防波堤"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">罗伯特·史密森</div>
+              <div class="knowledge-card-sub">Robert Smithson · 美国 · 大地艺术之父</div>
+              <div class="knowledge-card-work">1970年在犹他州盐湖中以石头堆砌出460米长的《螺旋防波堤》。作品随盐结晶生长变化，本身就是"时间与自然的对话"。史密森去世后，防波堤成为大地艺术最经典的圣地。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Christo_and_Jeanne-Claude.jpg/440px-Christo_and_Jeanne-Claude.jpg"
+              alt="克里斯托"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">克里斯托与珍妮-克劳德</div>
+              <div class="knowledge-card-sub">Christo & Jeanne-Claude · 保加利亚/法国</div>
+              <div class="knowledge-card-work">用布包裹海岸、建筑、峡谷甚至巴黎凯旋门。他们的作品全部临时存在，材料事后全部回收再利用——"昙花一现"本身就是关于自然与消逝的声明。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Agnes_Denes_Wheatfield_A_Confrontation_1982.jpg/440px-Agnes_Denes_Wheatfield_A_Confrontation_1982.jpg"
+              alt="艾格尼斯·丹尼斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">艾格尼斯·丹尼斯</div>
+              <div class="knowledge-card-sub">Agnes Denes · 匈牙利裔美国 · 生态艺术先驱</div>
+              <div class="knowledge-card-work">1982年在曼哈顿下城区（地价全球最贵之地）种下两英亩麦田，收获的小麦巡游世界28个城市。《麦田——对抗》是艺术对"土地与价值"最直接的一次追问。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Andy_Goldsworthy_2017.jpg/440px-Andy_Goldsworthy_2017.jpg"
+              alt="安迪·戈兹沃西"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍂</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">安迪·戈兹沃西</div>
+              <div class="knowledge-card-sub">Andy Goldsworthy · 英国 · 自然装置艺术家</div>
+              <div class="knowledge-card-work">用树叶、冰凌、石块、泥土制作精密的装置，不留一根钉子，不用一滴胶水。作品消融、腐朽、随风飘散——记录下消失过程的照片，是他作品真正的"完成形态"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏗️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">马岩松</div>
+              <div class="knowledge-card-sub">中国 · MAD建筑师事务所创始人</div>
+              <div class="knowledge-card-work">提出"山水城市"理论，让建筑与自然山水融合而非对抗。代表作哈尔滨大剧院与黄石矿坑公园被视为中国当代生态建筑的标志。他将中国传统山水美学与当代都市可持续性议题完美融合。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">俞孔坚</div>
+              <div class="knowledge-card-sub">中国 · 北大景观设计学奠基人</div>
+              <div class="knowledge-card-work">创立"海绵城市"理论与生态基础设施概念，主导秦皇岛汤河公园、上海后滩湿地公园等项目。他的设计哲学核心是：让城市"记住"洪水、尊重自然过程，而非对抗它。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          可持续设计与大地艺术给营销策划的最深刻启示，不是"做一个绿色的主视觉"，而是：<strong>真正有力量的可持续叙事，来自于对"消逝"和"共存"的接受</strong>。克里斯托的作品拆除后比存在时更令人动容；戈兹沃西的冰凌融化后留下的照片才是真正的作品。品牌的可持续IP，如果能让人感受到"这个活动结束了，但它留下了什么"，那才是真正触及了可持续美学的核心。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
