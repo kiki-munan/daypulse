@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/9</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/6/9/index.html" class="active">2026 / 6 / 9</a></li>
+      <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+      <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+      <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+      <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+      <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+      <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+      <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+      <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+      <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+      <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+      <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+      <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+      <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 09</div>
+      <div class="day-week">星期二</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">2026高考正式收官，历史题"难度爆表"冲上热搜，全国1300万+考生奔赴考场</div>
+            <div class="news-item-desc">2026年全国高考6月7日开考、今日结束。历史科目试题因涉及新议题，引发考生集体哀嚎冲上微博热搜。宏观层面，高考季每年拉动超百亿消费：文具、住宿、餐饮、陪考服务……品牌节点营销窗口已在。1300万考生背后，是同等量级家庭的情感共振。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/sh/2026/06-05/10634693.shtml" target="_blank">→ 中国新闻网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">1—4月全国规模以上工业企业利润增长18.2%，固定资产投资延续扩张，内需韧性持续</div>
+            <div class="news-item-desc">国家统计局数据显示，2026年前4月工业企业利润同比增长18.2%，为近三年最佳开局。消费品零售数据同步改善，上海发布《2026年扩消费行动方案》，明确社零与服务零售双增目标。整体宏观底部已过，消费信心正在温和修复中。</div>
+            <a class="news-item-link" href="https://www.stats.gov.cn/sj/zxfb/index.html" target="_blank">→ 国家统计局</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">亚洲AI基础设施层发展速度超越炒作热度，日经指数创新高，AI算力需求持续提振资本市场</div>
+            <div class="news-item-desc">6月以来，人工智能基础设施层（芯片、数据中心、云服务）在亚洲市场的实质性扩张，已超过表面叙事热度。上周韩国股市涨8%、台湾股市攀升近6%，日经指数同步创新高。AI不再只是话题，正在成为真实的产业驱动力——这轮行情的底色，是算力需求的结构性爆发。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/summary/2026-06-04/doc-iniafmmv2687104.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Claude免费版配额大幅提升，Anthropic同步开放Projects功能给免费用户；GPT-5.5持续扩容高负载区域</div>
+            <div class="news-item-desc">AI工具普惠化加速：Anthropic宣布Claude免费版日对话次数上限显著提高，并向免费用户有限开放Projects功能。OpenAI则持续扩容GPT-5.5的服务节点覆盖范围。头部AI平台正从"抢付费用户"转向"扩大基础盘"，AI习惯养成的规模战已悄然开打。</div>
+            <a class="news-item-link" href="https://deepseek.csdn.net/6a18f48410ee7a33f2764165.html" target="_blank">→ CSDN·AI工具动态</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国AI核心产业规模预计突破1.2万亿元，国产开源大模型全球下载量破100亿次</div>
+            <div class="news-item-desc">新华社数据：2026年中国AI企业超6000家，AI核心产业规模同比增速近30%。Qwen3.6系列旗舰模型持续迭代，豆包大模型2.0于2月发布，中国在AI专利申请数量上已居全球首位。规模化、开源化、产业化——国产AI正完成从"追赶"到"并跑"的阶段切换。</div>
+            <a class="news-item-link" href="https://www.news.cn/20260128/3b2f11906fd74ca397fef9996c805a60/c.html" target="_blank">→ 新华网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">2026小红书奢侈品行业峰会落幕，发布"好内容+好产品+大事件"三支点增长模型</div>
+            <div class="news-item-desc">6月初，小红书奢品峰会系统发布新增长框架：围绕"好内容激发渴望、好产品承接转化、大事件制造情感爆点"三支点，帮助奢侈品牌将用户的碎片化"生活瞬间"转化为确定性增长。这是小红书首次将"大事件"纳入品牌增长方法论核心，对平台大事件业务的权重表达意味深长。</div>
+            <a class="news-item-link" href="https://m.adquan.com/detail/0-360930" target="_blank">→ 广告门·奢品峰会解码</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">科尔尼2026奢侈品展望：全年增速2%-4%，低于预期；地区分化、品类分化成主旋律</div>
+            <div class="news-item-desc">科尔尼最新报告预测2026年全球奢侈品市场增长2%-4%，低于业界普遍预期的3%-5%。分化是关键词：中国市场有所复苏但节奏不稳，欧美高净值消费者仍是稳定器。奢侈品牌在内容平台的精准种草需求因此上升——泛投放失效，精准渗透才是出路。</div>
+            <a class="news-item-link" href="https://forbeschina.com/insights/71690" target="_blank">→ 福布斯中国</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">#张月直接离场了 冲上微博热搜第一，《浪姐》争议持续发酵，选秀节目"情绪价值"争夺战升温</div>
+            <div class="news-item-desc">据微博实时热搜，艺人张月相关话题以239万+讨论量登顶。综艺选秀节目中的真实情绪表达，正在成为比唱跳表现更核心的传播引爆点。"真实感"已超越"专业度"，成为Z世代综艺审美的第一评判标准——品牌选择综艺赞助时，情绪共振能力应优先于收视数据。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%BC%A0%E6%9C%88" target="_blank">→ 微博热搜·张月</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026高考作文题折射语文教育新趋势，"不要擅自回复外星人"等话题意外出圈</div>
+            <div class="news-item-desc">高考作文历年都是社会文化的晴雨表。今年的题目被网友解读出"外星文明回复"等话题，在微博、小红书双平台形成二次传播。年轻一代对"人类与宇宙"命题的天然好奇心，正在成为科幻、科普内容的强大情感入口——这也是大事件IP的潜在文化叙事方向之一。</div>
+            <a class="news-item-link" href="https://www.hxw.gov.cn/content/2026/06/08/14903555.html" target="_blank">→ 红星网·高考作文新趋势</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">奥美发布《2026年意见领袖营销趋势》：创作者已成"品牌共创者"，大品牌加码KOL但ROI衡量体系仍待重建</div>
+            <div class="news-item-desc">奥美中国报告指出，2026年品牌与创作者的关系正从"甲乙方"向"共创伙伴"迁移。影响力营销的核心不再是"粉丝触达量"，而是"内容与用户生活场景的契合深度"。大品牌提高KOL预算，但行业普遍面临ROI量化困境——如何证明"种草带来了什么"，是今年最热的方法论议题。</div>
+            <a class="news-item-link" href="https://www.ogilvy.com/cn/ideas/baogao2026nianyijianlingxiuyingxiaoqushi" target="_blank">→ 奥美中国·2026营销趋势报告</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">伊朗、以色列相继宣布停止互相攻击，中东局势出现新缓和信号，全球能源市场短暂松动</div>
+            <div class="news-item-desc">6月8日，伊朗与以色列在停火两个月后再度交火，随后双方先后宣布停止军事行动，美国总统特朗普发文施压为重要转折点。中东局势再度走向脆弱平衡——油价短线下行，但市场对持续性存疑。地缘波动对全球供应链、奢侈品市场情绪均有传导效应，需持续关注。</div>
+            <a class="news-item-link" href="https://www.tdm.com.mo/zh-hant/news-detail/1209963" target="_blank">→ 澳门广播电视·伊以停止攻击</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#高考 情绪场域引爆，小红书成考生&家长最大情绪出口</div>
+            <div class="trend-meta">教育 · 情感内容赛道 · 全年最强社会情绪节点之一</div>
+            <div class="trend-obs">💡 趋势观察：高考第二天，小红书上涌现大量"陪考妈妈""考前最后一晚""出考场的第一刻"等真实记录内容。与微博的"热议高考题"不同，小红书承接的是更私密、更情感化的叙事——这是该平台在重大社会节点的独特内容优势。对品牌而言，高考节点的内容机会窗口在"放榜后72小时"，陪伴式内容远比庆祝式广告更有共鸣。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%AB%98%E8%80%83" target="_blank">→ 微博热搜·高考</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书奢侈品峰会"大事件"方法论 行业热议中</div>
+            <div class="trend-meta">平台商业化 · 大事件战略 · 行业影响力</div>
+            <div class="trend-obs">💡 趋势观察：小红书首次将"大事件"正式写入奢品增长三支点，标志着平台大事件业务从"内容配合项"升级为"战略核心项"。这一定位变化将直接拉动品牌在平台大事件上的预算分配——对策划部门而言，能清晰讲述"大事件如何转化"的方法论能力，正在成为核心竞争力。</div>
+            <div class="trend-source"><a href="https://finance.sina.com.cn/stock/usstock/summary/2026-06-01/doc-inhzwyqi8402010.shtml" target="_blank">→ 新浪财经·小红书奢品峰会</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#发现外星人 科幻话题借高考作文东风出圈</div>
+            <div class="trend-meta">科幻 · 文化娱乐 · Z世代叙事偏好</div>
+            <div class="trend-obs">💡 趋势观察："不要擅自回复外星人"作为高考作文解读角度，在微博与小红书双平台引发Z世代创作狂欢——科幻段子、「地球公民」宇宙观漫画大量涌现。科幻IP对年轻用户的号召力远超传统认知，这一类型在小红书上的内容渗透正在快速深化，是大事件IP跨界合作的潜力方向。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%8F%91%E7%8E%B0%E5%A4%96%E6%98%9F%E4%BA%BA" target="_blank">→ 微博热搜·发现外星人</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#中国基建上新编织六张网 国家叙事内容持续出圈</div>
+            <div class="trend-meta">国家自豪感 · 科技实力内容赛道</div>
+            <div class="trend-obs">💡 趋势观察："中国基建"话题在小红书上长期有稳定受众，但真正的爆发往往来自视觉化呈现——用具体的项目、数字、对比图，把宏大叙事变成可感知的"骄傲感"。对品牌营销的启发：国家叙事不是宣传配料，而是一种强大的情感底色，当品牌能与这种底色产生共振时，内容的传播势能会被大幅放大。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%AD%E5%9B%BD%E5%9F%BA%E5%BB%BA%E4%B8%8A%E6%96%B0" target="_blank">→ 微博热搜·中国基建上新</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#曝男顶流有塌房风险 粉丝圈层情绪波动，艺人品牌合作风险管理话题升温</div>
+            <div class="trend-meta">娱乐 · 艺人营销 · 风险管理</div>
+            <div class="trend-obs">💡 趋势观察：每一次"塌房预警"都是品牌方的压力测试时刻。小红书上的粉丝情绪波动往往早于微博发酵，因为这里是粉丝做真实情感表达的主战场。对IP大事件策划而言，艺人合作的风险管理逻辑需要前置：从粉丝社区的内容情绪出发，而非仅依赖流量数据，是更安全的决策框架。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/3QeLwJEd7k" target="_blank">→ 今日热榜·微博文娱榜</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 方法论</div>
+        <div class="learning-title">当"大事件"被写进品牌增长框架：小红书奢品峰会方法论背后的战略逻辑</div>
+        <div class="learning-subtitle">从"内容+产品"的二维，到"内容+产品+大事件"的三角支撑——这次升级意味着什么？</div>
+        <div class="learning-body">
+          <p>2026年6月初，小红书奢品峰会发布了一个值得仔细阅读的增长模型：<strong>好内容激发渴望 → 好产品承接转化 → 大事件制造情感爆点</strong>。"大事件"第一次以与"内容"并列的姿态，出现在平台的官方增长方法论里。</p>
+          <p>这件事的重量，不在于它新颖，而在于它官方。对于在小红书做大事件策划的人来说，这是一个清晰的信号：<strong>平台正在用方法论为大事件业务正名</strong>——它不是一个锦上添花的噱头，而是品牌增长路径中的结构性环节。</p>
+          <p>那么，这个"大事件"究竟应该做什么？峰会给出的核心词是<strong>"情感爆点"</strong>。这让它区别于单纯的销售节点（大促）、也区别于内容传播（KOL种草）。大事件的核心使命，是在一个具体的时间坐标上，制造一个让用户"想起来就有感觉"的集体记忆。</p>
+          <p>对策划人来说，这意味着：衡量一场大事件成不成功，<strong>不只看活动期间的数据，更要问"活动结束一个月后，还有多少人在提它"</strong>。真正的情感爆点有余温，真正的集体记忆有持续性。</p>
+          <p>结合奥美《2026意见领袖营销趋势》报告中"品牌与创作者共创"的判断，一个完整的大事件路径逐渐清晰：<strong>内容种草（前）→ 大事件情感爆发（中）→ 创作者二次共创（后）</strong>。每个环节缺一不可，而中间的"情感爆发"，是整个链路的能量核心。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://m.adquan.com/detail/0-360930" target="_blank">广告门《解码奢品新消费周期下的增长逻辑》</a> ·
+          <a href="https://www.ogilvy.com/cn/ideas/baogao2026nianyijianlingxiuyingxiaoqushi" target="_blank">奥美中国《2026年意见领袖营销趋势》</a> ·
+          <a href="https://finance.sina.com.cn/stock/usstock/summary/2026-06-01/doc-inhzwyqi8402010.shtml" target="_blank">新浪财经·小红书奢品峰会报道</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 圣地亚哥国际漫画展</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🦸🎭🌟</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">流行文化</span>
+          <span class="festival-tag">美国·圣地亚哥</span>
+          <span class="festival-tag">每年7月</span>
+          <span class="festival-tag">全球最大流行文化盛会</span>
+        </div>
+        <div class="festival-name">圣地亚哥国际漫画展</div>
+        <div class="festival-name-en">San Diego Comic-Con International · 始于1970年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从地下室漫画迷聚会，到流行文化的好莱坞红毯</div>
+          <div class="festival-block-body">
+            <p>1970年，加利福尼亚州圣地亚哥。一群漫画迷和科幻爱好者，在一家酒店的地下室里举行了第一届"圣地亚哥黄金州漫画节"——参与者不到300人，票价1美元，主角是DC和漫威的纸质漫画册。没人能预想到，这个小型粉丝聚会会成为全球最大规模的流行文化盛典。</p>
+            <p>1980年代，随着《星球大战》《超人》系列票房的爆炸，电影公司开始把科幻主题片的宣传活动带入漫画展；1990年代，日本动漫、电子游戏相继加入；2000年代，<strong>漫威影业和华纳兄弟的Hall H首映发布</strong>，将Comic-Con彻底改造成全球最大的娱乐营销发布平台。</p>
+            <p>历届记忆点：2009年的《阿凡达》首映片段，让全场观众当场落泪；2012年的《复仇者联盟》全员亮相，成为超英电影营销史上的神圣时刻；2022年漫威宣布"多元宇宙传奇"计划，奠定下一个五年IP叙事。<strong>Comic-Con不只是宣传——它是粉丝与创作者建立情感契约的仪式场</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】150,000人的流行文化朝圣与20亿美元的内容营销引擎</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">150,000+</div>
+                <div class="festival-stat-label">年度参会人数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">4天</div>
+                <div class="festival-stat-label">活动周期（周四至周日）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">50+</div>
+                <div class="festival-stat-label">年历史</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">$20亿+</div>
+                <div class="festival-stat-label">对圣地亚哥地区经济贡献</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026/7</div>
+                <div class="festival-stat-label">24-27日，圣地亚哥</div>
+              </div>
+            </div>
+            <p>Comic-Con的核心场馆有一个传奇存在：<strong>Hall H</strong>。这个能容纳6500人的主舞台，是好莱坞各大影视公司最重要的年度发布阵地——漫威、DC、迪士尼、卢卡斯影业、索尼……每一场发布都是精心编排的"情感爆发机器"：概念预告片、主创现身、演员互动、意外彩蛋。</p>
+            <p>与戛纳的精英感不同，Comic-Con的气质是<strong>彻底的民间性</strong>：排队12小时只为进入Hall H的粉丝；精心制作的cosplay服装；创作者与粉丝在走廊偶遇的照片……这些非官方内容产生的UGC传播量，往往远超品牌官方素材。</p>
+            <p>品牌侧，乐高、可口可乐、麦当劳、三星……几乎所有主流消费品牌都会在Comic-Con期间设置联名装置或快闪体验。<strong>IP联名已成为Comic-Con不亚于正式发布的核心营销场景</strong>，品牌通过"蹭IP热度+制造粉丝打卡点"，获取大量真实情感内容素材。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026届看点与对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026届（7月24-27日）预期亮点：</strong>迪士尼整合漫威、星球大战、皮克斯三条线年度发布计划；DC新宇宙首批项目将首次公开放映；《头号玩家2》等预期续集的概念亮相。AI生成内容与真人影视的关系，将是本届最受争议的行业讨论议题。</p>
+            <p>同时，2026年是科幻大年——加上高考作文"外星文明"话题的文化共振，科幻IP在中国年轻用户中的接受度正在经历新一轮上升。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>Comic-Con最值得学习的，是它对"粉丝情感主权"的尊重。每个来Comic-Con的人，不是来"被触达"的——他们是来"参与一件大事"的。这种主体感，让他们从观众变成共创者，让每一张cosplay照片都成为免费的内容输出。小红书大事件的设计逻辑应如出一辙：<strong>活动的主角不是品牌，而是用户</strong>。品牌是舞台的搭建者，用户是在这个舞台上发光的人。当用户感到"我是这场活动不可缺少的一部分"时，他们会自发地告诉所有人。此外，Comic-Con的"彩蛋文化"——在官方内容里埋设意外惊喜——是制造"哦！"时刻的高效手法，值得在大事件活动设计中借鉴。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.comic-con.org/" target="_blank">San Diego Comic-Con 官网</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E5%9C%A3%E5%9C%B0%E4%BA%9A%E5%93%A5%E5%9B%BD%E9%99%85%E6%BC%AB%E7%94%BB%E5%B1%95" target="_blank">维基百科·圣地亚哥国际漫画展</a> ·
+          <a href="https://www.hollywoodreporter.com/topic/comic-con/" target="_blank">好莱坞报道·Comic-Con专题</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 科幻文学的六张面孔</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🚀 主题策展 · 科幻叙事图谱</div>
+        <div class="knowledge-headline">从阿西莫夫到刘慈欣：科幻文学如何塑造人类对未来的集体想象？</div>
+        <div class="knowledge-tagline">「科幻小说是现代神话——它用宇宙的尺度，回答人类最私密的恐惧与渴望。」</div>
+
+        <div class="knowledge-intro">
+          今天高考作文的"外星文明"话题让科幻重新成为全民热词。但科幻从来不只是"太空船和外星人"——它是人类用想象力拓展现实边界的方式，是每个时代最敏锐的社会预言家们的书写载体。<br><br>
+          理解科幻的谱系，不只是在理解文学，也是在理解：<strong>为什么一代代年轻人会对"更大、更远、更未知"的事物产生无法抗拒的向往</strong>——这种向往，正是所有高话题度IP的情感原点。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Isaac.Asimov01.jpg/440px-Isaac.Asimov01.jpg"
+              alt="艾萨克·阿西莫夫"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🤖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">艾萨克·阿西莫夫</div>
+              <div class="knowledge-card-sub">Isaac Asimov · 美国 · 科幻黄金时代</div>
+              <div class="knowledge-card-work">创造"机器人三定律"，《基地》系列构建千年文明兴衰史诗。他的科幻是"理性的科幻"——相信知识和逻辑可以解决一切。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Philip_K._Dick_in_1968.jpg/440px-Philip_K._Dick_in_1968.jpg"
+              alt="菲利普·迪克"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">菲利普·K·迪克</div>
+              <div class="knowledge-card-sub">Philip K. Dick · 美国 · 赛博朋克先驱</div>
+              <div class="knowledge-card-work">《仿生人会梦见电子羊吗？》（《银翼杀手》原著）追问：什么才算真正的人？他的科幻是"焦虑的科幻"——充满妄想、监控与身份危机，和今天的数字焦虑惊人相似。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Ursula_K_Le_Guin.JPG/440px-Ursula_K_Le_Guin.JPG"
+              alt="厄休拉·勒古恩"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌍</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">厄休拉·勒古恩</div>
+              <div class="knowledge-card-sub">Ursula K. Le Guin · 美国 · 社会科幻女王</div>
+              <div class="knowledge-card-work">《黑暗的左手》探索性别流动的社会；《一无所有》审视无政府主义乌托邦的代价。她用科幻问：一个更公平的世界应该是什么样的？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Octavia_E._Butler.jpg/440px-Octavia_E._Butler.jpg"
+              alt="奥克塔维娅·巴特勒"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">✊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">奥克塔维娅·巴特勒</div>
+              <div class="knowledge-card-sub">Octavia Butler · 美国 · 非裔科幻先驱</div>
+              <div class="knowledge-card-work">首位获麦克阿瑟"天才奖"的科幻作家。《种系》系列探讨种族、权力与生物进化的交叉。她的科幻是"身体的科幻"——权力如何写在DNA里？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌌</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘慈欣</div>
+              <div class="knowledge-card-sub">中国 · 《三体》2006-2010</div>
+              <div class="knowledge-card-work">用"黑暗森林法则"重新定义宇宙文明的生存逻辑：在资源有限的宇宙中，文明的最优策略是消灭一切潜在威胁。这是中国科幻第一次在全球尺度上改变了人类对宇宙的想象。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🛸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">郝景芳</div>
+              <div class="knowledge-card-sub">中国 · 雨果奖得主 · 《北京折叠》2012</div>
+              <div class="knowledge-card-work">三个不同空间轮流使用同一座城市的时间，每个空间的阶层固化得如同物理法则。她是中国第二位雨果奖得主，用科幻对准城市化中最真实的社会不平等。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          科幻和营销策划有一个共同的底层冲动：<strong>把一个"如果……会怎样"的问题，变成一个让人忍不住往下看的故事</strong>。刘慈欣问的是"如果宇宙是弱肉强食的"；Comic-Con问的是"如果你最爱的故事世界真实存在"；好的大事件IP也应该问出属于自己的那个"如果"——然后把答案变成一个场域，让用户走进去，亲身体验。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
