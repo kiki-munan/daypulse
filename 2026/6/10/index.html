@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/10</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1b4f72 0%, #2e86c1 45%, #aed6f1 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/6/10/index.html" class="active">2026 / 6 / 10</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 10</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">中国5月CPI今日发布，美国CPI晚间跟进，双强通胀数据牵动全球货币政策预期</div>
+            <div class="news-item-desc">今日09:30国家统计局将发布5月居民消费价格指数。前4月CPI分别为+1.3%、+1.3%、+1.0%、+1.2%，总体温和。与此同时，美国5月CPI数据将于北京时间20:30发布，市场高度关注美联储是否有降息空间。加拿大央行今日亦公布利率决议——三大央行同日表态，构成年中最密集的货币政策信号窗口。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/a/chgjj.html" target="_blank">→ 东方财富·财经日历</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">27省份"十五五"GDP目标出炉：粤苏或突破18万亿，西藏以7%增速领跑</div>
+            <div class="news-item-desc">全国31省份"十五五"规划纲要已全部发布。东部沿海大省锁定绝对体量，中西部省份以高增速抢夺政策红利。多省重点提及数字经济、新质生产力、绿色转型，这些方向将直接影响未来五年的营销热点赛道分布。</div>
+            <a class="news-item-link" href="http://news.10jqka.com.cn/cjzx_list/" target="_blank">→ 同花顺财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果WWDC 2026昨日发布：Siri AI全面升级，iOS 27从底层重构人机交互</div>
+            <div class="news-item-desc">美国时间6月9日，苹果在Apple Park举行全球开发者大会。最大亮点是"Siri AI"——Siri不再是指令执行器，而是具备跨App上下文理解、个人日程感知和主动建议能力的"个人智能体"。iOS 27同时深度集成Claude和GPT-4o，开发者工具中的AI Coding功能也大幅增强。这是苹果自iPhone以来最具想象力的一次系统级跨越，也意味着手机将真正成为AI的最主要端侧入口。</div>
+            <a class="news-item-link" href="https://www.apple.com/newsroom/2026/06/apple-unveils-next-generation-of-apple-intelligence-siri-ai-and-more/" target="_blank">→ Apple Newsroom</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国AI核心产业规模2026年预计突破1.2万亿，企业数量超6000家，专利数全球第一</div>
+            <div class="news-item-desc">新华社援引机构数据：国产开源大模型全球累计下载量已破百亿次，AI应用层的渗透已从大模型军备竞赛进入"场景落地"决胜阶段。对营销行业而言，AI生成内容、AI投放优化、AI创意工具的成本已降至个人可触达水平——"人人都有AI助理"正在从概念变为现实。</div>
+            <a class="news-item-link" href="https://www.news.cn/20260128/3b2f11906fd74ca397fef9996c805a60/c.html" target="_blank">→ 新华社</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">奢侈品行业两年流失7000万消费者，Moschino母公司走向破产边缘，时尚业洗牌加速</div>
+            <div class="news-item-desc">全球奢侈品市场自2024年开始降温，消费降级与情绪消费分化并行。数据显示两年内全球奢侈品消费者流失7000万人次，中端奢侈品牌首当其冲。Moschino、Versace等品牌的困境折射出一个趋势：在消费者更理性、更注重"体验感"的今天，单纯依赖品牌溢价的时代正在结束。与此同时，"健康即新奢侈"赛道正在吸收奢侈品巨头（开云、爱马仕）的战略转移。</div>
+            <a class="news-item-link" href="https://www.ladymax.cn/" target="_blank">→ 华丽志·时尚头条</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">高考经济升温：1290万考生带动周边消费逾320亿，"状元经济"成品牌节点借势新赛道</div>
+            <div class="news-item-desc">2026年高考今日进入最后一天（6月7-10日为考试周期，各地有所差异）。联合早报数据显示围绕考点的住宿餐饮、旗袍旗开得胜、同款文具、补脑保健品等消费规模超320亿。品牌借势"高考"节点正在形成固定营销范式——从情绪陪伴到实用礼赠，传播落点正在从"励志"转向"陪你的这段时光"。</div>
+            <a class="news-item-link" href="https://www.zaobao.com/news/china/story20260608-9173691" target="_blank">→ 联合早报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">微博热搜：#高考完的第一个晚上# 话题冲榜，全国1290万考生的情绪洪峰涌向社交媒体</div>
+            <div class="news-item-desc">高考结束的瞬间，"高考完的第一个晚上真的会很幸福"登上微博实时热搜。这是一个典型的"情绪集体出口"时刻——每年复制，每年都有巨大的传播势能。小红书上高考后的分享（撕书、旅行、喜好解锁）形成年度内容爆发窗口，品牌进入门槛低，共情成本高。</div>
+            <a class="news-item-link" href="https://s.weibo.com/top/summary" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">#莫离热度像跳楼机# 登上微博热搜第一，娱乐顶流流量逻辑再度被放大审视</div>
+            <div class="news-item-desc">艺人莫离话题热度大起大落，"热度像跳楼机"本身成为网络热梗。这类现象揭示了当下娱乐流量生态的核心矛盾：顶流效应越来越短暂，观众的注意力在无数个内容碎片间急速跳转。对艺人营销和品牌联名而言，押注单一流量明星的风险在上升，"多点布局+内容自持"成为更稳健的策略。</div>
+            <a class="news-item-link" href="https://s.weibo.com/top/summary" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">六部门联合发文：推动广告产业高质量发展，"广告+"行动助力"中国品牌"出海</div>
+            <div class="news-item-desc">市场监管总局等六部门6月8日联合印发意见，核心方向是：技术赋能（数智广告新业态）、出海助力（"中国产品"向"中国品牌"转变）、内容升级（绿色、智能、健康场景创新）。这是近年来规格最高的广告行业政策信号之一，意味着监管层正在从"规范约束"转向"产业扶持"——对整个广告营销行业是明确的利好。</div>
+            <a class="news-item-link" href="http://finance.people.com.cn/n1/2026/0608/c1004-40736193.html" target="_blank">→ 人民网·财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026中国AI环境下营销最佳实践案例征集正式启动，品牌AI化转型进入评估期</div>
+            <div class="news-item-desc">弗若斯特沙利文等机构启动年度AI营销案例征集，聚焦"AI如何从局部提效走向全链路智能化"。这标志着AI营销已从"试水"进入"沉淀方法论"阶段——品牌方需要拿出可复制、可量化的AI应用成果，而不只是讲"在用AI"的故事。</div>
+            <a class="news-item-link" href="https://www.frostchina.com/content/news/detail/6a2786c4fe2fba62e231b533" target="_blank">→ 弗若斯特沙利文中国</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">朝鲜向俄罗斯派遣军事代表团，欢送仪式视频在社交媒体热传，俄乌局势外交面重新进入关注视野</div>
+            <div class="news-item-desc">微博热搜中"视频感受朝方欢送仪式热烈氛围"登榜，折射出大众对俄乌战场以外朝俄军事合作深化的关注。这一地缘信号对全球供应链格局、能源市场和西方制裁体系均有潜在影响，对中国企业出海战略也构成新的外部变量。</div>
+            <a class="news-item-link" href="https://s.weibo.com/top/summary" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">小红书 Redshop 跨境平台本月正式上线，"出海种草"逻辑首次系统化落地</div>
+            <div class="trend-meta">平台重大动态 · 电商出海赛道</div>
+            <div class="trend-obs">💡 趋势观察：Redshop首批定向邀请50名种子商家，聚焦非遗手工、中国特色文化商品，差异化路线明确——"不做下一个Temu"。这意味着小红书的出海策略是：用内容种草的基因重构海外中国商品的叙事，而非打价格战。对大事件业务而言，Redshop上线意味着平台正在构建一条从"国内种草→海外转化"的完整链路，大事件IP在海外市场的传播价值值得被纳入策划考量。</div>
+            <div class="trend-source"><a href="https://www.tmtpost.com/7952609.html" target="_blank">→ 钛媒体·小红书Redshop解读</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#高考结束# 话题涌入小红书，"高考后做的第一件事"成内容爆发点</div>
+            <div class="trend-meta">情感内容赛道 · 青年用户高频节点</div>
+            <div class="trend-obs">💡 趋势观察：高考后72小时是小红书青年内容最密集的爆发期之一。2026年1290万考生中，大量将在今日至本周内涌入平台进行"解放"记录。从"撕书"到"第一顿火锅"，从"报志愿攻略"到"大学生活想象"——内容形态丰富，情绪密度极高。品牌在此节点做"陪伴式"内容，比"励志式"内容更容易建立真实的情感连接。</div>
+            <div class="trend-source"><a href="https://www.chinanews.com.cn/sh/2026/06-07/10635755.shtml" target="_blank">→ 中新网·高考新专业关注</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">国足今晚迎战泰国，体育话题再度激活，小红书体育内容赛道热度持续</div>
+            <div class="trend-meta">体育赛事话题 · 男足世界杯周期</div>
+            <div class="trend-obs">💡 趋势观察：微博热搜"国足vs泰国"挂榜，折射出2026世界杯背景下国足赛事对大众的话题吸引力。尽管结果充满不确定性，但赛事期间的情绪场（焦虑→爆发→复盘）是品牌共情营销的天然载体。小红书上的体育内容正在从"结果解析"向"体育生活方式"迁移，有内容心智的品牌更适合在前者退潮时入场。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/top/summary" target="_blank">→ 微博热搜·国足vs泰国</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">苹果WWDC 2026 iOS 27发布，"AI手机"话题在小红书科技内容区引发持续讨论</div>
+            <div class="trend-meta">科技内容赛道 · AI生活化话题</div>
+            <div class="trend-obs">💡 趋势观察：每年苹果发布会都是小红书科技博主的内容爆发节点，2026年尤其值得关注——因为Siri AI涉及"手机更懂我"这一与生活方式高度相关的叙事，普通用户的参与度将显著高于往年。"AI让手机帮我做什么"类内容，正在从科技垂类渗透到生活方式、效率工具甚至情感陪伴等泛内容区。品牌若能在这个时间节点切入"AI+我的生活"叙事，传播成本极低。</div>
+            <div class="trend-source"><a href="https://www.apple.com/newsroom/2026/06/apple-unveils-next-generation-of-apple-intelligence-siri-ai-and-more/" target="_blank">→ Apple Newsroom·WWDC 2026</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">小红书2026年Q1内容热点：AI走入日常、独居不做"人形孤岛"成平台两大叙事轴</div>
+            <div class="trend-meta">平台内容趋势 · 生活方式赛道</div>
+            <div class="trend-obs">💡 趋势观察：机构报告显示，进入2026年，小红书的内容热点正在向"AI融入具体生活场景"和"独居生活的情感表达"两个方向聚拢。这与平台"回归具体的人"的内容策略高度吻合。对大事件策划者而言，这意味着活动场景设计应该更多关注"个人体验"而非"集体狂欢"——让每一个参与者都能有"属于自己的那一刻"，才是当下最有效的转化公式。</div>
+            <div class="trend-source"><a href="https://www.itopmarketing.com/info22232" target="_blank">→ TopMarketing·小红书2026 Q1热点解读</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 政策与产业</div>
+        <div class="learning-title">从"规范"到"扶持"：六部门广告新政背后，一个行业正在被重新定位</div>
+        <div class="learning-subtitle">当广告被国家列为"产业"而非"监管对象"，营销从业者应该看到什么？</div>
+        <div class="learning-body">
+          <p>2026年6月8日，市场监管总局联合六个部门联合印发《关于促进新时代广告产业高质量发展的意见》。这是一份措辞与以往完全不同的政策文件——以前的广告政策，主题词大多是"规范"、"整治"、"违规"；这一次，关键词变成了"高质量发展"、"创新驱动"、"出海助力"。</p>
+          <p>这个转变值得深思。当监管层开始把广告定义为"文化传播的载体"、"品牌价值的塑造工具"，意味着广告行业正在完成一次<strong>身份重新定位</strong>：从"消费者保护的监管对象"，升级为"国家文化软实力建设的参与者"。</p>
+          <p>政策中最有想象力的是"广告+"行动和出海方向。<strong>"中国产品"向"中国品牌"转变</strong>，这句话背后的逻辑是：仅仅卖出去还不够，中国品牌需要在海外市场建立独立的品牌认知——这正是创意营销和内容传播的核心价值所在。</p>
+          <p>对小红书大事件业务而言，这个政策方向提供了一个重要坐标：<strong>IP营销不只是在国内市场上制造话题，而是在全球视野下建立"中国文化"的内容资产</strong>。当Redshop即将出海，当全球用户开始使用小红书，大事件IP的国际传播价值正在从可选项变为必选项。</p>
+          <p>另一个值得关注的政策信号是"数智广告新业态"。<strong>算力基础设施被明确列为广告行业的支撑要素</strong>，这意味着AI广告工具的合规化、规模化应用已经得到最高层面的鼓励。会写prompt的策划人，正在成为最受欢迎的新型广告从业者。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="http://finance.people.com.cn/n1/2026/0608/c1004-40736193.html" target="_blank">人民网《六部门发文促进广告产业高质量发展》</a> ·
+          <a href="https://www.frostchina.com/content/news/detail/6a2786c4fe2fba62e231b533" target="_blank">弗若斯特沙利文《2026 AI营销最佳实践征集》</a> ·
+          <a href="https://www.tmtpost.com/7952609.html" target="_blank">钛媒体《小红书Redshop出海差异化战略》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 哥本哈根时装周</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🇩🇰🌿👗</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">可持续时尚</span>
+          <span class="festival-tag">丹麦·哥本哈根</span>
+          <span class="festival-tag">每年1月&8月</span>
+          <span class="festival-tag">全球增长最快</span>
+        </div>
+        <div class="festival-name">哥本哈根时装周</div>
+        <div class="festival-name-en">Copenhagen Fashion Week · CPHFW · 始于2006年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从"斯堪的纳维亚小众展"到全球最受关注的可持续时尚平台</div>
+          <div class="festival-block-body">
+            <p>2006年，哥本哈根时装周正式创立，最初只是北欧设计师的地区性展示窗口，与四大时装周（纽约、伦敦、米兰、巴黎）的差距，仿佛冬日北海与地中海的距离。</p>
+            <p>转折点发生在2020年。CPHFW宣布实施<strong>可持续发展最低要求（Minimum Sustainability Requirements）</strong>——这在全球主要时装周中尚属首次：参展品牌必须满足环境、社会责任、商业透明度等12项硬性指标，否则不得参展。这个决定，让哥本哈根一夜之间从"参加者"变成了"规则制定者"。</p>
+            <p>随后几年，Ganni、Stine Goya、Cecilie Bahnsen等北欧设计师品牌相继在国际市场爆红。这些品牌共享一个特征：<strong>女性友好的设计语言 + 真实的可持续实践 + 强烈的生活方式叙事</strong>——三者的叠加，恰好与小红书种草逻辑高度契合。</p>
+            <p>历届主题：2022年"Collective Action"（集体行动）、2023年"Life Beyond Growth"（增长之外的生命）、2024年"Past Forward"（过去即未来）、2025年"Full Presence"（全然在场）……每一届主题，都不只是时装概念，而是一次对当代人生活方式的拷问与提案。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】规模与影响力：小城办出全球大效应</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">2×/年</div>
+                <div class="festival-stat-label">1月&8月各一届</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">5天</div>
+                <div class="festival-stat-label">每届持续时长</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">50+</div>
+                <div class="festival-stat-label">每届参展品牌数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">12项</div>
+                <div class="festival-stat-label">可持续硬性指标</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026/8</div>
+                <div class="festival-stat-label">下届预计8月举行</div>
+              </div>
+            </div>
+            <p>CPHFW的运营模式与四大时装周截然不同。它<strong>拒绝成为资本的秀场</strong>——参展资格的核心门槛不是预算规模，而是可持续实践的真实性。这让许多中小型设计师品牌有机会与国际大牌平起平坐，也让媒体报道的逻辑从"谁最贵"变成"谁最真实"。</p>
+            <p>在商业影响力上，CPHFW已成为全球买手、买手店、时尚媒体和可持续投资机构的年度必至目的地。Ganni在CPHFW的持续亮相，直接推动品牌估值在五年内翻了数倍，并在中国市场通过小红书种草完成了从"小众北欧品牌"到"时尚圈共识"的身份跃迁。</p>
+            <p>在文化影响力上，哥本哈根已超越伦敦，成为Z世代心目中最向往的"时尚友好城市"之一。<strong>它证明了一件事：当一个活动有足够清晰的价值观，规模不是吸引力的唯一来源。</strong></p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026年8月下届规划与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>下届预期：</strong>2026年8月CPHFW预计延续可持续主题，但将更多聚焦"数字时尚"与"AI辅助设计"——北欧设计师圈已率先开始探索AI生成面料纹样、数字孪生试衣等方向。同时，中国设计师品牌的关注度在持续上升，SHUSHU/TONG、Samuel Gui Yang等已引发国际买手的兴趣。</p>
+            <p><strong>中国品牌机会：</strong>CPHFW的可持续门槛，正好是中国品牌国际化最薄弱的环节——不是设计力，而是可持续叙事能力。如何把传统工艺、环保材料、文化符号转化为国际听得懂的"价值观语言"，是下一步中国设计出海的核心命题。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>CPHFW最值得借鉴的不是活动规模，而是它的"门槛即宣言"逻辑——通过设立可持续准入标准，把活动本身变成了一次价值宣言，让参与者天然成为价值认同者。小红书大事件IP也可以思考：活动的准入门槛（参与条件、内容要求、品牌资格）本身能否成为一种传播？当"被选中"本身变得有意义，参与动机就从"我想去"升级为"我想成为那种人"。另外，CPHFW证明了"两年制节奏"（每年两届，而非年度大事件一次）在维持社群热度、保持媒体记忆度上的有效性——大事件的频次设计，同样值得系统性思考。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://cphfw.dk/" target="_blank">CPHFW 官网</a> ·
+          <a href="https://www.vogue.com/article/copenhagen-fashion-week" target="_blank">Vogue·CPHFW解读</a> ·
+          <a href="https://www.businessoffashion.com/articles/sustainability/copenhagen-fashion-week-sustainability-requirements/" target="_blank">BoF·可持续门槛报道</a> ·
+          <a href="https://www.ladymax.cn/" target="_blank">华丽志·CPHFW中国关注</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 当代流行音乐制作人图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎵 主题策展 · 幕后的造星者</div>
+        <div class="knowledge-headline">你听过他们的音乐，但你不知道他们是谁——流行音乐制作人的隐秘王国</div>
+        <div class="knowledge-tagline">「每一首改变时代的歌，背后都有一双你从未见过的手。」</div>
+
+        <div class="knowledge-intro">
+          流行音乐制作人（Music Producer）是当代音乐工业最神秘也最有权力的角色：他们决定一首歌的声音质感、节奏框架、情绪底色，甚至决定哪个歌手会红、哪个会凉。<br><br>
+          理解音乐制作人，就像理解电影背后的摄影指导和剪辑师——你看到的是台前的明星，但塑造这一切质感的，是另一群人。对营销策划者而言，音乐与品牌的关系日益深化：从广告配乐到艺人联名，从音乐节赞助到平台独家，<strong>一首对的歌，可以让一个品牌"有了灵魂"</strong>。了解制作人的风格谱系，是做音乐营销的基本功。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Max_Martin_2019.jpg/440px-Max_Martin_2019.jpg"
+              alt="Max Martin"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Max Martin</div>
+              <div class="knowledge-card-sub">瑞典 · 流行音乐史上最成功制作人</div>
+              <div class="knowledge-card-work">Backstreet Boys《I Want It That Way》、Britney Spears《…Baby One More Time》、Taylor Swift《Shake It Off》、The Weeknd《Blinding Lights》……25首Billboard热单冠军，仅次于Lennon/McCartney。流行音乐的"完美公式"，他写了一半。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Pharrell_Williams_2014_%28cropped%29.jpg/440px-Pharrell_Williams_2014_%28cropped%29.jpg"
+              alt="Pharrell Williams"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎩</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Pharrell Williams</div>
+              <div class="knowledge-card-sub">美国 · 跨界创意全才</div>
+              <div class="knowledge-card-work">为Jay-Z、Beyoncé、Nelly制作金曲，凭《Happy》横扫2014年格莱美。2024年出任Louis Vuitton男装创意总监，成为音乐制作人跨界奢侈品行业最成功的范本。音乐与时尚的边界，在他这里消失了。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Jack_Antonoff_at_Glastonbury_2015.jpg/440px-Jack_Antonoff_at_Glastonbury_2015.jpg"
+              alt="Jack Antonoff"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Jack Antonoff</div>
+              <div class="knowledge-card-sub">美国 · 新世代情感流行核心人物</div>
+              <div class="knowledge-card-work">Taylor Swift《1989》《Reputation》《Lover》《Folklore》、Lorde《Melodrama》、Lana Del Rey《Norman Fucking Rockwell》……他擅长把私密情绪转化为时代共鸣。2020年代最重要的流行乐美学，半数出自他手。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Metro_Boomin_2022_%28cropped%29.jpg/440px-Metro_Boomin_2022_%28cropped%29.jpg"
+              alt="Metro Boomin"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎚️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Metro Boomin</div>
+              <div class="knowledge-card-sub">美国 · 嘻哈制作人一代宗师</div>
+              <div class="knowledge-card-work">与Future、21 Savage、Drake长期合作，塑造了2010年代Trap音乐的核心声音。标志性的"Metro Boomin want some more"片头语，让他成为第一个比歌手更有辨识度的制作人之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎧</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">龚琳娜 × 老锣</div>
+              <div class="knowledge-card-sub">中国 · 中国传统音乐现代化先驱搭档</div>
+              <div class="knowledge-card-work">德国作曲家Robert Zollitsch（老锣）与中国歌唱家龚琳娜的跨文化合作，创作出《忐忑》等颠覆传统的作品。"神曲"在互联网时代的爆红，是中国传统声乐与现代传播结合最早也最成功的案例之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎼</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">方大同 × 李荣浩</div>
+              <div class="knowledge-card-sub">中国 · 华语流行音乐制作人双星</div>
+              <div class="knowledge-card-work">方大同是华语R&B的奠基者，为多位顶级歌手制作、创作，几乎定义了2000-2010年代的香港流行音乐质感。李荣浩以"全能型"制作人姿态崛起——词曲编曲演唱一人包办，开创了独立音乐制作人在华语主流市场的先例。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          流行音乐制作人的价值，在于他们有能力<strong>把一个时代的情绪蒸馏成三分钟</strong>。品牌做音乐营销时，最常犯的错误不是预算不够，而是把音乐当"配乐"而非"表达"。一首有灵魂的品牌主题曲，可以在没有任何画面的情况下让人想起这个品牌；而一首为了"符合调性"硬凑出来的背景音乐，只会让人更快略过。理解制作人的风格谱系，不只是为了选对配乐，更是为了理解：什么样的声音，才能代表你想成为的那种品牌。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
