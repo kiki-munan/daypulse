@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 周末概览 · 2026/6/13–14</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .weekend-event { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .weekend-event:last-child { border-bottom: none; padding-bottom: 0; }
+    .weekend-event-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .weekend-event-emoji { font-size: 20px; }
+    .weekend-event-title { font-size: 15px; font-weight: 600; color: var(--text-primary); line-height: 1.5; }
+    .weekend-event-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 20px; background: var(--accent-light); color: var(--accent); text-transform: uppercase; }
+    .weekend-event-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 8px; }
+    .weekend-event-obs { font-size: 12.5px; color: var(--text-secondary); background: var(--tag-bg); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--accent); line-height: 1.65; }
+    .weekend-event-obs strong { color: var(--accent); }
+    .weekend-event-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; display: inline-block; margin-top: 6px; }
+    .weekend-event-link:hover { opacity: 1; text-decoration: underline; }
+    .weekend-coda { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--border); font-style: italic; text-align: center; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    .back-link { display: inline-block; font-size: 12px; color: var(--accent); text-decoration: none; margin-bottom: 16px; }
+    .back-link:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .layout { padding: 16px; } .site-header { padding: 16px 20px; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">周末补录 · 6/13–14</div>
+</header>
+
+<div class="layout">
+  <a class="back-link" href="/daypulse/">← 返回 DayPulse</a>
+
+  <div class="day-header">
+    <div class="day-date">周末概览</div>
+    <div class="day-week">2026 · 6 / 13 — 14</div>
+  </div>
+
+  <section class="section">
+    <div class="section-header">
+      <span class="section-icon">📦</span>
+      <span class="section-title">周末不能错过的 4 件事</span>
+      <span class="section-subtitle">上周末回顾</span>
+    </div>
+    <div class="section-body">
+
+      <div class="weekend-event">
+        <div class="weekend-event-header">
+          <span class="weekend-event-emoji">🚀</span>
+          <span class="weekend-event-title">SpaceX 完成人类史上最大 IPO：募资 750 亿美元，马斯克成全球首位万亿富豪</span>
+          <span class="weekend-event-tag">商业 · 科技</span>
+        </div>
+        <div class="weekend-event-body">
+          6 月 12 日，SpaceX 以每股 135 美元发行价在纳斯达克挂牌（股票代码 SPCX），IPO 募资总额达 750 亿美元，超越此前一切纪录。首日股价收于 160.95 美元，涨幅近 19%，总市值突破 2 万亿美元。约 400 名现任和前任员工一夜之间身家过亿。创始人马斯克个人净资产突破万亿美元——超越全球近九成国家的年度 GDP。
+        </div>
+        <div class="weekend-event-obs">
+          <strong>趋势判断：</strong>SpaceX 上市标志着"太空经济"正式进入公开市场定价时代。后续纳入纳指可能引发科技股大规模资金重配。对中国商业航天赛道而言，估值锚点已上移——对标逻辑将重塑国内投资人对航天企业价值的判断标准。
+        </div>
+        <a class="weekend-event-link" href="https://www.chinanews.com.cn/gj/2026/06-13/10639592.shtml" target="_blank">→ 中国新闻网</a>
+        &nbsp;
+        <a class="weekend-event-link" href="https://www.myzaker.com/article/6a2c983b8e9f0973ea192c5d" target="_blank">→ ZAKER·首日分析</a>
+      </div>
+
+      <div class="weekend-event">
+        <div class="weekend-event-header">
+          <span class="weekend-event-emoji">🕊️</span>
+          <span class="weekend-event-title">特朗普称美伊 14 日签署协议，伊朗否认——地缘市场再度罗生门</span>
+          <span class="weekend-event-tag">国际 · 地缘</span>
+        </div>
+        <div class="weekend-event-body">
+          特朗普 6 月 13 日在社交媒体宣布：美国和伊朗定于 14 日签署协议，霍尔木兹海峡将在签署后立即开放。但伊朗外交部发言人随后否认当天签署的计划，称"不排除未来几天内完成"。此前双方已停止互相攻击两个月，局势在脆弱平衡中摇摆。
+        </div>
+        <div class="weekend-event-obs">
+          <strong>趋势判断：</strong>美伊协议的核心变量是霍尔木兹海峡通航——全球约 20% 石油运输经由此处。"各说各话"意味着协议条款仍有重大分歧。能源市场本周将保持高度敏感，油价波动将直接影响消费品牌成本预期和物流供应链情绪。
+        </div>
+        <a class="weekend-event-link" href="https://www.news.cn/world/20260614/209460997d754b9bb551833870cbc6c0/c.html" target="_blank">→ 新华网</a>
+        &nbsp;
+        <a class="weekend-event-link" href="https://www.chinanews.com.cn/gj/2026/06-14/10640072.shtml" target="_blank">→ 中新网</a>
+      </div>
+
+      <div class="weekend-event">
+        <div class="weekend-event-header">
+          <span class="weekend-event-emoji">🎸</span>
+          <span class="weekend-event-title">黑豹乐队前主唱"大鹏"张克芃因病去世，终年 54 岁</span>
+          <span class="weekend-event-tag">娱乐 · 文化</span>
+        </div>
+        <div class="weekend-event-body">
+          6 月 13 日，黑豹乐队前主唱张克芃（大鹏）因病去世，年仅 54 岁。他不仅是黑豹乐队 1990 年代的主唱，还曾在 94 版《三国演义》中饰演张飞之子张苞，是中国摇滚与影视两个领域的标志性人物之一。国家京剧院演员顾谦发文悼念"四十多年的好兄弟"，引发乐迷集体追忆。
+        </div>
+        <div class="weekend-event-obs">
+          <strong>一句话：</strong>大鹏代表了 90 年代中国摇滚的黄金年代——那个音乐还能改变年轻人的时代。他的离世不仅是乐队的损失，更是一次集体记忆的告别。对品牌而言，经典文化符号的情感厚度，永远大于短期流量。
+        </div>
+        <a class="weekend-event-link" href="https://m.sohu.com/a/1036216419_120952561" target="_blank">→ 搜狐娱乐</a>
+        &nbsp;
+        <a class="weekend-event-link" href="https://m.jiemian.com/article/14583595.html" target="_blank">→ 界面新闻</a>
+      </div>
+
+      <div class="weekend-event">
+        <div class="weekend-event-header">
+          <span class="weekend-event-emoji">💡</span>
+          <span class="weekend-event-title">INNOTECH 2026 创科嘉年华在广州举办，150+ 科创项目亮相</span>
+          <span class="weekend-event-tag">科技 · 大湾区</span>
+        </div>
+        <div class="weekend-event-body">
+          6 月 13–14 日，由香港科技大学（广州）主办的 INNOTECH 2026 创科嘉年华在大湾区举行，汇集超过 150 个世界级科技创新项目，吸引数百位顶级投资人和科技创业者。作为大湾区最具影响力的高校科创活动之一，本届聚焦 AI、绿色科技、生物科技等前沿方向。
+        </div>
+        <div class="weekend-event-obs">
+          <strong>趋势判断：</strong>大湾区科创生态正加速"高校—资本—产业"的闭环构建。INNOTECH 这类平台性活动的密集举办，意味着区域创新从"实验室阶段"快速进入"商业验证阶段"——品牌科技合作的新机会点正在涌现。
+        </div>
+        <a class="weekend-event-link" href="https://www.hkust-gz.edu.cn/2026/04/09/call-for-projects-for-hkustgz-innotech-2026/" target="_blank">→ HKUST(GZ)</a>
+      </div>
+
+      <div class="weekend-coda">
+        📝 以上为 6/13–14 周末精选。今日内容请查看 <a href="/daypulse/2026/6/15/" style="color:var(--accent);">DayPulse · 6月15日</a>。
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 周末补录 · 由 Ki 生成
+</footer>
+
+</body>
+</html>
