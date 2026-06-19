@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/19</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-badge { font-size: 11px; font-weight: 600; background: var(--accent); color: white; padding: 3px 10px; border-radius: 20px; margin-left: 4px; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 56px; background: linear-gradient(135deg, #1a2e1a 0%, #2d6a2d 40%, #c4a03a 80%, #f5e8c4 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/6/19/index.html" class="active">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+      <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+      <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+      <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+      <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+      <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+      <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+      <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+      <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+      <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+      <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+      <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+      <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+      <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+      <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+      <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+      <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+      <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+      <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+      <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+      <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 19</div>
+      <div class="day-week">星期五</div>
+      <span class="day-badge">端午节 🐉</span>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行陆家嘴论坛发布六大举措，离岸人民币外汇交易试点落地上海自贸区</div>
+            <div class="news-item-desc">6月17日，中国人民银行行长潘功胜在2026陆家嘴论坛上宣布六项金融改革措施，涵盖完善短端利率调控机制、创设境外央行回购工具、在上海自贸区开展离岸人民币外汇交易试点等。这是推动外汇市场双向开放、助力上海打造人民币资产全球配置中心的关键政策布局，也是年内金融开放力度最大的一次集中发布。</div>
+            <a class="news-item-link" href="https://jrj.sh.gov.cn/ZXYW178/20260617/410f2082e598453dae17b9d813a4ae45.html" target="_blank">→ 上海金融监管局·全文</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">5月工业增加值同比增长4.5%，增速环比加快0.4个百分点，经济运行"向新向优"</div>
+            <div class="news-item-desc">国家统计局6月16日发布数据：5月份规模以上工业增加值同比实际增长4.5%，增速较4月加快0.4个百分点。官方定性"总体平稳、向新向优"，新能源、半导体等新兴产业拉动明显。在外部压力延续的背景下，这一数据传递出实体经济修复的积极信号。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/cj/2026/06-16/10641213.shtml" target="_blank">→ 中新网·统计局数据</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">"对话即交易"：AI支付从概念走向落地，银联商务推出首个对话式支付产品</div>
+            <div class="news-item-desc">银联商务发布AI支付新能力，用户可通过语音或文字对话完成点单、购票、缴费等全流程支付，省去APP跳转与页面切换。科技日报称此举"推动支付服务迈向对话即交易的全新阶段"。AI Agent叙事从内容创作蔓延至金融基础设施，支付入口的重构意味着更广泛的流量格局洗牌。</div>
+            <a class="news-item-link" href="https://www.stdaily.com/web/gdxw/2026-06/18/content_534179.html" target="_blank">→ 科技日报·AI支付报道</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">网信办开设"涉AI应用乱象举报专区"，14类AI违规行为纳入专项受理</div>
+            <div class="news-item-desc">配合"清朗·整治AI应用乱象"专项行动，中央网信办自6月起开设专项举报入口，受理范围涵盖大模型备案缺失、训练语料安全问题、AI"魔改"经典影视、生成内容标识不到位等14类问题。AI行业的监管框架正在从"鼓励发展"切换到"规范落地"双轮驱动模式。</div>
+            <a class="news-item-link" href="https://www.cac.gov.cn/2026-06/12/c_1782660002371256.htm" target="_blank">→ 网信办官方公告</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">全球AI产业规模化应用"临界点"到来，国内专家：从试点期正式进入产业化阶段</div>
+            <div class="news-item-desc">新浪机器学习热点报告指出，当前国内AI产业发展逻辑已发生结构性转变——从技术比拼、模型参数竞赛，转向具体场景的规模化落地验证。政务、医疗、金融、内容创作等多个垂类正在形成可复制的商业模式。这是AI叙事从"未来将来"到"已然发生"的转折时刻。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001906ynl6.html" target="_blank">→ 新浪·机器学习热点日报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">好奇、Babycare、碧芭宝贝纸尿裤被曝检出甲酰胺，李佳琦直播间同款卷入风波</div>
+            <div class="news-item-desc">《经济参考报》调查报道曝光，多款主流婴幼儿纸尿裤中检出毒性物质甲酰胺，记者亲身实验一夜后血液浓度近翻倍。涉事品牌包括美国金佰利旗下"好奇"及国产"Babycare""碧芭宝贝"。话题昨日登上微博热搜第一，各品牌紧急发声明，李佳琦回应其直播间相关产品情况。这是继"某品牌散粉事件"后，直播带货信任危机的又一次集中爆发。</div>
+            <a class="news-item-link" href="https://m.thepaper.cn/newsDetail_forward_33406895" target="_blank">→ 澎湃新闻·纸尿裤甲酰胺调查</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">端午假期出行重点提示上热搜，文旅消费再迎峰值，"龙舟"相关内容搜索量翻倍</div>
+            <div class="news-item-desc">微博热搜显示"端午出行重点提示"讨论量达61万，端午节话题49万。交通运输部预测端午假期全国旅客出行量超5亿人次。小红书、抖音端午相关搜索量较上月增长显著，"龙舟打卡""端午非遗体验"等内容成为种草主力。节日型大事件的流量红利窗口正在打开。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%AB%AF%E5%8D%88%E5%87%BA%E8%A1%8C%E9%87%8D%E7%82%B9%E6%8F%90%E7%A4%BA" target="_blank">→ 微博热搜·端午出行</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">世界杯最疯狂20分钟：加拿大vs卡塔尔，伤停补时惊天逆转引110万微博讨论</div>
+            <div class="news-item-desc">北京时间6月19日凌晨，2026世界杯小组赛B组，加拿大对阵卡塔尔，赛事最后20分钟戏剧性反转让微博热搜榜第一冲至110万讨论量。"加拿大球员小腿变形"等词条同时登榜，中文体育内容圈沸腾。世界杯正式进入每天制造爆款话题的高流量期，品牌借势战已全面展开。</div>
+            <a class="news-item-link" href="https://worldcup.cctv.com/" target="_blank">→ 央视网·世界杯直播</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">周冬雨话剧风波：观众现场发声掉粉，明星线下活动的"双刃剑效应"再引讨论</div>
+            <div class="news-item-desc">微博话题"观看周冬雨话剧观众发声"与"周冬雨掉粉"同日登榜，说明明星线下演出的现场体验管理正成为粉丝运营的关键变量。对大事件策划来说，明星/达人参与的线下活动，现场体验的每一个细节都可能成为舆情起爆点——"惊喜"与"翻车"只在毫厘之间。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%A7%82%E7%9C%8B%E5%91%A8%E5%86%AC%E9%9B%A8%E8%AF%9D%E5%89%A7%E8%A7%82%E4%BC%97%E5%8F%91%E5%A3%B0" target="_blank">→ 微博热搜·周冬雨话剧</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美密苏里州起诉安防品牌"洛瑞思"，指控其隐瞒中国军方关联、监控美国家庭</div>
+            <div class="news-item-desc">美国密苏里州总检察长凯瑟琳·哈纳韦正式起诉家用安防摄像头品牌洛瑞思（Lorex），指控其隐瞒与中国军方的关联，对用户实施监控。这是继海康威视、大华之后，美国地方政府层面针对中国安防企业采取法律行动的又一案例，中美科技脱钩的战线正向消费级产品延伸。</div>
+            <a class="news-item-link" href="https://www.voachinese.com/a/missouri-attorney-general-sues-lorex-for-alleged-ties-to-chinese-military-20260618/8162311.html" target="_blank">→ 美国之音·洛瑞思起诉报道</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美伊总统签署谅解备忘录，核问题谈判出现新进展，中东地缘格局微妙松动</div>
+            <div class="news-item-desc">美国与伊朗总统签署谅解备忘录，在伊朗核计划管控问题上迈出实质性一步。该消息昨日登上微博热搜，对全球大宗商品价格（原油、黄金）及地缘风险溢价产生短期影响。在全球多极化加速的背景下，中东缓和信号值得持续追踪。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%BE%8E%E4%BC%8A%E6%80%BB%E7%BB%9F%E7%AD%BE%E7%BD%B2%E8%B0%85%E8%A7%A3%E5%A4%87%E5%BF%98%E5%BD%95" target="_blank">→ 微博热搜·美伊备忘录</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#端午非遗打卡 龙舟内容爆发，节日型内容进入流量峰值期</div>
+            <div class="trend-meta">节日文化赛道 · 非遗生活化内容</div>
+            <div class="trend-obs">💡 趋势观察：端午假期最后一天，小红书上"端午""龙舟""粽子DIY""非遗体验"等关键词的内容量与互动量均处于节日前后72小时高峰区间。对平台大事件来说，这是一个典型案例：节日IP的流量并不集中在节日本身，而是在节日前3天到节日后2天形成"宽峰"——策划排期需要为这个节奏预留空间。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%AB%AF%E5%8D%88%E8%8A%82" target="_blank">→ 微博热搜·端午节</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#母婴安全危机 纸尿裤甲酰胺事件引发平台内容审查浪潮</div>
+            <div class="trend-meta">母婴消费赛道 · 品牌信任危机</div>
+            <div class="trend-obs">💡 趋势观察：好奇、Babycare、碧芭宝贝三大品牌同日卷入甲酰胺风波，微博热搜多条相关词条同时在榜，说明这是一个真正击中用户焦虑的消费安全事件。小红书母婴内容创作者此刻正在经历"站队压力"——如何在保护粉丝权益与维护品牌合作之间平衡，是这条赛道信任重建的核心命题。平台大事件如有母婴类合作品牌，近期需做好舆情监控预案。</div>
+            <div class="trend-source"><a href="https://m.thepaper.cn/newsDetail_forward_33406895" target="_blank">→ 澎湃新闻·甲酰胺调查</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界杯内容爆发期 球迷文化种草进入黄金窗口</div>
+            <div class="trend-meta">体育赛事赛道 · 世界杯流量红利</div>
+            <div class="trend-obs">💡 趋势观察：2026世界杯已正式进入高流量期，微博热搜榜前10中有4-5条与世界杯相关。小红书上的世界杯内容正在分化为两条赛道：一是专业球迷的"赛事解析"，二是泛用户的"世界杯周边生活方式"（深夜看球食物推荐、球迷装备、城市球迷文化）。后者对品牌种草来说是更友好的切入点，且情感浓度更高。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%96%E7%95%8C%E6%9D%AF%E6%9C%80%E7%96%AF%E7%8B%8220%E5%88%86%E9%92%9F" target="_blank">→ 微博热搜·世界杯最疯狂20分钟</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI支付进日常 "建议大家对钱要有概念"引发共鸣式讨论</div>
+            <div class="trend-meta">AI生活化赛道 · 金融科技内容</div>
+            <div class="trend-obs">💡 趋势观察：微博热搜"建议大家对钱要有概念"（53万讨论）与AI支付加速入场的新闻形成有趣的时代映照——一边是科技让支付越来越"无感"，一边是用户在反思金钱感知的消失。对内容创作者和品牌来说，这种"技术便利 vs 人文反思"的张力，是极具生命力的内容选题方向，在小红书的"理财觉醒"内容赛道上尤其值得关注。</div>
+            <div class="trend-source"><a href="https://www.stdaily.com/web/gdxw/2026-06/18/content_534179.html" target="_blank">→ 科技日报·AI支付落地</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书广告效果化进程 种草到转化链路持续完善</div>
+            <div class="trend-meta">平台商业化 · 效果广告升级</div>
+            <div class="trend-obs">💡 趋势观察：小红书2026年WILL商业大会定调"种草进入效果化时代"，当前平台正加速打通"内容种草→搜索跳转→电商转化"的完整链路。对大事件IP策划来说，这意味着活动内容不能只追求"曝光量"，而需要在策划阶段就设计可量化的转化节点——用话题带搜索，用搜索带购买，形成闭环叙事。</div>
+            <div class="trend-source"><a href="https://www.jwview.com/jingwei/html/m/12-23/650758.shtml" target="_blank">→ 中新经纬·小红书WILL大会报道</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 危机传播</div>
+        <div class="learning-title">品牌安全危机怎么打？从纸尿裤事件看消费品牌的"真实性承诺"困局</div>
+        <div class="learning-subtitle">当检测报告比品牌宣传更有说服力——信任是如何一点一点被透支的</div>
+        <div class="learning-body">
+          <p>好奇、Babycare、碧芭宝贝，三个在母婴赛道深耕多年、用户评价长期居高的品牌，在一份检测报告面前几乎同时失语。这不是偶发事故，而是一个关于<strong>"真实性承诺"</strong>的系统性故事。</p>
+          <p>现代消费品牌建立信任的路径，高度依赖"内容叙事"——用温暖的广告告诉你"我们爱孩子"，用种草笔记告诉你"成分安全放心用"。这些叙事都是真实的，也都不够真实。当一个第三方机构发布了一份质疑报告，品牌的内容积累在公众眼中可能瞬间失效——因为<strong>内容只能建立感知，不能替代事实</strong>。</p>
+          <p>这件事的营销学启示不是"不要做安全承诺"，而是：<strong>承诺的力度，必须和验证的机制等比例投入</strong>。强调"成分安全"的品牌，是否真的建立了公开透明的检测体系？承诺"用心为孩子"的品牌，是否愿意接受全链路的第三方审计？信任不是靠说出来的，是靠可验证的行为积累的。</p>
+          <p>对做品牌营销策划的人来说，有一个值得记住的原则：<strong>品牌叙事的天花板，是品牌产品力的真实水位</strong>。你可以把产品讲得很美，但只要有任何一个环节的真实质量低于叙事描绘的水位，就是一个等待被引爆的舆情炸弹。营销人的工作不是"掩盖差距"，而是推动品牌真正做到它说出来的话。</p>
+          <p>另一个视角：<strong>危机发生时，速度和诚意是第一位的</strong>。李佳琦选择公开回应，比沉默更明智；各品牌的声明质量参差不齐，但发声本身是正确的第一步。危机传播的原则：不否认问题的存在感，第一时间表达"我们在调查、我们在行动"，比完美的辟谣声明更能稳住用户情绪。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.guancha.cn/economy/2026_06_18_820918.shtml" target="_blank">观察者网·纸尿裤甲酰胺品牌回应</a> ·
+          <a href="https://www.tmtpost.com/8033131.html" target="_blank">钛媒体·好奇Babycare碧芭宝贝翻车深度</a> ·
+          <a href="http://www.xinhuanet.com/food/20260618/480687520d0041daa1b8510b91eee09c/c.html" target="_blank">新华网·经参调查全文</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 端午节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🐉🌊🪅</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">中华传统文化</span>
+          <span class="festival-tag">全球华人共同</span>
+          <span class="festival-tag">每年农历五月初五</span>
+          <span class="festival-tag">UNESCO非遗</span>
+        </div>
+        <div class="festival-name">端午节</div>
+        <div class="festival-name-en">Dragon Boat Festival / Duanwu Festival · 已有2000余年历史</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从驱邪仪式到诗人祭典，一个节日如何背负一个民族的情感重量</div>
+          <div class="festival-block-body">
+            <p>端午节的起源，远早于屈原——最初是古人在农历五月初五这个"恶月恶日"所举行的<strong>驱邪辟疫仪式</strong>：悬艾草、挂菖蒲、喝雄黄酒、洗草药浴，这些行为的底层逻辑是"抵御夏日瘟疫"。五月在中国古代被视为"毒月"，蛇虫蚊蚁肆虐，节日因此具有强烈的仪式感和生存意涵。</p>
+            <p>屈原的加入，发生在汉代以后。这位楚国诗人在农历五月初五投汨罗江自尽，他的死亡被赋予了"忠君爱国"的崇高意涵，端午节于是完成了一次文化升级——从驱邪节日变成了<strong>诗人节与爱国情感的载体</strong>。这也是中国节日文化中最典型的"叙事叠加"：自然节律+历史人物+情感共鸣，三层结构共同构成节日的厚度。</p>
+            <p>宋代以后，龙舟竞渡从驱邪仪式演变为真正意义上的竞技运动，粽子从"喂鱼护屈原"的传说走向各地不同口味的饮食文化表达——<strong>咸甜之争</strong>甚至成为当代网络的跨年话题。历年大IP主题从"诗与远方"到"龙舟精神"，端午的文化语义在不同时代被反复重写。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球最具商业转化力的中国传统节日之一</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">5亿+</div>
+                <div class="festival-stat-label">端午假期预计出行人次（2026）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2009年</div>
+                <div class="festival-stat-label">列入UNESCO人类非物质文化遗产</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">50+</div>
+                <div class="festival-stat-label">国家和地区设立龙舟赛事</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2000亿+</div>
+                <div class="festival-stat-label">端午粽子市场年规模（元）</div>
+              </div>
+            </div>
+            <p>2009年，端午节列入UNESCO人类非物质文化遗产，成为中国传统节日中第一个获此认定的节日（早于春节、中秋）。这一身份使端午在全球文化版图上获得了新的话语权。</p>
+            <p>在商业层面，端午已发展出三条成熟的变现路径：<strong>粽子礼盒经济</strong>（商务礼赠市场主力，五芳斋、稻香村、新中式粽子品牌年年争夺）；<strong>龙舟赛事经济</strong>（城市文旅、品牌冠名、直播赛事打包）；<strong>文化创意经济</strong>（端午主题文创、汉服出行、非遗体验营）。2026年，小红书平台"端午"相关内容搜索量同比涨幅明显，"端午露营""龙舟体验""手作粽子"成为三大爆款内容方向。</p>
+            <p>运作模式上，端午节日营销具有明显的"情感前置"特征：<strong>不是产品卖点驱动，而是场景+情感共鸣驱动</strong>。成功的端午营销往往从"家人团聚""乡愁记忆""屈原精神"等情感锚点切入，再反向包装产品。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】端午IP化的想象空间与对小红书大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>下届趋势展望：</strong>端午节的全球化进程正在加速——龙舟赛事已遍及北美、欧洲、东南亚，海外华人社区的端午节内容正反哺国内的文化认同叙事。预计2027年，"跨文化端午"将成为内容平台的重要选题方向：外国人包粽子、海外龙舟队的参赛故事，既有猎奇价值，又具情感厚度。</p>
+            <p>另一个趋势：<strong>端午与夏日生活方式的深度融合</strong>。粽子已经不只是食物，而是一种"手作参与感"的象征；龙舟不只是比赛，而是城市青年的团体运动入口。节日的文化边界在拓展，商业机会随之增大。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>端午节的策划价值，在于它是极少数同时具备<em>情感深度（屈原/家国）+ 参与行为（包粽/赛龙舟）+ 视觉记忆点（艾草/粽叶/龙舟）</em>三重结构的中国传统节日。对大事件IP来说，端午提供了一个很好的方法论参考：一个有传播力的节点活动，必须同时给用户一个"感受它的理由"（情感）、一个"参与它的方式"（行为）和一个"晒出来的形态"（视觉符号）。当这三者同时成立，内容自传播就会自然发生——用户不是为了帮你传播而传播，而是因为"这件事值得被我记录"。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://ich.unesco.org/en/RL/dragon-boat-festival-duanwu-00285" target="_blank">UNESCO非遗档案·端午节</a> ·
+          <a href="https://www.xinhuanet.com/culture/" target="_blank">新华网文化频道·端午专题</a> ·
+          <a href="https://s.weibo.com/weibo?q=%E7%AB%AF%E5%8D%88%E8%8A%82" target="_blank">微博热搜·端午节实时讨论</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 全球足球文化</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">⚽ 主题策展 · 足球的六张面孔</div>
+        <div class="knowledge-headline">从贝利到姆巴佩：谁在定义一个时代的足球审美？</div>
+        <div class="knowledge-tagline">「足球不只是运动，它是一种语言，全球20亿人说的同一种话。」</div>
+
+        <div class="knowledge-intro">
+          2026年世界杯正在北美举行。这是FIFA史上规模最大的一届——48支球队、16个城市、新三东道主（美国/加拿大/墨西哥），也是全球足球文化最集中的一次展示窗口。趁着世界杯的流量红利，我们来做一张足球巨星的文化图谱——不只是"谁进了多少球"，而是：<strong>每一位伟大球员究竟在足球历史上写下了什么？</strong><br><br>
+          对IP营销策划来说，足球明星的商业价值逻辑同样适用于任何文化IP运营：稀缺性、全球共识度、情感粘性，以及在不同文化语境中的可解读性。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Pelé_1958.jpg/440px-Pelé_1958.jpg"
+              alt="贝利"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">贝利 Pelé</div>
+              <div class="knowledge-card-sub">巴西 · 1940-2022 · 足球之王</div>
+              <div class="knowledge-card-work">17岁参加世界杯并夺冠，3次举起大力神杯，一生进球逾1000粒。他是足球从"地域运动"走向"全球文化符号"的关键人物。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Diego_Maradona_1981.jpg/440px-Diego_Maradona_1981.jpg"
+              alt="马拉多纳"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🤙</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">马拉多纳 Maradona</div>
+              <div class="knowledge-card-sub">阿根廷 · 1960-2020 · 上帝之手</div>
+              <div class="knowledge-card-work">1986年世界杯"上帝之手"与"世纪进球"同场，是足球史上最大的矛盾统一体。他让那不勒斯成为意大利南北平等的象征，死后被阿根廷全国哀悼三天。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Ronaldo_Brazil%2C_1997_%28cropped%29.jpg/440px-Ronaldo_Brazil%2C_1997_%28cropped%29.jpg"
+              alt="罗纳尔多（巴西）"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🦷</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">罗纳尔多（巴西）</div>
+              <div class="knowledge-card-sub">巴西 · 1976— · 外星人</div>
+              <div class="knowledge-card-work">纯粹的天才，速度与技巧的极端结合体。2002年世界杯决赛的那个"招牌发型"成为全球最辨识度最高的体育造型之一，耐克形象代言颠覆足球商业版图。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Lionel_Messi_20180626.jpg/440px-Lionel_Messi_20180626.jpg"
+              alt="梅西"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐐</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">梅西 Messi</div>
+              <div class="knowledge-card-sub">阿根廷 · 1987— · G.O.A.T.</div>
+              <div class="knowledge-card-work">8次金球奖，2022年卡塔尔世界杯圆梦，成为大多数人心目中史上最伟大球员。他的职业弧线是"天才终于补齐了命运欠他的那块拼图"的完美叙事。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Cristiano_Ronaldo_2018.jpg/440px-Cristiano_Ronaldo_2018.jpg"
+              alt="C罗"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">💪</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">C罗 Ronaldo</div>
+              <div class="knowledge-card-sub">葡萄牙 · 1985— · 勤奋的天才</div>
+              <div class="knowledge-card-work">与梅西并列GOAT争议，以"努力可以超越天赋"的叙事影响一代人。社交媒体粉丝数全球第一，商业价值与运动成就比肩。2026年世界杯仍在征战。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Mbappé_2018.jpg/440px-Mbappé_2018.jpg"
+              alt="姆巴佩"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🚀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">姆巴佩 Mbappé</div>
+              <div class="knowledge-card-sub">法国 · 1998— · 接班人</div>
+              <div class="knowledge-card-work">18岁进世界杯决赛并夺冠，速度打破记录，拒绝法国政府奖励将奖金全数捐给慈善。他是后梅西罗时代唯一公认的统治者，2026年的法国队让他背负一个时代的期待。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          足球明星与品牌IP有一个共同的传播规律：<strong>最持久的影响力，来自"精神叙事"而非"成绩叙事"</strong>。贝利之所以是"足球之王"，不只因为他的进球数，而是因为他代表了一个时代对足球的想象。马拉多纳之所以至今被人铭记，不是因为"上帝之手"的规则争议，而是因为他用那一刻展示了某种属于人类的傲慢与荣耀。当你在策划一个品牌IP或大事件时，问自己：这个IP在十年后，人们会记住它的什么故事？如果说不清楚，那"精神叙事"还没到位。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
