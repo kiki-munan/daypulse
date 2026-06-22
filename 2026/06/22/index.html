@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/22</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --weekend-bg: #f7f3ec; --weekend-border: #d4c9b8;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-badge { display: inline-block; font-size: 10px; font-weight: 600; background: var(--weekend-bg); border: 1px solid var(--weekend-border); color: var(--accent); padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .weekend-card { display: flex; gap: 16px; padding: 16px; margin-bottom: 12px; background: var(--weekend-bg); border: 1px solid var(--weekend-border); border-radius: 10px; transition: box-shadow 0.15s; }
+    .weekend-card:last-child { margin-bottom: 0; }
+    .weekend-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .weekend-emoji { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+    .weekend-body { flex: 1; min-width: 0; }
+    .weekend-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; line-height: 1.4; }
+    .weekend-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .weekend-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 8px; }
+    .weekend-comment { font-size: 11.5px; color: var(--accent); font-style: italic; line-height: 1.5; padding-left: 10px; border-left: 2px solid var(--accent); }
+    .weekend-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+    .weekend-tag.tag-business { background: #fef0e7; color: #b45309; }
+    .weekend-tag.tag-tech { background: #e8f0fe; color: #1a73e8; }
+    .weekend-tag.tag-society { background: #fce8e6; color: #d93025; }
+    .weekend-tag.tag-ent { background: #f3e8fd; color: #8430ce; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } .weekend-card { flex-direction: column; gap: 8px; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/6/22/index.html" class="active">2026 / 6 / 22 · 周一</a></li>
+      <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+      <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+      <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 22</div>
+      <div class="day-week">星期一
+        <span class="day-badge">📌 含上周末补录</span>
+      </div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">含周末回顾</span>
+      </div>
+      <div class="section-body">
+
+        <!-- 周末概览（周一补录模块） -->
+        <div class="news-panel">
+          <div class="news-panel-title">🕐 周末回顾 · 6/20–6/21</div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🤖</div>
+            <div class="weekend-body">
+              <div class="weekend-title">刘强东APEC论坛：将来全部机器人送货，培训70万快递员做"白领"</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-business">品牌</span>
+                <span class="weekend-tag tag-tech">AI</span>
+                6月21日 · 北京 · APEC工商领导人中国论坛
+              </div>
+              <div class="weekend-desc">京东创始人刘强东在APEC工商领导人中国论坛上发表重磅演讲，宣布"快递终将实现全部机器人送货"，并推出"涅槃计划"——将70万蓝领快递员送回124所签约学校进行技能培训，转型为机器人维修保养人员，实现蓝领"白领化"。同时，京东AI模型从第一天起就决定向全球全面开放，反对技术壁垒。刘强东呼吁APEC经济体尽早展开国际合作应对AI和机器人时代。</div>
+              <div class="weekend-comment">刘强东把"机器换人"叙事从"裁员焦虑"翻转为"技能升级"，这是品牌公关的高阶操作。但70万人"白领化"的执行成本和时间表，才是真正考验京东战略定力的地方。对行业而言，"AI开放共享" vs "技术壁垒"的立场之争正在成为新叙事主线。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🎤</div>
+            <div class="weekend-body">
+              <div class="weekend-title">《乘风2026》总决赛：谢娜即兴双语翻译引两极争议</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-ent">娱乐</span>
+                <span class="weekend-tag tag-society">社会热点</span>
+                6月20日 · 芒果TV直播
+              </div>
+              <div class="weekend-desc">《乘风2026》总决赛直播中，法籍（部分来源称越南籍）嘉宾庄法用英文发言时，节目组未配备专职翻译。现场出现沟通空白后，谢娜主动拿起麦克风进行即兴双语翻译。这一举动在网上引发两极热议——支持者肯定其救场能力，反对者则认为翻译质量不专业、节目组前期准备不足。谢娜在整个赛季中本就因控场节奏问题受到争议。</div>
+              <div class="weekend-comment">直播综艺的"无修音+全开麦+零彩排"模式把主持人推到了最前线。谢娜的即兴翻译既是一次"人设加分"机会，也是一次"暴露短板"的风险。对品牌而言，直播化综艺的每一个"事故瞬间"都是天然的社交货币——关键在事后叙事的主导权掌握在谁手里。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🌊</div>
+            <div class="weekend-body">
+              <div class="weekend-title">2026夏季达沃斯论坛明日大连开幕 · 主题为"规模化创新"</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-business">商业</span>
+                <span class="weekend-tag tag-tech">AI</span>
+                6/23–25 · 大连 · 筹备已基本就绪
+              </div>
+              <div class="weekend-desc">第十七届夏季达沃斯论坛将于6月23日至25日在大连国际会议中心举行，主题为"规模化创新"。预计1500余位来自商界、政界、社会组织和学术界的嘉宾参加。论坛将围绕贸易与产业格局变革、增长创造就业、能源与气候转型等议题展开，AI成为本届论坛"霸屏"话题。同日，2026世界人工智能大会宣布将于7月在上海举办。</div>
+              <div class="weekend-comment">"规模化创新"这个主题非常克制——不是"颠覆性创新"，而是"如何让已有的创新大规模落地"。这与刘强东"AI开放共享"的表态形成了呼应。从品牌营销角度看，达沃斯+WAIC的密集排期为科技品牌提供了罕见的"双主场叙事窗口"。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🎬</div>
+            <div class="weekend-body">
+              <div class="weekend-title">第28届上海国际电影节金爵奖颁奖典礼举行</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-ent">娱乐</span>
+                <span class="weekend-tag tag-business">品牌</span>
+                6/12–26 · 上海 · 梁朝伟担任主竞赛单元主席
+              </div>
+              <div class="weekend-desc">第28届上海国际电影电视节于6月12日至26日举行，金爵奖主竞赛单元主席由中国香港演员梁朝伟担任，评委团涵盖中国、美国、英国、德国等多国电影人。光线传媒董事长王长田在金爵论坛上的发言引发业内讨论。电影节期间还发布了多部重点影片。</div>
+              <div class="weekend-comment">上海国际电影节在端午假期叠加举办，形成了"文化消费+旅游"的周末经济效应。王长田等产业领袖的发言，值得品牌营销从业者关注——内容产业的资本叙事和创作叙事正在加速交汇。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 科技 · AI -->
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">2026世界人工智能大会官宣7月上海举办</div>
+            <div class="news-item-desc">新华社6月17日消息，今年7月中国将在上海举办2026世界人工智能大会暨人工智能全球治理高级别会议。大会将以"AI走进千家万户"为核心议题，推动人工智能消费应用按下加速键。</div>
+            <a class="news-item-link" href="https://www.news.cn/20260617/1e7e0beca0df4289bf17264661705aad/c.html" target="_blank">→ 新华社</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">澎湃新闻：让人工智能走进千家万户，AI消费按下加速键</div>
+            <div class="news-item-desc">澎湃新闻周末报道聚焦AI消费化趋势——从智能伴侣到自动驾驶，AI正褪去技术外壳，融入日常生活。品牌方需要思考：AI不是"卖点"，而是"体验基础设施"。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/" target="_blank">→ 澎湃新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">刘强东：京东AI模型向全球全面开放</div>
+            <div class="news-item-desc">在APEC工商论坛上，刘强东强调京东AI模型从第一天起就决定向全球所有国家和合作伙伴全面开放，反对技术鸿沟和技术壁垒。他认为"技术壁垒的本质就是技术剥削"。</div>
+            <a class="news-item-link" href="https://news.bjd.com.cn/2026/06/21/11819421.shtml" target="_blank">→ 北京日报</a>
+          </div>
+        </div>
+
+        <!-- 品牌 · 商业 -->
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 商业</div>
+          <div class="news-item">
+            <div class="news-item-title">京东"涅槃计划"：70万快递员转型机器人运维</div>
+            <div class="news-item-desc">刘强东宣布将70万蓝领快递员送回124所签约学校进行技能培训，转型为机器人维修保养人员。这一计划如果落地，将是中国最大规模的蓝领技能升级项目之一。</div>
+            <a class="news-item-link" href="https://news.bjd.com.cn/2026/06/21/11819421.shtml" target="_blank">→ 北京日报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">端午节假期：全社会跨区域人员流动量超2亿人次</div>
+            <div class="news-item-desc">6月20日全社会跨区域人员流动量完成2.01亿人次，端午假期铁路发送旅客量持续高位运行。文旅消费在假期集中释放，为品牌营销提供了天然的"节日场景"。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/" target="_blank">→ 中新网</a>
+          </div>
+        </div>
+
+        <!-- 国际 · 地缘 -->
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普表示将在"年内某个时候"再次访问中国</div>
+            <div class="news-item-desc">6月20日，美国总统特朗普表示将在年内再次访华。此前他曾表示除了G20峰会接触外，与中方领导人还有额外沟通。中美关系动向值得持续关注。</div>
+            <a class="news-item-link" href="https://sputniknews.cn/20260620/1071964767.html" target="_blank">→ 俄罗斯卫星通讯社</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">奥地利外长赖辛格将访华</div>
+            <div class="news-item-desc">奥地利外长赖辛格计划近期访华，中欧高层外交互动在夏季持续升温。</div>
+            <a class="news-item-link" href="https://www.people.com.cn/" target="_blank">→ 人民网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">端午假期多地暴雨 · 安徽湖北湖南贵州启动地质灾害Ⅳ级响应</div>
+            <div class="news-item-desc">国家防办提示，未来三天多地暴雨致灾风险高，安徽、湖北、湖南、贵州四省已启动地质灾害防御Ⅳ级响应。极端天气对假期出行和消费场景产生直接影响。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/" target="_blank">→ 中新网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#刘强东机器人送货 蓝领转型的叙事争夺战</div>
+            <div class="trend-meta">商业财经赛道 · 品牌公关方向</div>
+            <div class="trend-obs">💡 趋势观察：刘强东把"机器换人"包装成"涅槃计划"——从裁员焦虑翻转为技能升级叙事，这是品牌危机公关的经典手法。但小红书的职场赛道用户天然关注"我的岗位会不会被替代"，这个话题的传播力极强。品牌方可以参考京东的"转岗培训"叙事框架，在AI转型沟通中减少用户焦虑。</div>
+            <div class="trend-source"><a href="https://news.bjd.com.cn/2026/06/21/11819421.shtml" target="_blank">→ 北京日报·刘强东APEC发言</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#谢娜即兴翻译 直播综艺的"事故"与"故事"</div>
+            <div class="trend-meta">娱乐综艺赛道 · 主持人/嘉宾人设方向</div>
+            <div class="trend-obs">💡 趋势观察：谢娜在《乘风2026》总决赛的即兴双语翻译，本质上是直播综艺"无剧本"特性的典型产物。小红书的娱乐内容用户对"主持人翻车/救场"话题的参与度极高，因为这类内容兼具"吃瓜"和"专业讨论"双重属性。品牌可以关注这种"意外时刻"如何被节目组转化为传播素材——这正是"事故"变"故事"的叙事操作。</div>
+            <div class="trend-source"><a href="https://k.sina.com.cn/article_7857201856_1d45362c0019074yv0.html" target="_blank">→ 新浪综艺</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#夏季达沃斯+WAIC 科技品牌的双主场窗口</div>
+            <div class="trend-meta">科技内容赛道 · 品牌营销方向</div>
+            <div class="trend-obs">💡 趋势观察：达沃斯（6/23-25大连）+ 世界人工智能大会（7月上海）在不到一个月内接连举办，为科技品牌提供了罕见的"双主场叙事窗口"。小红书科技内容赛道中，"AI走进日常生活"的用户兴趣点正在超越"AI技术参数"，品牌应更多从"体验叙事"切入而非"技术秀肌肉"。</div>
+            <div class="trend-source"><a href="https://www.news.cn/20260617/1e7e0beca0df4289bf17264661705aad/c.html" target="_blank">→ 新华社·WAIC官宣</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#端午节文旅消费 假期场景营销的得与失</div>
+            <div class="trend-meta">生活方式赛道 · 节日营销方向</div>
+            <div class="trend-obs">💡 趋势观察：端午假期跨区域流动量超2亿人次，但极端天气（暴雨、地质灾害响应）在部分地区削弱了消费场景。品牌在做节日营销时需要考虑"天气变量"——同一节日在不同地区的消费体验差异可能很大。小红书上的"端午去哪儿"内容在暴雨地区可能被"端午宅家做什么"替代，品牌需准备多场景内容预案。</div>
+            <div class="trend-source"><a href="https://www.chinanews.com.cn/" target="_blank">→ 中新网·端午出行</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI转型叙事</div>
+        <div class="learning-title">"机器换人"还是"与人共生"？品牌如何讲述AI转型故事</div>
+        <div class="learning-subtitle">从刘强东APEC发言看科技品牌的AI叙事策略</div>
+        <div class="learning-body">
+          <p>6月21日，刘强东在APEC工商领导人中国论坛上的发言提供了一个值得拆解的品牌叙事案例——他如何讲述"AI将取代快递员"这个本质上带有焦虑感的话题。</p>
+          <p><strong>叙事策略一：翻转框架。</strong>刘强东没有回避"机器人送货意味着快递员失业"这个显而易见的焦虑，而是用一个"涅槃计划"把它翻转为"技能升级"叙事——70万快递员不是被取代，而是被"送回学校"变成"白领"。这个翻转的关键在于：它承认了变革的必然性，但重新定义了变革对人的影响。</p>
+          <p><strong>叙事策略二：提供时间表和路径。</strong>不是"AI将来会怎样"，而是"我们要把70万人送到124所学校培训机器人维修"。具体的数字（70万、124所）让叙事从愿景变成了可感知的项目。</p>
+          <p><strong>叙事策略三：站位全球化。</strong>刘强东同时宣布京东AI模型向全球全面开放，反对技术壁垒。这把京东的AI叙事从"企业战略"升级到了"全球合作"层面，在APEC这个国际场合尤其有效。</p>
+          <p><strong>对品牌营销的启示：</strong>当你的品牌面临"技术转型会伤害一部分人"的叙事挑战时，不要回避焦虑，而是翻转框架——从"失去"到"升级"，从"替代"到"共生"。具体的数字和清晰的路径，比空洞的承诺更有说服力。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://news.bjd.com.cn/2026/06/21/11819421.shtml" target="_blank">北京日报《刘强东：快递终将实现全部机器人送货》</a> ·
+          <a href="https://www.news.cn/20260617/1e7e0beca0df4289bf17264661705aad/c.html" target="_blank">新华社《2026世界人工智能大会7月上海举办》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 规模化创新</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🔬 主题策展 · "规模化创新"：从概念到落地的最后一公里</div>
+        <div class="knowledge-headline">创新不缺，缺的是让它长大的土壤</div>
+        <div class="knowledge-tagline">「规模化创新的本质，不是技术更大，而是阻力更小。」</div>
+
+        <div class="knowledge-intro">
+          2026大连夏季达沃斯论坛的主题是"规模化创新"（Scaling Innovation）。这个选择很有意思——不是"颠覆性创新"，不是"前沿探索"，而是<strong>"如何让已有的创新真正长大"</strong>。<br><br>
+          在AI和机器人技术的语境下，"规模化"意味着三件事：<br><br>
+          • <strong>成本规模化：</strong>让技术从"贵到只有大公司用得起"变成"小到每个企业都用得上"<br>
+          • <strong>人才规模化：</strong>京东的"涅槃计划"本质上是人才供给的规模化——70万人不是培训完就结束，而是要形成可持续的技能升级通道<br>
+          • <strong>治理规模化：</strong>7月上海的WAIC将聚焦AI全球治理，技术跑得太快，规则跟不上才是最大风险<br><br>
+          对品牌营销人来说，"规模化创新"这个框架提醒我们：好的品牌故事不是"我们有多创新"，而是"我们的创新如何让世界变得更好、更公平、更可及"。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏭</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">成本规模化</div>
+              <div class="knowledge-card-sub">Cost Scaling · 商业化路径</div>
+              <div class="knowledge-card-work">AI和机器人技术的核心挑战不是"能不能做"，而是"能不能便宜地做"。京东的机器人送货、WAIC的AI走进千家万户，本质上都在回答同一个问题：如何让技术服务从"奢侈品"变成"日用品"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">👥</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">人才规模化</div>
+              <div class="knowledge-card-sub">Workforce Scaling · 技能升级</div>
+              <div class="knowledge-card-work">京东"涅槃计划"的野心不在于70万人的绝对数字，而在于它试图建立一条"蓝领→技能工人→技术运维"的职业升级通道。如果成功，这将是AI时代人才转型的一个范式。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌍</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">治理规模化</div>
+              <div class="knowledge-card-sub">AI Governance · 全球协作</div>
+              <div class="knowledge-card-work">刘强东在APEC呼吁国际合作、WAIC聚焦AI全球治理——技术创新的全球竞争正在演变为治理规则的话语权竞争。谁能在治理框架的设计中占据主动，谁就能在下一代技术标准中定义"游戏规则"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">📢</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">品牌叙事规模化</div>
+              <div class="knowledge-card-sub">Narrative Scaling · 传播策略</div>
+              <div class="knowledge-card-work">品牌在AI时代的叙事挑战：如何在技术快速迭代中保持一致性？答案是把叙事锚定在"人的价值"而非"技术参数"上。"让AI服务每一个人"比"我们的模型有10万亿参数"更容易被规模化传播。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          达沃斯选择"规模化创新"作为主题，本身就是一个信号：全球商界正在从"创新竞赛"转向"落地竞赛"。品牌营销需要跟上这个转向——从"我们有多前沿"到"我们的前沿如何触达每一个人"。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新 · 今日含上周末补录内容
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
