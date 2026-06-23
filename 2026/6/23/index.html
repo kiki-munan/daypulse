@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/23</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; border-left: 2px solid var(--accent); }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.85; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    /* Festival */
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 52px; background: linear-gradient(135deg, #0a1628 0%, #2d5a8c 40%, #f5c842 80%, #ffffff 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    /* Knowledge */
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 36px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/6/23/index.html" class="active">2026 / 6 / 23</a></li>
+        <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+        <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+        <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+        <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+        <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+        <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+        <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+        <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+        <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+        <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+        <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+        <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+        <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+        <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+        <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+        <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+        <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+        <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+        <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+        <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+        <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+        <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+        <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+        <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+        <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+        <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+        <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+        <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+        <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 23</div>
+      <div class="day-week">星期二</div>
+      <span class="day-tag">⚽ 世界杯小组赛火热进行</span>
+      <span class="day-tag">🌿 北欧仲夏节</span>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 方向</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">端午假期出游1.24亿人次，消费质量升级成最强信号</div>
+            <div class="news-item-desc">文化和旅游部数据显示，刚刚过去的端午假期（6月20-22日）全国出游1.24亿人次，同比增长4.4%；出游总花费444.56亿元，增长4.0%。飞猪报告显示人均预订金额同比增长16%，品质旅行明显跑赢量。郑州文旅凭"一眼千年"冲上微博热搜158万讨论，地方文旅IP竞争进入白热化。</div>
+            <a class="news-item-link" href="https://www.mct.gov.cn/whzx/whyw/202606/t20260622_966305.htm" target="_blank">→ 文旅部数据中心</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">李强大连调研：高端船舶制造、核电装备列入现代化产业体系重点</div>
+            <div class="news-item-desc">国务院总理李强6月22日在大连深入走访大连船舶重工和一重集团，强调"智能化、绿色化、融合化"产业方向，并指出高端石化、先进核电装备对能源与产业安全的基础性意义。这是近期宏观政策对"高端制造+新质生产力"叙事的延续信号。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/fm/8036768.html" target="_blank">→ 钛媒体</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">三星全球员工全面部署ChatGPT Enterprise + Codex，OpenAI史上最大企业单</div>
+            <div class="news-item-desc">OpenAI官宣三星电子将ChatGPT企业版和代码自动化平台Codex全面推向韩国所有员工及全球DX部门员工，覆盖研发、制造、营销全链路。这是继三星2023年内部禁用AI事件后的180度转向，也是OpenAI企业化进程的里程碑。B端渗透正在以"全员赋能"而非"试点项目"模式加速。</div>
+            <a class="news-item-link" href="https://openai.com/index/samsung-electronics-chatgpt-codex-deployment/" target="_blank">→ OpenAI官网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达推出Halos机器人安全系统，Physical AI从算法落向认证体系</div>
+            <div class="news-item-desc">英伟达发布"Halos for Robotics"全栈安全系统，覆盖IGX Thor芯片、传感器桥接、Halos OS及AI安全认证实验室四层架构，首批合作伙伴为人形机器人公司Agility（Digit机器人）。世界模型正从"预测Token"迈向"预测物理状态"，物理AI的工业安全认证赛道正式开启。</div>
+            <a class="news-item-link" href="https://wap.eastmoney.com/a/202606223778317045.html" target="_blank">→ 东方财富</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美光与Anthropic战略合作：HBM存储+H轮融资入股，AI基础设施绑定深化</div>
+            <div class="news-item-desc">美光科技宣布与Anthropic达成涵盖HBM/DRAM/SSD技术研发、长期供应协议和股权投资的全面合作，共同优化Claude模型在训练和推理场景下的算力效率。大模型公司与芯片/存储厂商的深度绑定，正在重塑AI基础设施的产业结构。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/fm/8036768.html" target="_blank">→ 钛媒体早报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">华为乾崑智驾7月涨价，高阶包从32000元回调至36000元</div>
+            <div class="news-item-desc">引望发布公告，华为ADS Max高阶功能包将从7月1日起取消限时优惠，恢复标准价36000元，同步升级1-3年保障权益。新能源智驾溢价已从技术卖点转为常规选配，定价策略从促销期进入成熟期。乘用车智能化的"价格战下半场"开始分化。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/fm/8036768.html" target="_blank">→ 钛媒体</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">豆包APP在北京/杭州灰测打车，AI超级App的"出行入口"争夺开始</div>
+            <div class="news-item-desc">字节旗下豆包接入曹操出行提供一键打车服务，继续扩充AI助手的生活场景半径。高频刚需的出行场景能显著提升日活粘性，国产AI大模型的App层竞争正从对话工具转向"生活OS"。</div>
+            <a class="news-item-link" href="https://www.tmtpost.com/fm/8036768.html" target="_blank">→ 钛媒体早报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">姆巴佩世界杯左脚世界波1138万讨论，法国1-0伊拉克，世界杯热度飙升</div>
+            <div class="news-item-desc">世界杯小组赛持续制造社交高光时刻：姆巴佩一脚世界波冲上微博热搜榜首，话题热度超1138万；法国暴雨比赛现场也成独立话题。阿根廷2-0奥地利稳步推进。世界杯流量窗口下，品牌如何在赛事间隙制造"情绪钩子"是核心命题。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A7%86%E5%B7%B4%E4%BD%A9%E5%B7%A6%E8%84%9A%E4%B8%96%E7%95%8C%E6%B3%A2" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《逐玉》导演称"战争戏不需要逻辑"引争议，古偶品质讨论再起</div>
+            <div class="news-item-desc">国产剧《逐玉》导演言论在微博引发对古装剧创作态度的广泛讨论，折射出观众对内容品质诉求的提升。"品质保底"正成为长视频内容的基础门槛，口碑维护比流量更难替换。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%80%90%E7%8E%89%E5%AF%BC%E6%BC%94+%E6%88%98%E4%BA%89%E6%88%8F%E4%B8%8D%E9%9C%80%E8%A6%81%E9%80%BB%E8%BE%91" target="_blank">→ 微博话题</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">乐道CEO放话"考清华比搞换电容易"，品牌人格化营销的度与尺</div>
+            <div class="news-item-desc">乐道汽车CEO的大胆发言再次证明：CEO即内容、品牌人格化是2026年突围捷径。但话题冲击力与品牌调性之间的张力值得警惕——当玩梗成为惯性，反套路就失去稀缺性。对平台大事件营销的启示：敢说、能说、说到点子上，三者缺一不可。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B9%90%E9%81%93CEO%E7%A7%B0%E8%80%83%E6%B8%85%E5%8D%8E%E6%AF%94%E6%90%9E%E6%8D%A2%E7%94%B5%E5%AE%B9%E6%98%93" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Lay's为2026世界杯打造双创意活动，赞助商内容从"露出"升级为"参与设计"</div>
+            <div class="news-item-desc">乐事薯片作为FIFA官方赞助商，围绕"没有Lay's就没有比赛"延续第四年叙事，同步推出两套创意营销活动。世界杯赞助商已不满足于Logo曝光，内容共创和情感共鸣成为衡量赞助ROI的新维度。</div>
+            <a class="news-item-link" href="https://www.moomoo.com/hans/news/post/69395077/lay-s-launches-two-unique-creative-campaigns-for-fifa-world" target="_blank">→ 摩牛证券资讯</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">SpaceX IPO后首次发行优先票据，马斯克"物理AI栈"成资本市场新标的</div>
+            <div class="news-item-desc">SpaceX本月12日完成史上最大IPO（750亿美元），本周继续启动首次优先无担保票据融资，所得用于偿还过桥贷款。马斯克在路演中重点推销"AI物理栈"概念而非火箭本身——AI×硬件×基础设施的叙事框架正在重塑资本市场对科技公司的估值逻辑。</div>
+            <a class="news-item-link" href="https://zhuanlan.zhihu.com/p/2046296234898481754" target="_blank">→ 知乎专栏</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 5条</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">小红书Redshop本月正式上线，平台出海战略进入执行期</div>
+            <div class="trend-meta">跨境电商 · 平台动态</div>
+            <div class="trend-obs">🔍 趋势观察：redshop首批覆盖美英澳等9个核心市场，将小红书内容种草能力延伸至海外消费场景。对品牌方而言，这是继TikTok Shop之后又一个"内容即购买"的全球渠道；对平台IP大事件而言，出海版活动的策划将成为新增量方向。</div>
+            <div class="trend-source"><a href="https://www.cls.cn/detail/2341942" target="_blank">→ 财联社报道</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">端午节后"郑州文旅"出圈，"一眼千年是郑州"成爆款文案</div>
+            <div class="trend-meta">文旅IP · 内容营销</div>
+            <div class="trend-obs">🔍 趋势观察：地方文旅的爆款不再依赖明星或大制作，一句能激活文化认同的文案足以引爆。小红书上"历史感城市"的种草内容正在形成独立品类，"文化深度+拍照美学"的双重满足是用户留存的核心。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%80%E7%9C%BC%E5%8D%83%E5%B9%B4%E6%98%AF%E9%83%91%E5%B7%9E" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">世界杯热潮下，小红书"球场穿搭""出行攻略"内容急速上量</div>
+            <div class="trend-meta">赛事营销 · 用户内容</div>
+            <div class="trend-obs">🔍 趋势观察：世界杯周期内，赛事相关的生活方式内容（看球穿搭、球迷DIY、城市酒吧推荐）在小红书增速远超单纯的赛事资讯。平台正在成为赛事情绪的"生活化出口"，品牌可借助赛事情绪做场景化内容营销，而非直接蹭赛事Logo。</div>
+            <div class="trend-source"><a href="https://www.lexology.com/library/detail.aspx?g=e3e47464-a942-4e9a-bbd9-75671cec78f8" target="_blank">→ 世界杯营销合规指南</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">《恋与深空》道歉事件持续发酵，女性向游戏品牌危机管理成焦点</div>
+            <div class="trend-meta">游戏IP · 品牌舆情</div>
+            <div class="trend-obs">🔍 趋势观察：恋与深空接连道歉反映出女性向游戏用户的高情感投入与低容错要求。在小红书上，游戏内容社区和真实用户情绪是品牌危机的放大镜，也是修复口碑最重要的场域。及时、真诚、有实质改变的道歉才有效，"表演式道歉"反而加深裂痕。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%81%8B%E4%B8%8E%E6%B7%B1%E7%A9%BA%E4%B8%80%E7%9B%B4%E5%9C%A8%E8%AF%B4%E5%AF%B9%E4%B8%8D%E8%B5%B7" target="_blank">→ 微博话题</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">小红书金融专业号治理升级，内容生态"清洁度"持续提升</div>
+            <div class="trend-meta">平台治理 · 内容生态</div>
+            <div class="trend-obs">🔍 趋势观察：平台持续加码专业号治理，财经、金融类内容门槛提升，但也意味着留存的专业号内容质量和公信力更高。对品牌营销而言，平台内容生态的"净化"有利于优质内容的自然分发——噪音减少，信号更强。</div>
+            <div class="trend-source"><a href="https://www.stcn.com/article/detail/3944205.html" target="_blank">→ 证券时报中国网</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销方向</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">INSIGHT · 2026</div>
+        <div class="learning-title">隐性营销的生死线：世界杯赛季，品牌如何"上车"不"翻车"</div>
+        <div class="learning-subtitle">当赛事流量触手可及，"借势"与"侵权"只差一条线</div>
+        <div class="learning-body">
+          <p>2026年世界杯是史上规模最大的一届——48支球队、三国联办（美加墨）、104场比赛。每一场高光时刻背后，是数以亿计的眼球和品牌不惜代价购买的曝光机会。然而，游离于赞助体系之外的品牌，正面临一个越来越精明的问题：<strong>如何蹭赛事热度，又不被FIFA告？</strong></p>
+          <p>这套逻辑的核心概念叫做<strong>隐性营销（Ambush Marketing）</strong>——通过联想、暗示、时间节点，让消费者将品牌与赛事画等号，却并未购买官方赞助资格。它的边界极其微妙，各国法律态度不一，但普遍将"直接使用世界杯标志/吉祥物/官方主题曲"列为红线。</p>
+          <p><strong>合规借势的三条路：</strong>① 围绕球迷文化而非赛事本身做内容（"看球吃什么"比"世界杯吃什么"安全得多）；② 绑定选手个人IP而非FIFA商标（球迷对球星的情感远强于对赛事本身）；③ 制造与赛事共时的独立事件，用节奏感与赛事形成"情绪协同"。</p>
+          <p>乐事薯片（Lay's）作为官方赞助商连续四年叙事"没有Lay's就没有比赛"，成功将产品植入"看球仪式感"；而更多没有赞助资格的品牌，正在用"球场周边探店""球迷聚会攻略""出征穿搭"等内容形态，在小红书上收割同等的情绪流量。<strong>赛事是背景，情绪才是产品。</strong></p>
+          <p>对平台IP大事件营销的启示：当平台不是赛事官方合作方时，能否找到"情绪共鸣点"而非"版权结合点"，决定了内容的生命周期。世界杯的流量窗口只有30天，但"看球的人"的生活方式内容却可以延伸很久。</p>
+        </div>
+        <div class="learning-source">
+          参考来源：
+          <a href="https://www.lexology.com/library/detail.aspx?g=e3e47464-a942-4e9a-bbd9-75671cec78f8" target="_blank">Lexology《2026世界杯营销合规指南》</a> ·
+          <a href="https://www.moomoo.com/hans/news/post/69395077/lay-s-launches-two-unique-creative-campaigns-for-fifa-world" target="_blank">Lay's世界杯营销案例</a> ·
+          <a href="https://www.27sem.com/article/9247" target="_blank">2026品牌营销6大破圈策略</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日节日 · 北欧仲夏节</span>
+      </div>
+      <div class="section-body">
+
+        <div class="festival-banner-placeholder">🌸☀️🌿</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">北欧文化</span>
+          <span class="festival-tag">每年6月下旬</span>
+          <span class="festival-tag">瑞典/芬兰/挪威</span>
+          <span class="festival-tag">公共假日</span>
+          <span class="festival-tag">文化+商业</span>
+        </div>
+
+        <div class="festival-name">北欧仲夏节</div>
+        <div class="festival-name-en">Midsommar / Nordic Midsummer Festival</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">过去 · 从异教篝火到全球美学符号</div>
+          <div class="festival-block-body">
+            <p>仲夏节的根脉深埋于北欧异教传统。数千年前，北纬60度以北的斯堪的纳维亚人把夏至视为一年中最神圣的时刻——太阳永不落下，光与生命在此刻达到顶峰。他们燃起篝火驱赶恶灵、采摘七种野花置于枕下以梦见未来伴侣，绕着<strong>花柱（Maypole）</strong>起舞，以仪式感迎接生命最丰盈的时刻。</p>
+            <p>基督教传播后，教会将这一节日与施洗约翰诞辰（6月24日）合并，赋予了更多宗教外衣，但民间的自然崇拜从未消散。瑞典将仲夏节确立为官方公共假日，芬兰称之为<strong>Juhannus</strong>，挪威和丹麦也各有传统名称。</p>
+            <p>2019年，Ari Aster导演的恐怖片<strong>《仲夏夜惊魂》（Midsommar）</strong>意外将这一节日推向了全球流行文化视野——花冠、白裙、篝火与仪式感，在极致美与极致恐惧之间制造了强烈的视觉符号张力。小红书上，"Midsommar妆容""仲夏女神穿搭"随即成为独立的美学词条。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">现在 · 规模、商业与文化影响力</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">5国+</div>
+                <div class="festival-stat-label">北欧法定公假国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">6月19-25日</div>
+                <div class="festival-stat-label">瑞典官方节日窗口</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2亿€+</div>
+                <div class="festival-stat-label">北欧仲夏节零售带动（估算）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2019</div>
+                <div class="festival-stat-label">《仲夏夜惊魂》全球破圈年</div>
+              </div>
+            </div>
+            <p>如今的仲夏节已是北欧人一年中出行率最高的节假日之一，程度不亚于圣诞节。瑞典人举家迁往乡村小屋（Stuga），戴上<strong>花冠</strong>、穿上传统白衫、吃腌鲱鱼（Surströmming）与草莓蛋糕，赤脚在草地上跳"青蛙舞"。</p>
+            <p>商业层面，IKEA是最深度绑定仲夏节IP的全球品牌——每年6月在全球门店举办仲夏节主题活动，将北欧生活美学具象化为消费行为。宜家以此证明：<strong>节日不是购物节，而是生活方式的集中展示时刻。</strong>Marimekko、H&M等北欧品牌也会在此期间推出限定花卉图案系列，将节日色彩转化为销售动力。</p>
+            <p>在内容平台上，"仲夏感"已经演变成独立的美学语言——花冠、亚麻、金发、野花草地、午夜阳光，不需要解释背景，用户秒懂。这是节日符号成熟的标志：<strong>当形式语言能脱离故事独立传播，它就拥有了商业价值。</strong></p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">未来 · 对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <div class="festival-insight">
+              <strong>核心启发 ①：仪式感即内容产品。</strong>仲夏节最强的商业竞争力来自高度仪式化的参与方式——花冠DIY、赤脚草地、特定食物。每一个仪式都是天然的UGC内容生产器。大事件活动设计可以问：<em>我们给用户安排了什么"必须拍下来"的仪式动作？</em>
+            </div>
+            <div class="festival-insight" style="margin-top:10px">
+              <strong>核心启发 ②：美学一致性创造传播护城河。</strong>仲夏节的视觉语言高度统一——花、白、绿、金——消费者在任何渠道见到都能秒识别。活动IP的视觉体系越统一，跨场景传播成本越低。
+            </div>
+            <div class="festival-insight" style="margin-top:10px">
+              <strong>核心启发 ③：文化节日天然具有"参与门槛低、理解成本低"的优势。</strong>仲夏节不需要理解斯堪的纳维亚历史，只需要跳一支青蛙舞。大事件IP可以思考：活动的参与门槛是否低到让"路人"也愿意加入？
+            </div>
+          </div>
+        </div>
+
+        <div class="festival-block" style="margin-bottom:0">
+          <div class="festival-block-title">来源参考</div>
+          <div class="festival-block-body">
+            <a href="https://zh.wikipedia.org/zh-cn/%E4%BB%B2%E5%A4%8F%E7%AF%80" target="_blank" style="color:var(--accent); font-size:12px;">→ 维基百科·仲夏节</a> ·
+            <a href="https://www.ikea.com.tw/zh/store/hsin-chuang/midsummer" target="_blank" style="color:var(--accent); font-size:12px;">→ IKEA仲夏节活动</a> ·
+            <a href="https://scancentre.org/scandinavian-midsummer-festival-june-20-21/" target="_blank" style="color:var(--accent); font-size:12px;">→ Scandinavian Midsummer Festival 2026</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">策展 · 音乐图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">音乐 × 赛事 · 世界杯主题曲制造者图谱</div>
+        <div class="knowledge-headline">那些为世界杯唱过歌的人</div>
+        <div class="knowledge-tagline">"比赛结束了，歌还在响。"</div>
+        <div class="knowledge-intro">
+          世界杯是地球上收视人次最高的单体体育赛事，每四年制造一次文化奇点。而主题曲，是这个奇点最持久的余震——它在赛事结束后继续流传，成为集体记忆的声音锚点。从1994年的<em>Dare To Dream</em>到2010年的<em>Waka Waka</em>，再到2022年的<em>Hayya Hayya</em>，每一首世界杯主题曲背后都是一位或几位艺术家用全球舞台改写自己命运的故事。2026年，这个传统在北美的土地上再次开启。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Shakira_Hamburg_MG_0117_%28cropped%29.jpg/440px-Shakira_Hamburg_MG_0117_%28cropped%29.jpg"
+              alt="Shakira"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">夏奇拉 Shakira</div>
+              <div class="knowledge-card-sub">哥伦比亚 · 2010年南非世界杯</div>
+              <div class="knowledge-card-work">《Waka Waka (This Time for Africa)》——史上最畅销世界杯主题曲，销量超1000万，MV YouTube浏览超35亿次。她用非洲鼓点与拉丁律动让全球陌生人共享同一个身体记忆。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Ricky_Martin_%28cropped%29.jpg/440px-Ricky_Martin_%28cropped%29.jpg"
+              alt="Ricky Martin"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">瑞奇·马丁 Ricky Martin</div>
+              <div class="knowledge-card-sub">波多黎各 · 1998年法国世界杯</div>
+              <div class="knowledge-card-work">《La Copa de la Vida》（生命之杯）——将拉丁流行音乐推向全球主流的关键一役。他的开幕式演出至今仍被认为是世界杯开幕式史上最具能量的时刻之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/K%27naan_2011_cropped.jpg/440px-K%27naan_2011_cropped.jpg"
+              alt="K'NAAN"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">K'NAAN</div>
+              <div class="knowledge-card-sub">索马里裔加拿大 · 2010年（创作者）</div>
+              <div class="knowledge-card-work">《Wavin' Flag》原曲创作者，可口可乐购买版权作为世界杯推广曲，覆盖全球212个版本。一个难民出身的诗人/说唱歌手，用一首歌让整个世界认识了非洲的希望叙事。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Pitbull_2014.jpg/440px-Pitbull_2014.jpg"
+              alt="Pitbull"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🕶️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Pitbull</div>
+              <div class="knowledge-card-sub">古巴裔美国 · 2014年巴西世界杯</div>
+              <div class="knowledge-card-work">《We Are One (Ole Ola)》——合作Jennifer Lopez和Claudia Leitte，首次将南美卡尼瓦尔能量、流行电子与拉丁说唱打包成世界杯音乐大礼包。Pitbull是世界杯主题曲商业化运营最成熟的典范。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          世界杯主题曲的本质，是用音乐制造"我们同属一个时刻"的幻觉。它不需要所有人都听懂歌词，只需要在某个瞬间让人感觉自己是人类这个大团队的一员。这是IP大事件营销最难复制却最值得追求的境界：<strong>不是让用户记住品牌，而是让品牌成为集体记忆的一部分。</strong>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 每个工作日 09:45 为你更新 · 2026/06/23
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    sidebar.classList.toggle('collapsed');
+    btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+    btn.title = sidebar.classList.contains('collapsed') ? '展开' : '收起';
+  }
+</script>
+
+</body>
+</html>
