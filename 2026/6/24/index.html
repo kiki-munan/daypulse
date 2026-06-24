@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/6/24</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a3a1a 0%, #2d6a2d 40%, #c9b037 80%, #f5f0e8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/6/24/index.html" class="active">2026 / 6 / 24</a></li>
+        <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+        <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+        <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+        <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+        <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+        <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+        <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+        <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+        <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+        <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+        <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+        <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+        <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+        <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+        <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+        <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+        <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+        <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+        <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+        <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+        <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+        <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+        <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+        <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+        <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+        <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+        <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+        <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+        <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+        <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 06 · 24</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">前5月财政收入增长4%，修复态势持续——但"增量政策"窗口如何打开？</div>
+            <div class="news-item-desc">财政部最新数据：1—5月全国一般公共预算收入同比增长4%，增幅较1—4月提高0.5个百分点。新华财经指出，收入修复为后续发力留足"弹药"。外贸方面，量增质升的稳健信号同步释放。当前宏观面的微妙之处在于：财政空间已在回暖，市场更关心政策何时落地，用什么方式激活消费侧需求。</div>
+            <a class="news-item-link" href="http://news.10jqka.com.cn/" target="_blank">→ 同花顺财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">第17届夏季达沃斯开幕，全球议题聚焦"多元对话·务实良策"</div>
+            <div class="news-item-desc">面对全球贸易增速从4.7%放缓至约2%的预期压力，联合国贸发会议警示地缘政治紧张正持续冲击供应链与海运投资。达沃斯论坛的议程折射出一个悖论时代：增长放缓、对话加速——各方都在讲"多元"，但共识越来越难凝聚。</div>
+            <a class="news-item-link" href="http://finance.china.com.cn/" target="_blank">→ 中国网财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">SpaceX斩获AI算力大单：Reflection AI签约月付1.5亿美元，合同总额最高达63亿美元</div>
+            <div class="news-item-desc">开源AI初创公司Reflection AI将自2026年7月起，每月向SpaceX旗下Colossus超算集群支付1.5亿美元算力租金，合约期若执行至2029年，总额高达63亿美元。这是SpaceX在IPO后大规模商业化算力基础设施的最新动作。AI算力"租用经济"正在重构资本流向：不是谁拥有模型，而是谁提供底层算力，谁就锁定了未来五年的现金流。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-06-23/doc-inieiatm6904819.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普签量子计算行政令：2028年前部署实用量子计算机，剑指中国技术竞赛</div>
+            <div class="news-item-desc">白宫签署行政令，要求包括能源部在内的联邦机构与学术界、私营部门合作，在2028年前建成一台具备科学研究价值的量子计算机。分析人士直指：此举是美国确保在中美量子技术竞赛中抢占领导地位的战略布局。量子计算的商业化赛道，正在从实验室叙事进入国家意志层面。</div>
+            <a class="news-item-link" href="https://www.stcn.com/article/detail/3973533.html" target="_blank">→ 证券时报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">千问志愿填报Agent爆火，AI出分提醒与高考分数"同时到达"登上微博热搜</div>
+            <div class="news-item-desc">阿里千问上线高考志愿填报全周期Agent，提供查分、定位、方案制定全流程服务。"千问出分提醒和高考分数同时到达"成为今日热搜话题，折射出AI Agent正在以具体场景切入大众日常决策。从AI聊天到AI"帮你填志愿"，感知门槛已大幅降低——这意味着AI的下一战场是高频、高情绪价值的人生节点。</div>
+            <a class="news-item-link" href="https://www.stcn.com/article/detail/3963104.html" target="_blank">→ 证券时报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">六部门联合发文促广告产业高质量发展：AI赋能、出海协同、数字化转型三箭齐发</div>
+            <div class="news-item-desc">市场监管总局等六部门发布意见，聚焦数智广告新业态、算力赋能内容生产、支持广告企业出海嵌入全球产业链等六大举措。这是广告行业难得一见的顶层政策信号。对营销人而言，值得关注的关键词：<strong>AI内容生产 + 出海协同 + 传统广告数字化转型</strong>——三者合力将重塑国内广告产业格局。</div>
+            <a class="news-item-link" href="http://zw.china.com.cn/2026-06/24/content_118563991.shtml" target="_blank">→ 中国政务</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">法国夏季打折季6月24日正式启动，欧美消费旺季进入冲刺阶段</div>
+            <div class="news-item-desc">法国《Soldes d'été》夏季大促今日正式开跑（6月24日—7月21日），品牌折扣幅度普遍达到20%-70%。对出海品牌与跨境电商而言，这是欧美消费旺季的关键起跑点——伴随音乐节、旅行高峰与世界杯余热，欧洲市场7月整体消费热度将延续至暑期末。</div>
+            <a class="news-item-link" href="https://www.globalstardigital.com/zh-cn/influencer-marketing-insights/2026%E6%AC%A7%E7%BE%8E%E5%A4%8F%E5%AD%A3%E6%B6%88%E8%B4%B9%E6%97%BA%E5%AD%A3%E8%90%A5%E9%94%80%E6%97%A5%E5%8E%86%EF%BC%9A6-8%E6%9C%88%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9%E3%80%81%E6%B6%88%E8%B4%B9/" target="_blank">→ GlobalStar Digital</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">C罗世界杯梅开二度，葡萄牙5-0狂胜乌兹别克斯坦，C罗超越尤西比奥成队史世界杯射手王</div>
+            <div class="news-item-desc">世界杯K组第二轮，葡萄牙5-0大胜乌兹别克斯坦。C罗第6分钟破门打消首轮失球阴霾，上半场梅开二度将个人世界杯总进球提升至10球，超越传奇名宿尤西比奥。微博"C罗成为葡萄牙世界杯射手王"话题热度超千万。小红书持权转播赛事仍在持续吸引男性新增用户，平台将赛事内容与球迷圈子互动全面打通。</div>
+            <a class="news-item-link" href="https://news.7m.com.cn/news/20260624/729334.shtml" target="_blank">→ 7M足球新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026中国电影暑期档提前升温，历史题材影片集中定档，票房已破5亿</div>
+            <div class="news-item-desc">《四渡》《长安的荔枝》等历史题材电影在国内外引发关注，2026年暑期档在端午假期后已实现票房早期积累。美国独立建国250周年系列文化活动亦同步激活国际间的文化叙事讨论。今夏文化消费的关键词：家国叙事、历史IP、全球同频。</div>
+            <a class="news-item-link" href="https://pub-zhtb.hizh.cn/a/202606/13/AP6a2ced88e4b05ced6a104e77.html" target="_blank">→ 珠海网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">世界杯营销格局：联想、海信、蒙牛三家中国品牌跻身全球16个赞助席位，"精准破局"vs"重金占位"的路线分化</div>
+            <div class="news-item-desc">本届世界杯官方全球赞助商席位售罄，中国仅三家企业入局。相比传统"重金占位"，品牌营销竞争的焦点已转向精准内容与圈层渗透。小红书以持权转播商身份切入，绕开了大规模广告投放的竞争赛道，走了一条以"内容权益换用户增量"的差异化路径——这是值得关注的平台级营销策略样本。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/jjxw/2026-06-12/doc-iniccnfv0355312.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">链博会开幕折射AI产业重心跃迁：算力、数据、算法形成"新基础设施三角"</div>
+            <div class="news-item-desc">第四届链博会在北京开幕，AI产业链布局成为核心议题。与此同时，联合国贸发会议预警：全球供应链在地缘政治紧张下持续承压，贸易增速预计从4.7%下滑至2%以内。"链"的重塑，既是技术叙事，也是地缘棋局。</div>
+            <a class="news-item-link" href="http://finance.china.com.cn/" target="_blank">→ 中国网财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#C罗世界杯梅开二度 · 小红书赛事热度持续攀升</div>
+            <div class="trend-meta">体育赛事 · 球迷内容赛道 · 男性用户破圈</div>
+            <div class="trend-obs">💡 趋势观察：C罗进球话题在微博引爆超千万热度，同步传导至小红书球迷圈子。小红书作为世界杯持权转播商，正在将这一赛事热度转化为男性用户的真实留存——赛事直播+球迷卡+圈子互动的组合，让小红书第一次在体育内容上形成闭环。对大事件策划的启示：<strong>版权不是内容，是入场券；用版权驱动的社区氛围，才是真正的资产。</strong></div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=C%E7%BD%97%E6%88%90%E4%B8%BA%E8%91%A1%E8%90%84%E7%89%99%E4%B8%96%E7%95%8C%E6%9D%AF%E5%B0%84%E6%89%8B%E7%8E%8B" target="_blank">→ 微博热搜·C罗成为葡萄牙世界杯射手王</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#高考志愿填报 · AI助手爆发，平台内容需求同步激活</div>
+            <div class="trend-meta">教育消费 · AI工具使用 · 焦虑叙事赛道</div>
+            <div class="trend-obs">💡 趋势观察：高考出分叠加AI志愿助手引发全网讨论，小红书上"高考后我怎么办"、"报考避坑"类内容正在进入峰值期。这是一个典型的"高情绪价值时间节点"——用户既需要信息，也需要情绪出口。品牌和创作者此时切入，要选择"陪伴者"姿态而非"解决方案提供商"的姿态。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%AB%98%E8%80%83%E5%BF%97%E6%84%BF%E5%A1%AB%E6%8A%A5%E9%81%B5%E5%BE%AA9%E4%B8%AA%E5%AD%97" target="_blank">→ 微博热搜·高考志愿填报遵循9个字</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#法国夏季折扣季开启 · 海淘与出海消费话题升温</div>
+            <div class="trend-meta">跨境消费 · 时尚奢侈赛道 · 出行种草</div>
+            <div class="trend-obs">💡 趋势观察：法国夏季折扣季正式开始，带动小红书上"巴黎购物攻略"、"法国outlets"类笔记的收藏和搜索量爬升。6-7月是出行+购物双叠加的内容高峰，旅游、时尚、生活方式品牌是借势的最优赛道。平台内以"真实体验"为核心的种草内容，在此节点的转化效率通常高于非节点期。</div>
+            <div class="trend-source"><a href="https://www.globalstardigital.com/zh-cn/influencer-marketing-insights/2026%E6%AC%A7%E7%BE%8E%E5%A4%8F%E5%AD%A3%E6%B6%88%E8%B4%B9%E6%97%BA%E5%AD%A3%E8%90%A5%E9%94%80%E6%97%A5%E5%8E%86%EF%BC%9A6-8%E6%9C%88%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9%E3%80%81%E6%B6%88%E8%B4%B9/" target="_blank">→ GlobalStar Digital·欧美夏季消费日历</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#千问AI出分提醒 · AI Agent进入情感高频场景</div>
+            <div class="trend-meta">AI工具 · 教育赛道 · 生活服务场景</div>
+            <div class="trend-obs">💡 趋势观察："千问出分提醒和高考分数同时到达"成为热搜话题，说明AI Agent正在从效率工具向情感陪伴者迁移。对小红书平台而言，这类"AI真的懂我"的内容具有强烈的分享动机——人们愿意把"AI帮了我"的故事讲给别人听。大事件中嵌入AI互动体验，将是2026年下半年IP设计的重要方向。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%8D%83%E9%97%AE%E5%87%BA%E5%88%86%E6%8F%90%E9%86%92%E5%92%8C%E9%AB%98%E8%80%83%E5%88%86%E6%95%B0%E5%90%8C%E6%97%B6%E5%88%B0%E8%BE%BE" target="_blank">→ 微博热搜·千问出分提醒和高考分数同时到达</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界杯品牌营销 · 小红书转播策略引发行业讨论</div>
+            <div class="trend-meta">平台商业化 · 体育IP营销 · 行业议题</div>
+            <div class="trend-obs">💡 趋势观察：TMT Post、澎湃等媒体深度分析"小红书为什么买世界杯"，行业对"版权+社区内容"组合玩法的讨论持续发酵。这不仅是小红书自身的商业化命题，也是整个内容平台行业的重要参照系——<strong>大事件的流量边界，由你愿意为多大的IP付出多少战略成本来决定。</strong></div>
+            <div class="trend-source"><a href="https://www.tmtpost.com/8006817.html" target="_blank">→ TMT Post·2026世界杯，为什么小红书买了抖音没买？</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 广告政策</div>
+        <div class="learning-title">六部门发文：广告业的"国家意志时刻"，对内容营销人意味着什么？</div>
+        <div class="learning-subtitle">从"监管"到"赋能"——一份政策文件背后的行业信号解读</div>
+        <div class="learning-body">
+          <p>六部门联合发文促进广告产业高质量发展，这在中国广告史上并不多见。这份文件的重要性，不在于它"管了什么"，而在于它"鼓励了什么"——这是一个罕见的从监管叙事转向产业扶持叙事的政策时刻。</p>
+          <p>文件核心关键词：<strong>数智广告新业态、AI算力赋能内容生产、广告企业出海、传统广告数字化转型</strong>。翻译成业务语言，就是：政府在明确告诉行业——AI做广告、出海做广告、数字化广告，都是被鼓励的方向。</p>
+          <p>对内容营销人而言，最值得注意的是"算力赋能"这个表述。意见明确鼓励平台和服务机构"用好算力设施，为广告内容生产和投放提供算力保障"——这不是一句空话，而是在暗示：下一阶段广告行业的生产效率差异，将越来越多地取决于AI工具的使用深度，而不是创意人才的数量。</p>
+          <p>出海协同方向同样值得关注：<strong>支持广告企业与中国优势产业"协同出海"</strong>，意味着联想、海信在世界杯赞助席位上的玩法，将在政策层面获得更清晰的框架支持。对IP大事件策划而言，未来的国际化IP机会，不只是"跟着平台出海"，而是"跟着中国品牌出海，用大事件为出海品牌建立文化认同"。</p>
+          <p>一句话总结：<strong>这份文件是广告行业近年来难得的"利好确认书"</strong>——既确认了AI是合法的生产力工具，也确认了出海是被鼓励的方向。接下来，看谁能把政策利好转化为真实的业务增量。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="http://zw.china.com.cn/2026-06/24/content_118563991.shtml" target="_blank">中国政务《六部门提出六大举措》</a> ·
+          <a href="https://www.news.cn/fortune/20260608/444da1c3cafb41d0b88fca0bdaa59b3f/c.html" target="_blank">新华网《六部门发文促广告产业高质量发展》</a> ·
+          <a href="https://finance.sina.com.cn/jjxw/2026-06-12/doc-iniccnfv0355312.shtml" target="_blank">新浪财经《2026世界杯消费品牌营销大法》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 温布尔登网球锦标赛</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎾🌿👑</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">体育盛典</span>
+          <span class="festival-tag">英国·伦敦</span>
+          <span class="festival-tag">每年6-7月</span>
+          <span class="festival-tag">世界最古老网球赛</span>
+          <span class="festival-tag">全球顶级赛事IP</span>
+        </div>
+        <div class="festival-name">温布尔登网球锦标赛</div>
+        <div class="festival-name-en">The Championships, Wimbledon · 始于1877年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从维多利亚花园聚会到全球最神圣的运动圣殿</div>
+          <div class="festival-block-body">
+            <p>1877年，全英草地网球和槌球俱乐部在伦敦郊区温布尔登举办了第一届锦标赛，参赛者22人，观众约200人，门票1先令，冠军奖品是一把银质球拍。没有人预料到，这场业余的夏日消遣，会成为150年后全球观众超过10亿人次的顶级赛事IP。</p>
+            <p>几个奠定温布尔登身份的决定，在历史上显得如此"固执"又如此"成功"：<strong>全白服装规定</strong>（1877年至今）、<strong>草地球场</strong>（全球四大满贯中唯一保留）、<strong>草莓配奶油</strong>作为官方特色食物……这些仪式感设定，在体育竞技中嵌入了一套完整的文化符号体系，让温布尔登成为远超"网球比赛"的文化事件。</p>
+            <p>历年记忆点：1980年博格与麦肯罗的世纪对决（"冰"与"火"的人格对撞）；2001年网球王子费德勒在此夺得人生首个大满贯；2019年费纳决赛长达5小时、堪称运动史诗的"世界杯决赛级"对战。每一届的核心叙事，都有一个清晰的人物弧光——温布尔登是天才与命运的角斗场。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球赛事IP的商业运作范本</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">500,000+</div>
+                <div class="festival-stat-label">年度现场观众</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10亿+</div>
+                <div class="festival-stat-label">全球收视人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">£320M+</div>
+                <div class="festival-stat-num-sub">(约29亿元)</div>
+                <div class="festival-stat-label">年度奖金池 2025届</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">300万颗</div>
+                <div class="festival-stat-label">年销草莓</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026年</div>
+                <div class="festival-stat-label">6月29日开幕</div>
+              </div>
+            </div>
+            <p>温布尔登的商业逻辑极为独特：<strong>它几乎从不做主动营销</strong>——没有大规模广告投放，没有联名轰炸，但它是全球赞助商最想绑定的赛事IP之一，历届赞助方包括劳力士、IBM、美国运通、Slazenger……每一个品牌都在用温布尔登的"历史感"为自己的"品质感"背书。</p>
+            <p>运作模式方面，温布尔登由全英俱乐部自主运营，不属于任何职业巡回赛体系，但ATP和WTA积分均认可其大满贯地位。票务系统实行抽签制（公开排队+会员分配），每年门票放出即抢空——稀缺性本身就是最强的品牌资产。</p>
+            <p>2026届温布尔登将于<strong>6月29日开幕，7月12日闭幕</strong>，时间与世界杯小组赛阶段高度重叠，形成"体育盛夏双峰叠加"的收视格局。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】下届规划与对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026届看点：</strong>卡洛斯·阿尔卡拉斯能否蝉联？塞雷娜之后，谁将接管女子网球的叙事？温布尔登正在经历一次微妙的代际更迭——老神话谢幕，新英雄等待加冕，这种张力本身就是最好的内容。</p>
+            <p>全英俱乐部正在推进球场扩建计划，包括对"第一草场"进行可开合屋顶改造，进一步提升恶劣天气的赛程稳定性，预计2028-2030年间完工。稳定性就是IP资产，这是温布尔登150年来一直在做的事。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>温布尔登是一个极致的"仪式感IP"案例——全白服装、草莓奶油、草地球场，这些规定性符号在外人眼中是"怪癖"，在圈内人眼中是"身份认同"。它的核心资产不是奖金，不是转播权，而是<strong>一套被全球接受的仪式体系</strong>。小红书平台大事件的长期建设逻辑也应如此：每一个IP从第一届起，就要开始"建立仪式"——哪怕是一个专属表情包、一个每届必出现的梗、一套专属的用户语言——这些看似细节的东西，是IP从"活动"到"文化现象"的分水岭。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.wimbledon.com/" target="_blank">Wimbledon 官网</a> ·
+          <a href="https://zh.wikipedia.org/wiki/%E6%B8%A9%E5%B8%83%E5%B0%94%E7%99%BB%E7%BD%91%E7%90%83%E9%94%A6%E6%A0%87%E8%B5%9B" target="_blank">维基百科·温布尔登网球锦标赛</a> ·
+          <a href="https://www.dhl.com/discover/zh-cn/e-commerce-advice/e-commerce-trends/e-commerce-marketing-calendar" target="_blank">DHL电商营销日历2026</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 运动与叙事</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">⚽🎾 主题策展 · 当体育成为神话：六位改写时代的运动明星</div>
+        <div class="knowledge-headline">从C罗到费德勒：他们不只是运动员，是一套完整的文化叙事系统</div>
+        <div class="knowledge-tagline">「伟大的运动员是时代的投影——他们放大了我们对胜利、衰老与超越的所有想象。」</div>
+
+        <div class="knowledge-intro">
+          今天，C罗在世界杯创造新的历史；五天后，温布尔登将再次召唤一批网球神话的诞生或延续。体育，是全球最有效的故事制造机。这六个人，每一个都不只是"打得好"——他们各自代表了一种关于人类潜能的叙事模板，被几亿人反复讲述和传播。这，正是大事件最想借助的东西：一个自带传播动能的神话内核。
+        </div>
+
+        <div class="knowledge-cards">
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Cristiano_Ronaldo_2018.jpg/400px-Cristiano_Ronaldo_2018.jpg"
+              alt="C罗"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">克里斯蒂亚诺·罗纳尔多 CR7</div>
+              <div class="knowledge-card-sub">葡萄牙 · 足球 · 生于1985</div>
+              <div class="knowledge-card-work">意志的神话。不是最有天赋的，但是训练最努力的。他的故事叙事模板是：<strong>平民出身→极致自律→反复证明自己→打破年龄边界</strong>。今日在世界杯再破纪录，是这个叙事的最新章节。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Federer_1920x1080.jpg/400px-Federer_1920x1080.jpg"
+              alt="Roger Federer"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">罗杰·费德勒 Roger Federer</div>
+              <div class="knowledge-card-sub">瑞士 · 网球 · 生于1981</div>
+              <div class="knowledge-card-work">优雅的极限。8次温布尔登冠军，职业生涯中最接近"完美"的运动员。他的叙事模板：<strong>天才早熟→低谷迷失→涅槃重生→以美的方式告别</strong>。2022年退役演讲让全球球迷集体落泪。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Serena_Williams_2013_US_Open.jpg/400px-Serena_Williams_2013_US_Open.jpg"
+              alt="Serena Williams"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">💪</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">塞雷娜·威廉姆斯 Serena Williams</div>
+              <div class="knowledge-card-sub">美国 · 网球 · 生于1981</div>
+              <div class="knowledge-card-work">力量的政治。23个大满贯冠军，是女性在男性叙事主导的运动文化中"强行改写规则"的最佳样本。她的品牌价值远超网球本身，她是一个关于<strong>身体自主、种族认同、女性力量</strong>的文化符号。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg/400px-Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg"
+              alt="Lionel Messi"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏆</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">莱昂内尔·梅西 Leo Messi</div>
+              <div class="knowledge-card-sub">阿根廷 · 足球 · 生于1987</div>
+              <div class="knowledge-card-work">命运的完成。2022年世界杯夺冠是他叙事最关键的拼图——在此之前，他是"缺了世界杯的天才"；此后，他是"完整的传说"。J组阿根廷正在2026世界杯延续这个神话的尾声。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏃</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">博尔特 Usain Bolt</div>
+              <div class="knowledge-card-sub">牙买加 · 短跑 · 生于1986</div>
+              <div class="knowledge-card-work">快乐的神话。奥运会上赛前跳舞、赛后庆祝，用最极致的速度配上最松弛的表情，创造了一个反"苦行者"人设的运动明星模板：<strong>天赋+快乐+个人魅力</strong>，同样可以封神。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🥋</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">🇨🇳 郎平</div>
+              <div class="knowledge-card-sub">中国 · 排球 · 生于1960</div>
+              <div class="knowledge-card-work">两次时代的人。作为球员，她是80年代中国女排"五连冠"的核心；作为教练，她带领中国女排赢得2015年世界杯和2016年奥运金牌。她的叙事是关于<strong>责任、选择与跨越时代的价值</strong>。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="knowledge-coda">
+          大事件策划的底层逻辑之一，是找到能和用户"共振"的叙事原型。C罗的"意志"、费德勒的"优雅"、梅西的"命运"——每一个都是人类情感的普世版本，不懂足球的人也会被感动。当我们设计一个大事件IP，最值得问的问题是：<strong>这个活动的"神话内核"是什么？它在讲一个什么样的关于人的故事？</strong>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 2026.06.24 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
