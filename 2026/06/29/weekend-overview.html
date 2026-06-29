@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 周末概览 06/27–06/28</title>
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --surface: #ffffff;
+      --border: #e8e4dc;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6860;
+      --text-muted: #9e9b94;
+      --accent: #c4653a;
+      --accent-light: #f5ede8;
+      --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    .site-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .site-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-primary);
+    }
+    .site-title span { color: var(--accent); }
+    .header-date {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+    .layout {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .day-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+    .day-date {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: var(--font-serif);
+      color: var(--text-primary);
+    }
+    .day-week {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-icon { font-size: 16px; }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.03em;
+    }
+    .section-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .section-body { padding: 20px 24px; }
+    .weekend-item {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .weekend-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .weekend-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .badge-society { background: #fce8e6; color: #d93025; }
+    .badge-geo { background: #f0e8f5; color: #4a2d6a; }
+    .badge-tech { background: #e8ecf5; color: #2d3d6a; }
+    .badge-brand { background: #e8f0e8; color: #2d5a2d; }
+    .badge-market { background: #f5ede8; color: #6a3d2d; }
+    .weekend-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .weekend-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 8px;
+    }
+    .weekend-obs {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      background: var(--tag-bg);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border-left: 3px solid var(--accent);
+    }
+    .weekend-link {
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      opacity: 0.8;
+      display: inline-block;
+      margin-top: 6px;
+    }
+    .weekend-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .weekend-links { margin-top: 4px; }
+    .weekend-links .weekend-link { margin-right: 12px; }
+    .site-footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      margin-top: 24px;
+    }
+    @media (max-width: 768px) {
+      .layout { padding: 16px; }
+      .site-header { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">周末补录 · 06/27 – 06/28</div>
+</header>
+
+<div class="layout">
+  <div class="day-header">
+    <div class="day-date">周末概览</div>
+    <div class="day-week">周六 6/27 – 周日 6/28</div>
+  </div>
+
+  <!-- 周末概览模块 -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-icon">📡</span>
+      <span class="section-title">周末补录</span>
+      <span class="section-subtitle">5 件不能错过的事</span>
+    </div>
+    <div class="section-body">
+
+      <!-- 1 -->
+      <div class="weekend-item">
+        <span class="weekend-badge badge-society">社会热点</span>
+        <div class="weekend-title">北京「中国尊」遭小型飞机撞击，官方时隔近一天后证实</div>
+        <div class="weekend-desc">6月26日（周五）傍晚，一架注册编号 B-12PP 的阿若拉 SA60L 轻型飞机撞上北京中信大厦（中国尊）东侧高层后机身解体，大厦两面玻璃幕墙破裂缺失，残骸散落路面。官方通报驾驶员死亡、13人受伤。BBC 于6月28日梳理事件未解之谜，舆论持续发酵。</div>
+        <div class="weekend-obs">💡 趋势判断：北京最高楼遭飞机撞击极为罕见，社交媒体视频传播量巨大。官方延迟近一天才正式通报，加剧了信息真空期的猜测和谣言扩散。对内容平台而言，此类事件的"信息核实 vs 传播速度"博弈将持续考验平台治理能力。</div>
+        <div class="weekend-links">
+          <a class="weekend-link" href="https://www.bbc.com/zhongwen/topics/ckr7mn6r003t/simp" target="_blank">→ BBC 中文</a>
+          <a class="weekend-link" href="https://cn.nytimes.com/china/20260627/china-plane-crash-beijing/" target="_blank">→ 纽约时报</a>
+          <a class="weekend-link" href="https://www.rfi.fr/cn/%E4%B8%AD%E5%9B%BD/20260627-%E5%8C%97%E4%BA%AC%E4%B8%AD%E4%BF%A1%E5%A4%A7%E5%8E%A6-%E4%B8%AD%E5%9B%BD%E5%B0%8A-%E9%81%AD%E5%B0%8F%E9%A3%9E%E6%9C%BA%E6%92%9E%E5%87%BB-%E5%AE%98%E6%96%B9%E9%80%9A%E6%8A%A5%E9%A9%BE%E9%A9%B6%E5%91%98%E6%AD%BB%E4%BA%A113%E4%BA%BA%E5%8F%97%E4%BC%A4" target="_blank">→ RFI</a>
+        </div>
+      </div>
+
+      <!-- 2 -->
+      <div class="weekend-item">
+        <span class="weekend-badge badge-geo">地缘 · 国际</span>
+        <div class="weekend-title">美伊爆发谅解备忘录签署以来首次军事冲突，紧张局势急剧升级</div>
+        <div class="weekend-desc">6月26日（周五），美军对伊朗实施打击，回应德黑兰在霍尔木兹海峡袭击商船。伊朗革命卫队随即发表声明，将对美国后续任何袭击作出"毁灭性回应"。特朗普周末发出"伊朗将不复存在"警告，中东地缘风险在周末急剧升温。</div>
+        <div class="weekend-obs">💡 趋势判断：这是美伊签署谅解备忘录后的首次直接军事冲突，标志着中东地缘博弈进入新阶段。霍尔木兹海峡作为全球石油运输咽喉，冲突升级可能推动油价上行，同时压制全球风险资产情绪。下周关注原油、黄金及避险资产的市场反应。</div>
+        <div class="weekend-links">
+          <a class="weekend-link" href="https://www.voachinese.com/z/1739" target="_blank">→ 美国之音</a>
+          <a class="weekend-link" href="https://finance.sina.com.cn/stock/usstock/summary/2026-06-28/doc-iniexpwa3222182.shtml" target="_blank">→ 新浪财经</a>
+          <a class="weekend-link" href="https://www.rfi.fr/cn/" target="_blank">→ RFI</a>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="weekend-item">
+        <span class="weekend-badge badge-tech">科技 · AI</span>
+        <div class="weekend-title">苹果游说白宫批准从长鑫存储采购芯片；中国 AI 进入"独角兽定局"时代</div>
+        <div class="weekend-desc">周末消息显示，苹果正向白宫施压，希望获准从中国长鑫存储采购芯片以控制成本。与此同时，行业分析指出2026年6月中国AI行业目标估值达300亿美元（约2000亿人民币），成为全球估值最高的AI独角兽，行业进入"独角兽定局"阶段。</div>
+        <div class="weekend-obs">💡 趋势判断：苹果寻求从中国企业采购芯片是供应链脱钩叙事中罕见的"反向信号"——成本压力正在迫使科技巨头绕开地缘限制。长鑫存储作为国内DRAM龙头，其一季度净利润247亿的亮眼业绩加上苹果的采购意向，可能加速国产存储芯片的价值重估。</div>
+        <div class="weekend-links">
+          <a class="weekend-link" href="https://wap.eastmoney.com/a/202606283785527666.html" target="_blank">→ 东方财富</a>
+          <a class="weekend-link" href="https://app.myzaker.com/news/article.php?pk=6a2b70ba8e9f096cb2581cf6" target="_blank">→ 钛媒体</a>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="weekend-item">
+        <span class="weekend-badge badge-market">产业 · 半导体</span>
+        <div class="weekend-title">功率半导体7月涨价潮启动，意法半导体6/28起调价</div>
+        <div class="weekend-desc">意法半导体发布价格调整通知函，自6月28日起上调部分产品价格。受AI算力集群功耗激增驱动，功率半导体正成为存储之后的产业新增长引擎。多家厂商跟进阶梯式涨价，行业普遍认为7月将是功率半导体新一轮涨价的集中期。同时，下周重磅日程还包括半导体"7月涨价潮"、美国非农数据和我国PMI。</div>
+        <div class="weekend-obs">💡 趋势判断：功率半导体涨价潮是AI产业链从"算力军备竞赛"向"基础设施扩容"演进的直接体现。当AI训练从GPU延伸到电力管理和散热，功率器件成为下一个瓶颈。对营销而言，"AI+能源""AI+半导体"的交叉叙事是下半年的内容增长点。</div>
+        <div class="weekend-links">
+          <a class="weekend-link" href="https://finance.ifeng.com/c/8tb1rTpyyhG" target="_blank">→ 凤凰网财经</a>
+          <a class="weekend-link" href="https://www.163.com/dy/article/L0ISIB3Q0512B07B.html" target="_blank">→ 网易财经</a>
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div class="weekend-item">
+        <span class="weekend-badge badge-society">社会 · 气候</span>
+        <div class="weekend-title">欧洲6月极端热浪持续，超1亿人遭遇破纪录高温</div>
+        <div class="weekend-desc">6月下旬高温持续席卷欧洲，法国、英国等多国遭遇6月同期破纪录高温。据估算，气温超过35摄氏度的欧洲地区人口超过1亿。高温导致学校关闭、医院不堪重负、铁路运行受影响。澎湃AI晚新闻专题报道指出，热浪引发的死亡和意外事故激增。</div>
+        <div class="weekend-obs">💡 趋势判断：欧洲极端热浪的频度和强度与全球气候变暖的"放大器效应"直接相关。6月就出现破纪录高温，暗示北半球夏季气候风险可能远超往年预期。"气候变化"相关内容在平台上有持续的社会讨论价值，可作为公益、品牌ESG传播的内容锚点。</div>
+        <div class="weekend-links">
+          <a class="weekend-link" href="https://www.stdaily.com/web/gdxw/2026-06/28/content_538645.html" target="_blank">→ 科技日报</a>
+          <a class="weekend-link" href="https://www.thepaper.cn/newsDetail_forward_33469013" target="_blank">→ 澎湃新闻</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 周末补录模块 · 由 Ki 生成 · 06/27–06/28
+</footer>
+
+</body>
+</html>
