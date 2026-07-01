@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/1</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a2a1a 0%, #2e5e2e 40%, #6aaa6a 80%, #c4e8a0 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/7/1/index.html" class="active">2026 / 7 / 1</a></li>
+        <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+        <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+        <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+        <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+        <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+        <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+        <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+        <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+        <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+        <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+        <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+        <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+        <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+        <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+        <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+        <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+        <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+        <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+        <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+        <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+        <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+        <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+        <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+        <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+        <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+        <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+        <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+        <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+        <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+        <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+        <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+        <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+        <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+        <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+        <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 01</div>
+      <div class="day-week">星期三</div>
+      <span class="day-tag">🇨🇳 香港回归29周年</span>
+      <span class="day-tag">⚽ 世界杯1/16决赛日</span>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 方向</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">7月1日起一批重磅新规施行：超龄劳动者保护、网络交易监管、多项消费者权益条款落地</div>
+            <div class="news-item-desc">人社部等5部门联合出台《超龄劳动者基本权益保障暂行规定》自今日施行，明确超龄灵活就业人员工伤及相关待遇保障。同步施行的还有新版《网络交易监督管理办法》，对直播带货、平台责任、虚假评价等作出更细化约束。政策落地正改变商业规则的边界线。</div>
+            <a class="news-item-link" href="http://mobile.rmzxw.com.cn/tranm/index/url/www.rmzxw.com.cn/c/2026-06-28/3938828.shtml" target="_blank">→ 人民政协网·7月新规一览</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">人形机器人概念在A股持续发酵，机构密集调研，多股连板——"量产元年"叙事进入兑现检验期</div>
+            <div class="news-item-desc">2026年被业界称为人形机器人"从10到100"的量产落地关键年。优必选、智元机器人等头部企业订单破亿，五洲新春、大业股份等概念股连续收获涨停板。AI基础设施板块同步走强，数据中心、电网配套企业获市场重点关注。人形机器人从"资本叙事"到"制造交付"的过渡，正在接受市场的实时压测。</div>
+            <a class="news-item-link" href="https://www.cls.cn/detail/1882142" target="_blank">→ 财联社·机器人概念调研名单</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">AI基础设施成资本主赛道：字母表、宽达服务等企业承接AI算力配套需求，数据中心电力缺口成制约瓶颈</div>
+            <div class="news-item-desc">新浪AI热点日报显示，AI基础设施（数据中心、电网、电力传输）板块正成为全球资本的核心配置方向。大模型军备竞赛的下游，是对电力和物理计算资源的庞大需求——AI的能量消耗已成为一个地缘与商业双重命题。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001907laa0.html?from=tech" target="_blank">→ 新浪·AI热点日报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">小红书月活突破4亿、足球兴趣用户超1亿，押注世界杯转播权，借体育破圈冲击2亿日活</div>
+            <div class="news-item-desc">小红书已成为除央视、咪咕外唯一同时持有世界杯直播、转播及短视频版权的平台，借本届赛事覆盖女性及泛体育用户增量。月活4亿、日活1.7亿的数据背后，平台正在重新定义自己的内容边界——从"种草"到"体育直播"，内容生态的拓展是平台商业化纵深的前置动作。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4861801.html" target="_blank">→ 虎嗅·小红书彻底爆发了</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">暑假工维权话题登热搜，"暑假工才是真正的315"——年轻人就业焦虑与劳动权益意识同步升温</div>
+            <div class="news-item-desc">7月开学季前的暑期兼职旺季，叠加超龄劳动者新规施行，劳动权益议题形成多层共振。年轻人用幽默表达对"临时工困境"的不满，背后是对灵活就业保障缺位的真实焦虑。这类话题在小红书上往往以"个人故事+社会共情"的形式发酵，对消费品牌的"温暖雇主"叙事是机会也是风险。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%9A%91%E5%81%87%E5%B7%A5%E6%89%8D%E6%98%AF%E7%9C%9F%E6%AD%A3%E7%9A%84315" target="_blank">→ 微博热搜·暑假工315</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">恋与深空连续3天发文道歉，配音演员物料仍未下架——乙游危机公关再次成为行业观察样本</div>
+            <div class="news-item-desc">恋与深空因配音演员（敖尹）舆论风波持续发酵，连续道歉未能平息用户情绪，物料管理滞后加剧反弹。这是继此前多起乙游危机后又一典型案例：女性向内容用户的情感粘性极高，但信任一旦受损，修复成本远超预期。对IP营销而言，与艺人/KOL深度绑定的合作，必须同步设计风险隔离机制。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%81%8B%E4%B8%8E%E6%B7%B1%E7%A9%BA%E8%BF%9E%E7%BB%AD3%E5%A4%A9%E5%8F%91%E6%96%87%E9%81%93%E6%AD%89" target="_blank">→ 微博热搜·恋与深空道歉</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">詹姆斯正式告别湖人，生涯第五支球队将揭晓——一个时代的休止符，全球球迷情绪场正在扩散</div>
+            <div class="news-item-desc">Shams Charania确认：勒布朗·詹姆斯将继续职业生涯，已告知湖人自己将离队。湖人选择围绕东契奇重建，双方和平分手。詹姆斯生涯征途的每一次转身，都是一次全球性情绪事件——这类"体育×情感"的大叙事，是小红书体育内容最具传播势能的内容形态之一。</div>
+            <a class="news-item-link" href="https://sports.sina.com.cn/nba/2026-07-01/detail-inifhezh3060340.shtml" target="_blank">→ 新浪体育·詹姆斯离开湖人</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">金鹰奖最佳男主角参评名单公布，百花奖角逐同步进行——颁奖季内容营销窗口开启</div>
+            <div class="news-item-desc">两大内地电视/电影奖项参评名单相继公布，引发粉丝讨论和品牌借势热情。颁奖季是娱乐营销的黄金窗口，艺人流量、作品话题与品牌合作的三方共振在此时密度最高。对平台大事件而言，颁奖季也是考量"娱乐IP合作时效性"的重要参考节点。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%87%91%E9%B9%B0%E5%A5%96%E6%9C%80%E4%BD%B3%E7%94%B7%E4%B8%BB%E8%A7%92%E5%8F%82%E8%AF%84%E5%90%8D%E5%8D%95%E5%85%AC%E5%B8%83" target="_blank">→ 微博热搜·金鹰奖参评名单</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">张家界玻璃桥因印度游客大量涌入出现栈道堵塞，文旅目的地全球传播的"双刃剑"效应再现</div>
+            <div class="news-item-desc">张家界近年持续受益于Douyin和海外社媒的病毒式传播，但爆火带来的接待容量压力同样显现。这一现象提示：文旅IP的内容种草能力与目的地实际承载力之间存在结构性张力——"让更多人来"和"让来的人体验好"，是两道需要同时解答的命题。大事件线下选址和人流管理同理。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%BC%A0%E5%AE%B6%E7%95%8C%E7%8E%BB%E7%92%83%E6%A1%A5%E5%8D%B0%E5%BA%A6%E6%B8%B8%E5%AE%A2%E5%A0%B5%E5%A1%9E%E6%A0%88%E9%81%93" target="_blank">→ 微博热搜·张家界印度游客</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">香港回归祖国29周年：特区推出交通免费、文化展览等系列庆祝活动，港府强调"由治及兴"成效</div>
+            <div class="news-item-desc">今日是香港回归中国29周年。特区政府推出涵盖电车免费乘坐、文化艺术展览、"挑战29天运动29分钟"等多项市民优惠活动。"祝福香港祝福祖国"话题登上微博热搜。对内地品牌而言，香港市场的内容适配和港澳受众触达，是下半年大事件布局的潜在增量场。</div>
+            <a class="news-item-link" href="https://www.hksar29.gov.hk/tc/event.html" target="_blank">→ 香港特区成立29周年官方活动</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">FIFA世界杯：哈兰德第86分钟绝杀，挪威2-1淘汰科特迪瓦晋级16强；德国点球大战爆冷出局</div>
+            <div class="news-item-desc">2026美加墨世界杯进入1/16决赛阶段，今日赛事高潮迭起。哈兰德包抄推射完成绝杀，助挪威队史首次杀入16强；而东道主热门之一德国则在点球大战中爆冷不敌巴拉圭，提前出局引发全球球迷热议。世界杯内容在小红书的热度已进入持续爆发期。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%93%88%E5%85%B0%E5%BE%B7%E7%BB%9D%E6%9D%80%E7%A0%B4%E9%97%A8" target="_blank">→ 微博热搜·哈兰德绝杀破门</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界杯 小红书直播间人气破记录，女性球迷内容量持续领跑</div>
+            <div class="trend-meta">体育内容赛道 · 平台破圈关键节点</div>
+            <div class="trend-obs">💡 趋势观察：小红书拿下世界杯转播权后，球迷内容在站内迎来爆发——从赛事解说到球星颜值分析，从"世界杯妆容"到"看球穿搭"，女性球迷的内容视角为平台贡献了独一无二的内容差异化。对大事件营销而言，这揭示了一个关键路径：体育场景不只属于体育用户，让"非典型受众"找到参与角度，才是最大化内容势能的关键。</div>
+            <div class="trend-source"><a href="https://www.stcn.com/article/detail/3931720.html" target="_blank">→ 证券时报·小红书世界杯策略分析</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#香港回归29周年 港风内容话题量涨幅明显，港式生活方式种草复苏</div>
+            <div class="trend-meta">节日内容赛道 · 城市生活方式</div>
+            <div class="trend-obs">💡 趋势观察：每年7月1日前后，"港风"相关内容（港式早茶、港剧、香港旅游攻略、港式穿搭）在小红书上都会迎来一波搜索和发布高峰。2026年随着内地赴港旅游的进一步恢复，港风内容的转化链路（内容→收藏→出行）正在缩短。对品牌而言，在这个节点做香港在地场景内容，是低成本触达出行人群的窗口。</div>
+            <div class="trend-source"><a href="https://www.hksar29.gov.hk/tc/event.html" target="_blank">→ 香港特区29周年庆典官网</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#暑假到了 暑期攻略类内容进入年度峰值，旅行/学习/副业三大方向齐头并进</div>
+            <div class="trend-meta">季节性内容赛道 · 暑期流量窗口</div>
+            <div class="trend-obs">💡 趋势观察：7月1日正式进入暑期，小红书的旅行攻略、暑期学习计划、兼职副业攻略同步涌现。这是全年站内内容密度最高的季节之一——用户决策速度快（假期时间有限），对"具体可操作"的内容需求强。大事件如果选在暑期档，需要提前至少4-6周完成内容种草蓄水，错过这个窗口会大幅提升冷启成本。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%9A%91%E5%81%87%E5%B7%A5%E6%89%8D%E6%98%AF%E7%9C%9F%E6%AD%A3%E7%9A%84315" target="_blank">→ 微博热搜·暑假工话题</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#好工作都是突然找到的 职场情绪内容持续发酵，"反内卷"叙事站内热度不减</div>
+            <div class="trend-meta">职场情绪赛道 · 年轻用户内容心理</div>
+            <div class="trend-obs">💡 趋势观察：这类"励志但不鸡汤"的职场内容，在小红书上的传播逻辑是：用户看到"好工作是突然找到的"，联想到自己的不确定感，然后收藏——不是为了学知识，而是为了情绪托底。品牌进入这类话题场的方式，应该是"提供情绪容器"而非"给建议"——小红书上最有共鸣的职场内容，往往是"我也有同样的感受"，而非"你应该这样做"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A5%BD%E5%B7%A5%E4%BD%9C%E9%83%BD%E6%98%AF%E7%AA%81%E7%84%B6%E6%89%BE%E5%88%B0%E7%9A%84" target="_blank">→ 微博热搜·好工作都是突然找到的</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#iPhone 18 Pro泄密 科技期待感内容引发站内讨论，数码测评赛道进入预热周期</div>
+            <div class="trend-meta">数码科技赛道 · 产品发布期待值</div>
+            <div class="trend-obs">💡 趋势观察：iPhone新品前的"泄密期"是小红书数码内容的季节性流量红利——用户期待感带动开箱预测、上手体验假设等内容热度上升。这一规律对品牌同样适用：在新品发布前6-8周做内容预热，能以远低于正式发布期的CPM成本建立认知。预热期用户是最有购买意愿的高质量种子用户。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=iPhone18Pro%E9%81%AD%E6%B3%84%E5%AF%86" target="_blank">→ 微博热搜·iPhone18Pro泄密</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 危机公关</div>
+        <div class="learning-title">为什么乙游道歉越道越错？——从恋与深空事件看"情感型产品"的危机逻辑</div>
+        <div class="learning-subtitle">当用户爱的不是产品，而是"我与产品之间的关系"，品牌的道歉方式就必须完全不同</div>
+        <div class="learning-body">
+          <p>恋与深空连续三天发文道歉，但物料未能及时下架。结果是：每一次道歉都再次提醒用户"那件让我受伤的事还没有被认真对待"。这是情感型产品危机处理中最典型的失误——<strong>把危机当作公关问题处理，而不是当作情感伤害处理</strong>。</p>
+          <p>普通品牌的危机逻辑是：承认错误→给出补偿→恢复信任。但乙游、偶像应援、粉丝经济这类"情感关系型产品"，用户购买的从来不是"功能"，而是<strong>"我和这个虚构角色/艺人之间的独特关系感"</strong>。一旦这个关系感被污染，再多的文案道歉都无法触及真正的伤口。</p>
+          <p>正确的处理路径应该是：<strong>1. 立刻、彻底地物理性清除触发伤害的内容</strong>（动作先于语言）；<strong>2. 承认的不是"做了错误决定"，而是"我们的选择伤害了你对这段关系的信任"</strong>（感情框架而非事件框架）；<strong>3. 给出"关系修复"而非"产品补偿"</strong>——用户要的不是优惠券，而是"这个虚构世界里你仍然安全"的感受。</p>
+          <p>对IP营销的启发：当一个大事件活动与明星/KOL深度绑定时，<strong>事先设计"关系隔离机制"</strong>比事后危机公关省力得多。与其签约10个中腰部达人，不如建立清晰的"品牌内容归品牌，达人口碑归达人"的内容边界——即使某一个达人出现舆情，活动IP的情感积累不会被全部拖下水。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://s.weibo.com/weibo?q=%E6%81%8B%E4%B8%8E%E6%B7%B1%E7%A9%BA%E8%BF%9E%E7%BB%AD3%E5%A4%A9%E5%8F%91%E6%96%87%E9%81%93%E6%AD%89" target="_blank">微博热搜·恋与深空事件</a> ·
+          <a href="https://www.huxiu.com/article/4861801.html" target="_blank">虎嗅·情感型产品用户关系分析</a> ·
+          <a href="https://www.adquan.com/" target="_blank">广告门·品牌危机公关案例库</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 富士摇滚音乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎸🏔️🌿</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">户外音乐节</span>
+          <span class="festival-tag">日本·新潟</span>
+          <span class="festival-tag">每年7月末</span>
+          <span class="festival-tag">亚洲最高规格</span>
+        </div>
+        <div class="festival-name">富士摇滚音乐节</div>
+        <div class="festival-name-en">FUJI ROCK FESTIVAL · 始于1997年 · 2026届 7月24-26日</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从被台风淹没的处女秀，到亚洲最具代表性的户外音乐节</div>
+          <div class="festival-block-body">
+            <p>1997年，主办方SMASH公司在山梨县富士天神山开创了日本第一届大型户外摇滚音乐节。然而命运没有给这个第一届留面子——台风直接袭击现场，数万观众在泥泞中挣扎，舞台被迫关闭，组织者损失惨重。任何理性的商人在此刻都会放弃。</p>
+            <p>SMASH没有。1999年，音乐节迁至新潟县汤泽町<strong>苗场滑雪场</strong>，这里成了它永久的家园。四周山脉、树林包围，夏天的苗场变成一座短暂存在的乌托邦城市——帐篷、炊烟、音乐、泥土气息，以及来自全球的200+组演出阵容。</p>
+            <p>2000年代，Fuji Rock确立了与英国格拉斯顿伯里音乐节接近的精神气质：<strong>强调"体验完整性"而非明星阵容</strong>。购票者知道，买的不只是演出，而是三天在森林里彻底"失联"的沉浸体验。历年登台的艺术家包括Bob Dylan、Radiohead、Björk、Arcade Fire、Beck……一张Fuji Rock的演出名单，几乎是一部西方当代摇滚的名人堂。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】亚洲户外音乐节的标杆与文化输出机器</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">30年</div>
+                <div class="festival-stat-label">连续举办（1997-2026）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">200+</div>
+                <div class="festival-stat-label">每届演出组数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">7万+</div>
+                <div class="festival-stat-label">每届入场人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">苗场</div>
+                <div class="festival-stat-label">新潟县·1400m海拔</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026/7/24</div>
+                <div class="festival-stat-label">7.24-26日，即将开幕</div>
+              </div>
+            </div>
+            <p>Fuji Rock的独特性在于它的<strong>生态哲学</strong>：从1999年起，主办方就要求"Leave No Trace"（不留痕迹），禁止使用一次性塑料、鼓励观众自带杯子，现场配备完整的垃圾分类系统。这不是口号，是运营核心——苗场在每届音乐节结束后，几乎恢复到活动前的自然状态。</p>
+            <p>Fuji Rock也是一个完整的<strong>生活系统</strong>：超过100家食物摊位（涵盖正宗日式拉面到印度咖喱），独立精品、乐器店、书店散落在林间小路；有专属露营区、儿童区、冥想空间和瑜伽课程。它不只是音乐节，而是一个有完整"社会结构"的临时社区。</p>
+            <p>2026届主题延续"Music &amp; Nature"精神，7月24-26日在苗场举行。本届阵容中西方头部艺人与亚洲代表性乐队并列，首次在主舞台引入多场日本独立音乐人压轴，被媒体称为"最本土化的一届"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】可持续音乐节的全球模板，与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>Fuji Rock的下一步：</strong>主办方公布2027年将引入更多AR/数字体验叠加层，同时推出面向海外观众的"完整音乐节体验套餐"（含住宿、交通、语言支持），将Fuji Rock从日本音乐节打造为亚洲文化旅游目的地。</p>
+            <p>可持续运营方面，2026年将首次实现主舞台全程使用可再生能源供电，成为亚洲大型音乐节的零碳里程碑。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>Fuji Rock最值得学习的，不是它的音乐阵容，而是它的<strong>「体验闭环设计」</strong>——从购票时的期待感，到到场后的方向感（林间地图、营地位置），到音乐间隙的探索惊喜（突然发现藏在树林里的小舞台），再到离场时的"我明年还要来"。这个完整的情绪弧线设计，是大事件活动从"好玩"升级为"有记忆点"的核心。对慢人节或任何大事件IP来说，可以问自己：用户在什么节点会产生"意外惊喜"感？哪一个瞬间会让他们掏出手机发小红书？哪一个场景会让他们产生"明年还要来"的愿望？把这三个时刻设计清楚，活动口碑就已经成功了一半。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://tc.fujirockfestival.com/" target="_blank">Fuji Rock Festival 官网（繁中版）</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E5%AF%8C%E5%A3%AB%E6%90%96%E6%BB%BE%E9%9F%B3%E6%A8%82%E7%A5%AD" target="_blank">维基百科·富士摇滚音乐祭</a> ·
+          <a href="https://hk.trip.com/blog/fuji-rock-2025/" target="_blank">Trip.com·Fuji Rock攻略</a> ·
+          <a href="https://en.fujirockfestival.com/" target="_blank">官方英文站·2026届信息</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 独立音乐的世界版图</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎵 主题策展 · 当摇滚不再是主流，它去了哪里？</div>
+        <div class="knowledge-headline">从Radiohead到苏打绿：独立音乐人如何在商业夹缝中构建永久版图</div>
+        <div class="knowledge-tagline">「他们从不打折，但你愿意为他们横越一座城市。」</div>
+
+        <div class="knowledge-intro">
+          独立音乐（Independent Music / Indie）不是一种曲风，而是一种态度和生产关系——在主流唱片公司体制之外，保持对创作的自主控制。从1970年代的朋克精神，到1990年代的Grunge浪潮，到今天Bandcamp上每天涌现的数千张自发行专辑，独立音乐从未死去，只是换了形态。<br><br>
+          而最神奇的事实是：<strong>独立音乐人的忠实听众，往往比任何顶流明星的粉丝都更愿意为音乐本身付钱</strong>。他们买黑胶、买周边、不远千里赶赴音乐节——不是因为被算法推送，而是因为真的在意。这对品牌营销是一个值得深思的镜子。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Thom_Yorke_2008.jpg/440px-Thom_Yorke_2008.jpg"
+              alt="Thom Yorke"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Thom Yorke / Radiohead</div>
+              <div class="knowledge-card-sub">英国 · 另类摇滚 · 牛津</div>
+              <div class="knowledge-card-work">2007年《In Rainbows》实验"pay what you want"发行模式，全球下载超200万次。不依赖唱片公司，每张专辑都在证明：听众愿意为真正打动他们的音乐付费。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/PJ_Harvey_at_Latitude_2011.jpg/440px-PJ_Harvey_at_Latitude_2011.jpg"
+              alt="PJ Harvey"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">PJ Harvey</div>
+              <div class="knowledge-card-sub">英国 · 独立摇滚 · 多塞特</div>
+              <div class="knowledge-card-work">两度荣获水星奖（英国年度专辑），是独立音乐中极少以政治题材入场却不说教的艺术家。在英国国家音乐馆创作《Let England Shake》时向公众开放录音全程——音乐即行为艺术。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Feist_2011.jpg/440px-Feist_2011.jpg"
+              alt="Feist"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Feist</div>
+              <div class="knowledge-card-sub">加拿大 · 民谣独立 · 多伦多</div>
+              <div class="knowledge-card-work">《1234》因Apple iPod广告而被数亿人听见——一首独立民谣在商业合作中获得了超越任何发行公司的曝光，却没有失去独立气质。这是独立音乐与品牌合作的最优质案例之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌙</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">苏打绿</div>
+              <div class="knowledge-card-sub">台湾 · 独立流行 · 台北</div>
+              <div class="knowledge-card-work">从校园乐团到跨越20年的华语独立音乐地标。2022年改名"魚丁糸"，2023年正式复名——这段复出本身就是一次完美的情感营销。吴青峰的歌词对华语听众来说，是一代人的情绪档案。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">陈绮贞</div>
+              <div class="knowledge-card-sub">台湾 · 独立民谣 · 台北</div>
+              <div class="knowledge-card-work">华语独立音乐的精神象征。坚持自主发行20年，在没有大公司背书的情况下售出巡演门票数十万张。她证明了：<strong>当音乐与听众之间形成真正的情感契约，任何平台都只是工具</strong>。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">万能青年旅店</div>
+              <div class="knowledge-card-sub">中国大陆 · 后摇/后朋 · 石家庄</div>
+              <div class="knowledge-card-work">同名专辑在没有任何宣传的情况下通过口碑传播，成为中国独立摇滚史上最重要的专辑之一。"石家庄人"不只是一首歌，是一代内陆青年的精神切面——"被剪掉的声音"从来没有真正沉默。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          独立音乐和大事件IP策划的相似之处在于：<strong>你无法靠预算买来真正的文化感</strong>。Fuji Rock没有成为今天的Fuji Rock，是因为它花了最多钱买最大牌的艺术家——而是因为它在三十年里，一次次选择了"完整体验"而非"头条噱头"。真正的文化积累是一种时间的沉淀；而品牌IP，可以借道真正有文化根基的节日、音乐人、作品，成为那种沉淀的一部分——前提是，你得真的在乎，而不只是借势。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
