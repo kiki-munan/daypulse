@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/3</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a0a2e 0%, #8b1a4a 45%, #e85d04 80%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/7/3/index.html" class="active">2026 / 7 / 3</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 03</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美国6月非农大幅低于预期，道指暴涨600点创历史新高，芯片股跌幅扩大</div>
+            <div class="news-item-desc">美国6月就业数据爆冷，市场降息预期骤升，传统蓝筹/金融股拉动道指涨近600点至52900点历史新高；纳指则因科技股承压下跌0.8%。英伟达、AMD、ARM、特斯拉集体回调，而苹果因折叠屏 iPhone 18 备货预期上调拉涨4.5%。两市分化折射出"降息预期利好旧经济、但AI成长赛道已高位兑现"的资金逻辑切换。</div>
+            <a class="news-item-link" href="https://xueqiu.com/7705477932/398217682" target="_blank">→ 雪球早课·2026/07/03</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">黄金突破4100美元，央行逆回购630亿，A股下半年进入中报业绩验证主线</div>
+            <div class="news-item-desc">现货黄金受非农疲弱+美元跳水提振，直线拉升至4122美元/盎司，黄金板块多股涨停。国内央行当日开展630亿元7天期逆回购，维持流动性稳定。A股上半年公募基金240只翻倍，全集中于AI/机器人赛道；下半年资金开始切向中报业绩验证主线，高低估值切换正式开启。</div>
+            <a class="news-item-link" href="https://caifuhao.eastmoney.com/news/20260703084544138388100" target="_blank">→ 东方财富·7月3日财经综述</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">物理AI峰会7月7日欧洲登场，人形机器人/具身智能进入规模化落地拐点</div>
+            <div class="news-item-desc">欧洲首届物理AI峰会（PhysicalAI Summit）即将召开，机构预判人形机器人、高阶自动驾驶2026-2028年出货量将持续倍增。核心路线确定为"VLA+世界模型"融合，仿真数据平台市场规模预计2030年达1806亿元（沙利文测算）。宇树科技A股科创板IPO同期获批注册，成为"具身智能第一股"，从受理到注册仅104天创纪录。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1868845785636009344" target="_blank">→ 百家号·物理AI峰会分析</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">WAIC 2026定档7月17-20日上海，超300款AI产品全球首发，图灵奖得主姚期智担纲</div>
+            <div class="news-item-desc">2026世界人工智能大会以"智能伙伴，共创未来"为主题，由外交部、科技部等10部委联合主办。首设高水平国际学术会议"WAIC Academic"，图灵奖得主姚期智任主席、"强化学习之父"萨顿任国际联席主席。展览面积超10万平方米，设140场论坛——这是AI从"工具"向"伙伴"转型叙事的年度最大公开演练场。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1868678094751665422" target="_blank">→ 百家号·WAIC 2026</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">暑期入境游预订量同比增超6倍，亲子青年客群带动线下消费复苏</div>
+            <div class="news-item-desc">近一周入境游爆发，飞猪数据显示出境游预订量翻倍，国内暑期经济进入旺季。7月叠加2026美加墨世界杯关键赛程（7月19日决赛），商超"观赛套餐+升学宴"双线驱动，啤酒/快消/预制菜进入全年最大销售窗口。品牌赛事借势与场景化营销迎来集中爆发期。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1869645839218607327" target="_blank">→ 百家号·消费早参</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026广告主营销七大趋势：产品力回归、AI战略化、情绪触点成流量新入口</div>
+            <div class="news-item-desc">CTR联合中国传媒大学发布《2026中国广告主营销趋势调查报告》，超三成广告主选择经营扩张，94.1%已开展AI营销应用投入。核心转变：场景营销从"触点堆砌"进入"生活切片+情绪共振"3.0时代；电梯媒体、沉浸式体验场景成为品牌情感连接主阵地。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1863862081199812623" target="_blank">→ 百家号·2026广告主趋势报告</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">《特立独行》7月3日公映，白敬亭饰超英困于县城酒桌文化，被誉近年最优国产喜剧</div>
+            <div class="news-item-desc">邢文雄执导的讽刺喜剧《特立独行》正式公映，白敬亭+魏翔搭档，超级英雄对抗"形式主义、酒桌文化、关系社会"，英文片名直接叫"Lying Town"（谎言小镇）。72城超前点映后口碑已经炸开，被评为"笑里藏刀"的年度国产喜剧黑马。暑期档国产内容消费迎来强势开局。</div>
+            <a class="news-item-link" href="https://ent.sina.cn/2026-07-03/detail-inifnnxe5628897.d.html" target="_blank">→ 新浪娱乐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">鞠婧祎"差点叫鞠水晶"话题冲热搜第二，北京7月演唱会季全面启动</div>
+            <div class="news-item-desc">鞠婧祎童年改名趣事引发全网共鸣，话题阅读超12亿，粉丝玩梗"呼叫鞠水晶"同步宣传新剧《千香》，形成轻松出圈的正向话题。与此同时，北京7月演唱会季全面开启：薛之谦"万兽之王"3场连演、韦礼安「嗨韦」演唱会、国风"三途风月"同台，暑期现场经济热度高涨。</div>
+            <a class="news-item-link" href="https://ent.sina.cn/2026-07-03/detail-inifntfa5610300.d.html" target="_blank">→ 新浪娱乐</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">孔雪儿FENDI上海外滩活动生图刷屏，"黑天鹅造型"话题单日阅读破3亿</div>
+            <div class="news-item-desc">7月1日，孔雪儿出席FENDI上海外滩品牌活动，雨中黑色蕾丝长裙生图自然流出，迅速被冠以"外滩最美黑天鹅"。话题单日3亿阅读量，带动孔雪儿海边写真系列搜索量飙升28%，完成品牌联名+艺人声量+自然种草的三重正循环。这是2026年7月品牌×艺人联动"自然感出圈"的教科书案例。</div>
+            <a class="news-item-link" href="https://ent.sina.cn/2026-07-02/detail-inifkiyh2666515.d.html" target="_blank">→ 新浪娱乐·孔雪儿FENDI</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">小红书世界杯小组赛报告：直播时长是赛前90倍，曝光282亿，男性用户占比超70%</div>
+            <div class="news-item-desc">小红书发布世界杯小组赛观赛报告，数据全线刷新平台记录：直播观看时长达赛前90倍，球迷圈子数1390个、加入破1000万，梅西帽子戏法场创最多观看/分享双纪录。最值得关注的是男性用户占比超70%——这意味着世界杯正在改变小红书的用户性别结构，为平台带来增量人群的持久留存挑战。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1869654079181031291" target="_blank">→ 百家号·小红书世界杯报告</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">霍尔木兹海峡航运逐步恢复，原油价格维持低位；中英经贸联委会第15次会议在伦敦召开</div>
+            <div class="news-item-desc">自伊朗上周袭击商船以来，霍尔木兹海峡船舶通行量首次回升，24艘大宗商品货船恢复通行，但伊朗声明仍强制规定航线，供应中断风险犹存。WTI原油维持69-70美元弱势震荡。同日，商务部长王文涛与英国商贸大臣在伦敦召开中英经贸联委会第15次会议，围绕贸易、投资及区域合作深入交换意见。</div>
+            <a class="news-item-link" href="https://m.163.com/dy/article/L0O5HDMF0519QIKK.html" target="_blank">→ 国际金融要情·7月1日</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书世界杯直播 数据破纪录，男性用户首次成主流</div>
+            <div class="trend-meta">体育赛事 · 直播内容 · 用户结构变化</div>
+            <div class="trend-obs">💡 趋势观察：平台世界杯直播时长达赛前90倍，男性用户占比超70%——这是小红书用户结构的一次历史性突破。对大事件策划而言，这意味着足球/体育类IP活动的受众已不再只是女性，"体育+泛生活"的内容矩阵（宠物世界杯、针织球衣、球迷美食）才是留住新用户的关键路径。赛事结束后如何沉淀男性用户，是平台接下来的真正命题。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1869654079181031291" target="_blank">→ 小红书世界杯小组赛观赛报告</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#暑期档内容种草 电影/演唱会/旅行三线并行</div>
+            <div class="trend-meta">暑期消费 · 文娱内容 · 体验经济</div>
+            <div class="trend-obs">💡 趋势观察：7月起，暑期文娱消费全面爆发——《特立独行》《千香》等影视内容上线，北京演唱会季开启，入境/出境游预订量翻倍。小红书上的暑期攻略、观影/观演笔记、旅行OOTD正在同步提速。对平台大事件而言，暑期是全年最适合联动"线下体验+线上种草"的时间窗口，如何把体验流量导向商业转化，是接下来两个月的核心战场。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1869645839218607327" target="_blank">→ 消费早参·飞猪暑期数据</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#孔雪儿FENDI黑天鹅 品牌联名自然种草出圈</div>
+            <div class="trend-meta">品牌营销 · 艺人联动 · 种草生态</div>
+            <div class="trend-obs">💡 趋势观察：孔雪儿FENDI话题的核心不是买热搜，而是"生图自然流出→网友自发命名→话题有机扩散"的全链路无刻意感。这是小红书最核心的种草逻辑：用户愿意主动分享的内容，才是真正有效的品牌传播。对策划大事件现场的来说，如何制造"值得被自发分享"的视觉锚点和故事切口，比设计打卡墙更重要。</div>
+            <div class="trend-source"><a href="https://ent.sina.cn/2026-07-02/detail-inifkiyh2666515.d.html" target="_blank">→ 新浪娱乐·孔雪儿FENDI报道</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#宇树科技具身智能第一股 AI硬科技内容持续热</div>
+            <div class="trend-meta">科技内容 · AI创业 · 硬科技种草</div>
+            <div class="trend-obs">💡 趋势观察：宇树科技科创板IPO获批，104天极速审核引发科技圈热议。小红书上AI机器人相关内容——从具身智能演示视频到"AI会取代什么工作"话题讨论——正在持续形成内容热区。这类"科技奇观"内容天然自带传播力，品牌如何借助科技叙事做跨圈内容种草，是下半年值得探索的方向。</div>
+            <div class="trend-source"><a href="https://caifuhao.eastmoney.com/news/20260703084544138388100" target="_blank">→ 东方财富·7月3日综述</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#美妆护肤消费韧性 暑期防晒/轻底妆品类持续增长</div>
+            <div class="trend-meta">美妆品类 · 暑期消费 · 内容种草</div>
+            <div class="trend-obs">💡 趋势观察：2026年Q1美妆护肤线上市场表现亮眼，被视为必需品的护肤护发类保持稳健，防晒、轻底妆、电解质护肤成为暑期种草热词。小红书历来是美妆品类最重要的决策平台之一——夏日防晒攻略、试色测评、素人改造对用户消费路径的影响力远超传统广告。大事件如联动美妆品牌，沉浸式体验场景+真实达人测评是最优转化路径。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1869410857479498662" target="_blank">→ 百家号·2026消费新势能报告</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 赛事营销</div>
+        <div class="learning-title">当世界杯来到小红书：赛事IP如何从"流量借势"做到"用户留存"</div>
+        <div class="learning-subtitle">从小红书世界杯数据看平台大事件的内容运营逻辑</div>
+        <div class="learning-body">
+          <p>小红书世界杯小组赛的数据震撼人心：直播观看时长90倍增长、282亿内容曝光量、男性用户占比超70%。但数据背后更值得研究的，是小红书这次大事件运营的方法论——它在做一件和其他平台不一样的事。</p>
+          <p>其他平台的赛事直播逻辑是<strong>"流量漏斗"</strong>：把用户引来看球，看完就走。小红书做的是<strong>"兴趣扩圈"</strong>：以世界杯为圆心，向外扩展到宠物世界杯、AI绘画球衣、球迷美食、针织应援——把赛事热度转化为UGC内容生态，最终在赛事结束后还能留下一个"足球兴趣社区"。</p>
+          <p>这背后有一个关键决策：<strong>把世界杯作为App一级入口</strong>，与"关注""发现"并列——这是小红书历史上首次为单一赛事开设如此高权重的入口。这个决策意味着平台愿意用核心流量位置赌一个判断：体育赛事能够真正改变用户结构，而不只是带来一波短期流量。</p>
+          <p>对平台大事件策划而言，这是一堂很具体的课：<strong>大事件的价值不只是热度，而是热度能否转化为用户的新身份认同和持续行为</strong>。1188万用户领取了"球迷尾巴"，这不是装饰，这是平台在帮用户完成一次自我定义——"我是小红书上的球迷"。当用户接受这个身份，他就会持续生产相关内容、持续回来。</p>
+          <p>下半年，当类似规模的IP事件来临时，这个问题值得提前想清楚：<strong>活动结束后，用户会带走什么身份？会留下什么习惯？</strong>这才是大事件真正的遗产。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://baijiahao.baidu.com/s?id=1869583615400865770" target="_blank">界面新闻《小红书如何留住世界杯流量》</a> ·
+          <a href="https://baijiahao.baidu.com/s?id=1869654079181031291" target="_blank">新京报贝壳财经《小红书世界杯小组赛观赛报告》</a> ·
+          <a href="https://baijiahao.baidu.com/s?id=1863862081199812623" target="_blank">CTR《2026中国广告主营销趋势调查报告》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 祇园祭</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🏮🎏⛩️</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">UNESCO非遗</span>
+          <span class="festival-tag">日本·京都</span>
+          <span class="festival-tag">每年7月</span>
+          <span class="festival-tag">千年祭典</span>
+        </div>
+        <div class="festival-name">祇园祭</div>
+        <div class="festival-name-en">Gion Matsuri · 始于公元869年 · 日本三大祭典之首</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从驱疫御灵会到千年文化遗产</div>
+          <div class="festival-block-body">
+            <p>公元869年，平安时代。日本列岛瘟疫肆虐，京都城里死亡人数不断攀升。清和天皇命令全国66个藩国各造一辆鉾车，送往京都的神泉苑祈福消灾——这就是祇园祭的起点，一场由国家级恐慌催生的集体仪式。</p>
+            <p>公元970年后，祇园祭从"有疫才办"固定为年度常规祭典，主办权逐渐从官方移交至京都民间町众手中。这是一个关键的权力转移——祭典开始生长出自己的生命，不再依附于政治指令，而是成为一座城市的集体记忆载体。中途曾因"应仁之乱"（1467年）中断超过20年，1496年恢复后反而愈加壮观，逐渐形成了今天的鉾车巡游格局。</p>
+            <p>历年核心：每届祭典有一辆"长刀鉾"固定作为先头，车上供奉真刀，象征辟邪。其他32辆山鉾的出场顺序，自室町时代起沿用<strong>抽签制度</strong>确定——公平、随机、充满悬念，这个机制本身就极具现代活动策划的借鉴意义。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】京都7月的一整座城都是舞台</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">1,157年</div>
+                <div class="festival-stat-label">传承历史（869年至今）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">32辆</div>
+                <div class="festival-stat-label">山鉾花车参加巡行</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">100万+</div>
+                <div class="festival-stat-label">年均观光人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">7月17日</div>
+                <div class="festival-stat-label">前祭山鉾巡行高潮</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">7月24日</div>
+                <div class="festival-stat-label">后祭山鉾巡行</div>
+              </div>
+            </div>
+            <p>祇园祭持续整整一个月（7月1日至31日），但核心体验发生在两个时间点：<strong>7月17日前祭山鉾巡行</strong>和<strong>7月24日后祭山鉾巡行</strong>。32辆高达6米以上、造价数亿日元的华丽花车，由数百名穿着传统装束的町众拉拽，缓缓穿行四条乌丸——浮动的博物馆，会移动的建筑遗产。</p>
+            <p>鉾车本身已是文化资产：车上装饰着产自14-16世纪欧洲、中国和东南亚的珙桐挂毯，是丝绸之路贸易的直接遗存。它们在平时被收藏于各町会所，每年7月才"苏醒"一次，走上街头。</p>
+            <p>商业维度不可忽视：宵山（花车展示的前三夜）期间，四条、室町周边形成巨大的屋台夜市——和服浴衣租赁、祭典限定食品、地方工艺品一应俱全。京都酒店7月房价溢价普遍超过3-5倍，奢华酒店套餐"宵山望鉾"动辄数十万日元仍供不应求。祭典的IP运营能力，让整座城市的每一家商业体都成为受益者。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026届进展与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026年巡行时间已定：</strong>前祭山鉾巡行7月17日（周五）9时起，后祭7月24日（周五）9时30分起。随着日本免签政策持续放宽，中国赴日旅游恢复，祇园祭正在成为中国旅行种草内容的重要话题——小红书上的"京都7月攻略""宵山夜市"等内容已在持续发酵。</p>
+            <p>UNESCO 2009年将祇园祭山鉾巡行列入人类非物质文化遗产代表作名录，这进一步确立了它作为全球文化IP的权威地位，也让任何与之联动的品牌活动都能共享这份文化背书。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>祇园祭的核心秘密在于它从未把自己定义为"活动"，而是定义为"节气"——它是京都7月的时间刻度，而不是一个有开始和结束的独立事件。这种"节气感"让用户不是"去看一场活动"，而是"参与一种时间的仪式"。平台大事件的最高境界，或许就是这样：让用户觉得"这件事发生在生命里，而不只是在日历上"。另外，祇园祭的鉾车抽签机制——年年不同、充满悬念——给了每一届观众都不一样的"独家记忆"。IP活动的可持续性，往往来自这种"每次来都有新惊喜"的机制设计。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://baike.baidu.com/item/祇园祭/9002658" target="_blank">百度百科·祇园祭</a> ·
+          <a href="http://ok.lifestyle.com.cn/main/?l=view&cate=11&id=11731" target="_blank">百乐酒店·2026祇园祭巡行时间</a> ·
+          <a href="https://mp.weixin.qq.com/s?__biz=MzUyODk0Njk1MQ==&mid=2247526110&idx=1&sn=58a22de26e2bd90e9313cce22984f769" target="_blank">日本夏日祭典完全指南2026</a> ·
+          <a href="https://ich.unesco.org/en/RL/gion-matsuri-float-festival-00226" target="_blank">UNESCO非遗名录·Gion Matsuri</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 日本当代音乐图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎵 主题策展 · 日本当代音乐的六个切面</div>
+        <div class="knowledge-headline">从坂本龙一到米津玄師：当J-POP遇见世界</div>
+        <div class="knowledge-tagline">「音乐是感情最短的路径。」——坂本龙一</div>
+
+        <div class="knowledge-intro">
+          日本音乐是一个自成宇宙的系统：它吸收了西方摇滚、R&amp;B、电子乐，又用日语独特的音节节奏、日本美学中的"物哀"（もののあわれ）和"侘寂"（わびさび）重新塑造——最终输出的是一种全世界都听得懂、却无法被完全复制的声音。<br><br>
+          对做品牌、做内容的人来说，日本音乐提供的不只是一份歌单，而是一套<strong>关于如何在主流和小众之间找到张力、在流行和艺术之间找到尊严</strong>的方法论。这六位艺术家，从不同角度构成了这张图谱。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Ryuichi_Sakamoto_2006.jpg/440px-Ryuichi_Sakamoto_2006.jpg"
+              alt="坂本龙一"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">坂本龙一</div>
+              <div class="knowledge-card-sub">Ryuichi Sakamoto · 1952-2023</div>
+              <div class="knowledge-card-work">YMO（黄色魔法乐团）奠基人，电子乐先驱，电影配乐传奇（《末代皇帝》《遮蔽的天空》）。晚年用iPad病床上完成最后一张专辑《12》，2023年离世。"音乐是死亡前的练习"——他的存在本身就是美学宣言。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Hikaru_Utada_2010.jpg/440px-Hikaru_Utada_2010.jpg"
+              alt="宇多田光"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">✨</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">宇多田光</div>
+              <div class="knowledge-card-sub">Hikaru Utada · 1983年生 · J-POP女神</div>
+              <div class="knowledge-card-work">1998年出道专辑《First Love》至今是日本史上销量最高的单张专辑（765万张）。在纽约长大的她把英语R&amp;B语感注入日语歌词，创造出独一无二的"混血美声"。《Automatic》开创了日本流行音乐的新纪元。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🦋</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">米津玄師</div>
+              <div class="knowledge-card-sub">Kenshi Yonezu · 1991年生 · 平成末日之声</div>
+              <div class="knowledge-card-work">从NicoNico动画的匿名创作者"ハチ"（Hachi）走向全日本最大的演唱会现场。《Lemon》是日本史上流媒体播放最多的歌曲之一，MV全球破8亿。他的音乐像在问：现代人是不是已经无法真正感受悲伤了？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Sheena_Ringo_2019.jpg/440px-Sheena_Ringo_2019.jpg"
+              alt="椎名林檎"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍎</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">椎名林檎</div>
+              <div class="knowledge-card-sub">Sheena Ringo · 1978年生 · 日本摇滚女王</div>
+              <div class="knowledge-card-work">把歌舞伎的夸张、朋克的愤怒和昭和老歌的怀旧揉在一起，创作出无法归类的"东京音乐"。曾担任2020年东京奥运会开幕式音乐监督，被《Rolling Stone Japan》评为史上最伟大日本艺术家TOP10。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">YOASOBI</div>
+              <div class="knowledge-card-sub">ayase + ikura · 2019年成立 · 二次元破圈先锋</div>
+              <div class="knowledge-card-work">将小说改编成歌曲，用音乐把文字变成感受。《夜に駆ける》（夜の逃亡）上线NicoNico后病毒式扩散，成为2020年代日本Z世代的精神音轨。《アイドル》（Idol）更是打破日本YouTube观看记录，成为全球现象。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Yoshiki_20130621.jpg/440px-Yoshiki_20130621.jpg"
+              alt="YOSHIKI"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥁</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">YOSHIKI</div>
+              <div class="knowledge-card-sub">X JAPAN · 1965年生 · 视觉系鼻祖</div>
+              <div class="knowledge-card-work">X JAPAN用眼线、蕾丝和重金属重新定义了"日本男性美学"，奠定了视觉系（Visual Kei）这一亚文化运动的基础。YOSHIKI本人颈部手术后仍坚持表演，"以苦痛创作"的艺术家形象使他成为亚洲摇滚史上最具传奇色彩的人物之一。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六位艺术家身上有一个共同的特质：<strong>他们都不只是在做音乐，而是在构建一种关于自己的完整世界观</strong>。坂本龙一的环保主义、椎名林檎的东京美学、YOASOBI的小说宇宙……他们的音乐是入口，背后是一整套可以持续输出内容的叙事体系。对IP大事件策划来说，这是值得学习的地方：一个好的IP，不是一首歌，而是一个让人愿意持续进入的世界。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
