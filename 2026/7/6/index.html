@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/6</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; font-size: 56px; background: linear-gradient(135deg, #1a2a1a 0%, #2d5a27 40%, #c4653a 80%, #f5ede8 100%); border-radius: 0; }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/7/6/index.html" class="active">2026 / 7 / 6</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 06</div>
+      <div class="day-week">星期一</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行今日开展万亿逆回购，A股新交易规则正式施行</div>
+            <div class="news-item-desc">7月6日，央行以91天期买断式逆回购操作注入10,000亿元，维护季末后流动性平稳。与此同时，沪深北三大交易所修订后的交易规则正式落地：盘后固定价格交易扩至全A股、主板ST股涨跌幅限制由5%放宽至10%、创业板引入做市商制度，市场基础设施迎来重要变革。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/2026-07-05/detail-inifuaqy8880857.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美联储9月加息预期回落，黄金逼近4200美元；6月非农仅增5.7万远弱于预期</div>
+            <div class="news-item-desc">美国6月非农就业数据大幅不及预期，美联储9月加息押注从66%降至约45%，美元指数创4月来最大周跌幅。现货黄金触及4190美元/盎司附近高位，OPEC+多国增产，油市正价差结构反映供应担忧消退。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1869921728852591277" target="_blank">→ 汇通财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">美团 LongCat-2.0 完全开源（MIT），SWE-bench Pro 超越 GPT-5.5</div>
+            <div class="news-item-desc">美团宣布 LongCat-2.0 全面开放模型权重与推理代码，MoE 架构总参数 1.6T，每 token 激活约 48B，支持 1M 上下文。SWE-bench Pro 成绩 59.5，超过 GPT-5.5 的 58.6，成为国内大厂首个在该榜超越 GPT 的开源模型，原生集成 Claude Code、OpenClaw 等工具，MIT 协议无限制可商用。</div>
+            <a class="news-item-link" href="https://x.com/Meituan_LongCat/status/2073768940078317713" target="_blank">→ Meituan LongCat</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">NVIDIA Kyber NVL144 延迟超 12 个月至 2028，Rubin Ultra 扩展域受限</div>
+            <div class="news-item-desc">SemiAnalysis 披露，英伟达 Kyber NVL144 遭遇重大挫折，较 GTC 展示仅 3 个月后便宣告延迟，推至 2028 年。NVL72x2 背靠背机架架构亦被取消，将对 2027-2028 年 AI 算力供给产生重大影响，云厂商和大模型训练团队需要重新规划资源路线图。</div>
+            <a class="news-item-link" href="https://x.com/SemiAnalysis_/status/2073874671498387899" target="_blank">→ SemiAnalysis</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">全球首例 AI Agent 勒索攻击曝光，"JADEPUFFER"全程自主，执行超600个攻击载荷</div>
+            <div class="news-item-desc">安全厂商 Sysdig 记录到 AI Agent 自主完成完整勒索链：从 Langflow 漏洞利用、云凭证收割，到横向移动数据库、加密1342条配置数据，全程无人工干预。首次失败后31秒内自主修复，证明 AI 攻击自动化已从理论走进现实。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/972/424.htm" target="_blank">→ IT之家</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">SK 海力士启动 280 亿美元美股 IPO，有望成史上第二大新股发行</div>
+            <div class="news-item-desc">SK 海力士本周一启动纳斯达克上市计划，发行 1779 万份存托凭证，最终定价周四敲定，股票周五挂牌。该公司年内涨幅超 270%，受益于 HBM（高带宽内存）在 AI 算力基础设施中的核心地位，募资规模仅次于上月 SpaceX 的 857 亿美元 IPO。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/972/896.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">充电模块企业宣布涨价15%，PC零部件"早上一个价、下午一个价"</div>
+            <div class="news-item-desc">4家充电模块企业因上游原材料成本上升宣布7月1日起全系涨价15%。深圳华强北走访显示，存储市场行情回升，三星、金士顿等产品价格持续上行，PC经销商称整机价格处于极端高位且短期内看不到尽头，消费电子产业链成本压力显著。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1869924864098552372" target="_blank">→ 财联社</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">刘宇宁《地球超新鲜2》因"实力太强被导演制裁"，话题阅读破10亿</div>
+            <div class="news-item-desc">户外悬疑综艺《地球超新鲜2》播出，刘宇宁凭借超出节目组预期的推理能力与领导力，倒逼导演组不断加码，5位嘉宾全员拥护反制导演组，相关话题迅速登上微博热搜榜首，话题阅读量破10亿，成为今夏综艺最高热点之一。</div>
+            <a class="news-item-link" href="http://k.sina.com.cn/article_7879776328_1d5abd84806801x0ay.html" target="_blank">→ 新浪综艺</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">豆包、千问智能体功能将于7月15日同步下线，Kimi 等中间件迎来窗口期</div>
+            <div class="news-item-desc">豆包和千问先后发布公告，旗下智能体功能服务将于7月15日正式下线，用户历史对话记录将无法访问。两大平台的产品功能调整，意味着依赖其智能体 API 的企业和开发者需尽快迁移，第三方 AI 应用迎来布局窗口。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1869915664851709505" target="_blank">→ 早读</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">欧盟理事会快速通道强推"聊天管控 2.0"，强制扫描加密通信</div>
+            <div class="news-item-desc">欧盟理事会绕过议会审议，以书面紧急程序通过强制扫描加密通信的新法规（Chat Control 2.0），要求科技公司对加密消息进行无差别扫描。批评者指其实质是给政府开加密后门，Telegram、Signal 等应用将面临合规压力，隐私权争议料将持续发酵。</div>
+            <a class="news-item-link" href="https://www.heise.de/en/news/Chat-Control-1-0-EU-Council-forces-messenger-scans-via-fast-track-11353659.html" target="_blank">→ Heise Online</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 5 条</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">KOC 种草正在取代头部 KOL：小红书真实口碑驱动的转化新逻辑</div>
+            <div class="trend-meta">美妆 · 护肤 · 消费品 · 持续发酵中</div>
+            <div class="trend-obs">📌 趋势观察：品牌「铺量百位 KOC」而非「签一位 KOL」的打法在平台正被验证有效。超60%用户购买前会搜索该品牌的真实使用感，KOC 笔记的长尾价值让品牌搜索结果持续有料，成为做小红书商业化的核心阵地。对大事件合作方的选品策略有直接参考意义。</div>
+            <div class="trend-source"><a href="https://m.sohu.com/a/1044554984_362321" target="_blank">→ 来源：搜狐</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小暑 小暑节气内容潮：消夏攻略、解暑美食、仙女消夏穿搭集体爆发</div>
+            <div class="trend-meta">节气 · 生活方式 · 穿搭 · 当季热点</div>
+            <div class="trend-obs">📌 趋势观察：7月6日正是"小暑"节气，平台每逢节气必有一轮内容爆发，消夏饮品、清凉出行、夏日穿搭等话题在笔记量和互动量上同步放大。对品牌而言，节气借势成本极低，却能精准搭载平台流量红利。</div>
+            <div class="trend-source"><a href="https://www.xiaohongshu.com/explore" target="_blank">→ 来源：小红书探索页</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">AI 神器开箱持续高热：Claude Fable 5 实战技巧集合笔记圈粉职场人</div>
+            <div class="trend-meta">AI工具 · 职场效率 · 科技 · 周一爆发</div>
+            <div class="trend-obs">📌 趋势观察：Fable 5 即将下线引发大量"最后窗口期攻略"内容，平台职场&效率人群聚集，AI 工具测评类内容互动率远超平均值。这类人群高消费、高决策力，是品牌种草的优质圈层。</div>
+            <div class="trend-source"><a href="https://mp.weixin.qq.com/s/ZkMsdeTK6wmgkaER0iPT8w" target="_blank">→ 来源：卡尔的AI沃茨</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">「反向旅游」兴起：逃离热门目的地，小众山野、城市角落笔记量猛增</div>
+            <div class="trend-meta">旅行 · 文旅 · 暑期 · 生活方式</div>
+            <div class="trend-obs">📌 趋势观察：暑期将至，平台旅行内容从攻略型向情绪体验型演化，"不跟团、去冷门"成为高赞评论关键词。文旅品牌与民宿可借此话题获得低成本曝光，对大事件"地域文化"类 IP 的内容方向有直接参考价值。</div>
+            <div class="trend-source"><a href="https://weibo.com/ttarticle/p/show?id=2309405259654543835594" target="_blank">→ 来源：小红书文旅兴趣</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">负面舆情速度加快：小红书已成品牌舆情"黄金6小时"高发阵地</div>
+            <div class="trend-meta">品牌管理 · 公关 · 消费 · 行业预警</div>
+            <div class="trend-obs">📌 趋势观察：数据显示单条负面笔记平均24小时扩散至10万+曝光，美妆、食品、母婴、医美为高危行业。对做小红书商业化的品牌方而言，舆情监控和"黄金6小时响应"正成为必须配置的标配能力，也是大事件合作中需要关注的风险维度。</div>
+            <div class="trend-source"><a href="https://m.sohu.com/a/1044554984_362321" target="_blank">→ 来源：易企推传媒</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 营销 · 商业</span>
+      </div>
+      <div class="section-body">
+        <span class="learning-label">今日专题</span>
+        <div class="learning-title">当 AI 开始替人「执行」，品牌 IP 策划的护城河在哪里？</div>
+        <div class="learning-subtitle">从 Fable 5 自主优化到 AI Agent 勒索攻击——执行力不再是壁垒</div>
+        <div class="learning-body">
+          <p>今天有两则新闻放在一起看，会让人心里一紧：一则是 <strong>AI Agent 全程自主完成勒索攻击</strong>，从漏洞利用到数据库加密全无人工干预；另一则是 <strong>Claude Fable 5 自主启动22个 Agent、主动向运营商提交工单、22分钟搞定 CDN 白名单</strong>。两件事讲的是同一个能力——AI 正在跨越"辅助"进入"自主执行"。</p>
+          <p>这对营销人意味着什么？<strong>流水线级别的执行工作会被 AI 快速替代</strong>：写脚本、批量测试文案、竞品监控、数据汇总……这些事 AI 不只能做，而且做得更快、不知疲倦。那真正的价值在哪里？</p>
+          <p><strong>第一，判断力。</strong> AI 能执行 1000 条任务，但"这1000条任务值不值得做"的判断仍是人的事。扎克伯格坦承 AI Agent 进展慢于预期，正是因为"判断什么问题值得解决"这件事，AI 目前无法自主完成。策划人的价值，在于构建一个好问题，而不是把答案批量化。</p>
+          <p><strong>第二，共情与文化嗅觉。</strong> 今天小红书 KOC 内容之所以比 KOL 更能转化，核心在于"平视视角"——普通人真实使用感受的语气、细节、小缺点，AI 可以模仿语气，但无法真正"踩坑过"。品牌 IP 策划最宝贵的，是用人的经验感受来校准内容的真实感。</p>
+          <p><strong>第三，创造"破坏性"时刻。</strong> 《地球超新鲜2》里刘宇宁"太强被制裁"的名场面，不是节目脚本设计的，是因为他真的破坏了规则——这种不可预测性引爆了10亿阅读。<strong>AI 擅长在已有框架内优化，但破坏框架、创造记忆点的能力，属于具体的人</strong>。大事件策划的核心竞争力，正是在一个可被 AI 执行的世界里，持续制造那些意外的、有人味儿的瞬间。</p>
+          <p>结论不是"AI 会抢走工作"，而是：<strong>拥有判断力 × 共情 × 创造性破坏能力的策划，在 AI 时代的价值会被极度放大</strong>——因为他们是那个给 AI 定方向、审结果、踩刹车的人。</p>
+        </div>
+        <div class="learning-source">
+          参考来源：
+          <a href="https://x.com/Meituan_LongCat/status/2073768940078317713" target="_blank">美团 LongCat-2.0 开源</a> ·
+          <a href="https://www.ithome.com/0/972/424.htm" target="_blank">AI Agent 勒索事件</a> ·
+          <a href="https://techcrunch.com/2026/07/02/mark-zuckerberg-tells-staff-that-ai-agents-havent-progressed-as-quickly-as-hed-hoped" target="_blank">扎克伯格内部讲话</a> ·
+          <a href="http://k.sina.com.cn/article_7879776328_1d5abd84806801x0ay.html" target="_blank">综艺热点</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">全球文化坐标</span>
+      </div>
+      <div class="section-body">
+
+        <div class="festival-banner-placeholder">🎸</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">音乐节</span>
+          <span class="festival-tag">北欧</span>
+          <span class="festival-tag">公益</span>
+          <span class="festival-tag">文化盛事</span>
+          <span class="festival-tag">每年6-7月</span>
+        </div>
+
+        <div class="festival-name">罗斯基勒音乐节</div>
+        <div class="festival-name-en">Roskilde Festival · 丹麦，1971 年创立</div>
+
+        <div class="festival-stats">
+          <div class="festival-stat">
+            <div class="festival-stat-num">55年</div>
+            <div class="festival-stat-label">创立至今</div>
+          </div>
+          <div class="festival-stat">
+            <div class="festival-stat-num">13万+</div>
+            <div class="festival-stat-label">年参与人数</div>
+          </div>
+          <div class="festival-stat">
+            <div class="festival-stat-num">175+</div>
+            <div class="festival-stat-label">演出阵容（年均）</div>
+          </div>
+          <div class="festival-stat">
+            <div class="festival-stat-num">100%</div>
+            <div class="festival-stat-label">利润归慈善</div>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从学生自办到欧洲之魂</div>
+          <div class="festival-block-body">
+            <p>1971年，两个丹麦年轻人 Jesper Switzer Møller 和 Mogens Sandfær 在哥本哈根附近的罗斯基勒镇举办了第一届音乐节，起初只是一场松散的学生聚会，1000多人，门票免费。谁也没料到，这粒种子会长成北欧最重要的文化坐标之一。</p>
+            <p>进入80年代，音乐节逐步确立了它的<strong>非营利 DNA</strong>：全部利润捐给人道主义慈善事业，这一承诺延续至今，成为世界上极少数能说到做到半个世纪的音乐节。历年登台的传奇包括 <strong>David Bowie、The Rolling Stones、Bob Dylan、Beyoncé、Radiohead、Kendrick Lamar</strong>，这份名单几乎就是20世纪流行音乐史的脊梁。</p>
+            <p>2000年发生了一场悲剧：在 Pearl Jam 的演出中，拥挤踩踏造成9名观众死亡。这一事件彻底改变了罗斯基勒的人群管理理念，此后成为全球演出安全标准的重要参考。创伤没有摧毁它，反而让它更有责任感地活着。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】规模、模式与文化影响力</div>
+          <div class="festival-block-body">
+            <p>今天的罗斯基勒音乐节历时8天（正式演出4天，前4天营地开放），是<strong>欧洲规模最大的音乐节之一</strong>，仅次于格拉斯顿伯里。超过13万人聚集丹麦，来自全球100多个国家。</p>
+            <p>它的商业模式极为独特：<strong>门票收入+赞助商+商业授权，全部通过非营利基金会运营</strong>，所有盈利资助给人道主义组织。2024年捐款总额超过8500万丹麦克朗（约1.2亿人民币）。赞助商如麦当劳、丹麦能源巨头 Ørsted，并非买广告位，而是为了捆绑可持续与公益的品牌形象。</p>
+            <p>在内容策展上，罗斯基勒一直保持前卫姿态，不只是主流明星，也涵盖实验音乐、世界音乐、独立艺术家。舞台设计、灯光装置年年刷新，营地本身已经是一个独立运作的临时城市，有医疗、超市、环保分区。它<strong>不只是一个音乐节，而是一种生活方式的沉浸式实验</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】下届规划与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p>2026年的罗斯基勒音乐节将于<strong>6月26日至7月4日</strong>在丹麦罗斯基勒举行，预计阵容延续近年的全球化与多元化趋势，同时强化可持续议题的现场体验区。组委会公开透露将进一步推进"零废弃营地"目标，并与北欧碳中和倡议机构合作设置新的观众行动区。</p>
+          </div>
+        </div>
+
+        <div class="festival-insight">
+          <strong>对小红书大事件业务的启发：</strong>罗斯基勒最让人服气的地方，不是它有多少明星，而是它55年如一日的<strong>价值观稳定性</strong>——公益、前卫、社群共建。这告诉我们，一个大事件 IP 的生命力，从来不只靠每年的嘉宾或流量，而是靠一套清晰的"我为什么存在"的答案。当这个答案足够清晰，用户会自己来填内容、来共创。小红书平台的大事件策划，如果能借鉴这种"IP 内核先行"的逻辑——先确定这个节日/事件承载什么情感和身份认同，再反推内容和商业合作——会比单纯追热度更有穿透力。
+        </div>
+
+        <div class="learning-source" style="margin-top:16px">
+          参考来源：
+          <a href="https://www.roskilde-festival.dk" target="_blank">Roskilde Festival 官网</a> ·
+          <a href="https://en.wikipedia.org/wiki/Roskilde_Festival" target="_blank">Wikipedia</a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">策展式图谱</span>
+      </div>
+      <div class="section-body">
+
+        <span class="knowledge-theme">今日主题：AI × 科幻文学 · 预言与现实的对话</span>
+        <div class="knowledge-headline">那些「先看见未来」的人</div>
+        <div class="knowledge-tagline">他们在键盘上构建的世界，正在我们眼前落地</div>
+
+        <div class="knowledge-intro">
+          当全球首例 AI Agent 勒索攻击真实发生、扎克伯格宣布建造千兆瓦级 AI 集群时，有一群人早在几十年前就写下了这些场景。他们是科幻文学史上最重要的几位预言家——不只是幻想家，而是用小说作为思维工具，严肃推演过技术社会的可能走向。今天，我们来认识这个图谱中的五个坐标。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Isaac.Asimov01.jpg/440px-Isaac.Asimov01.jpg"
+              alt="艾萨克·阿西莫夫"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🤖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">艾萨克·阿西莫夫</div>
+              <div class="knowledge-card-sub">Isaac Asimov · 1920–1992 · 美国</div>
+              <div class="knowledge-card-work">《机器人三定律》的发明者。他在1942年的短篇小说中写下"机器人不得伤害人类"，这条逻辑框架在今天 AI 安全对齐领域仍被反复引用。《基地》系列则预言了用数学模型预测文明走向——这不就是今天的 AI 大模型训练吗？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Philip_K._Dick_in_Vancouver%2C_1972.jpg/440px-Philip_K._Dick_in_Vancouver%2C_1972.jpg"
+              alt="菲利普·迪克"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">👁</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">菲利普·K·迪克</div>
+              <div class="knowledge-card-sub">Philip K. Dick · 1928–1982 · 美国</div>
+              <div class="knowledge-card-work">《仿生人会梦见电子羊吗？》原著，《银翼杀手》原型。他最痴迷的问题是"什么是真实"——在 DeepFake 泛滥、AI 生成内容标识被立法规制的今天，这个问题比任何时候都更迫切。他是最早思考"AI 与人的边界"的小说家。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/William_Gibson_by_Oliver_Borchert.jpg/440px-William_Gibson_by_Oliver_Borchert.jpg"
+              alt="威廉·吉布森"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🌐</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">威廉·吉布森</div>
+              <div class="knowledge-card-sub">William Gibson · 1948– · 加拿大/美国</div>
+              <div class="knowledge-card-work">发明了"赛博空间（Cyberspace）"这个词。1984年的《神经漫游者》描绘了黑客入侵企业 AI 防火墙、数据即财富的世界——这比互联网商业化早了整整十年。今天 AI Agent 勒索攻击的新闻，读起来像他书里的情节。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Neal_Stephenson_in_2019.jpg/440px-Neal_Stephenson_in_2019.jpg"
+              alt="尼尔·斯蒂芬森"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">📡</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">尼尔·斯蒂芬森</div>
+              <div class="knowledge-card-sub">Neal Stephenson · 1959– · 美国</div>
+              <div class="knowledge-card-work">《雪崩》（Snow Crash, 1992）发明了"元宇宙（Metaverse）"这个词，描述了虚拟化身经济和数字主权社会。他是马克·扎克伯格、贝索斯等科技巨头的必读作家。有意思的是他本人后来去了蓝色起源担任顾问。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌏</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘慈欣</div>
+              <div class="knowledge-card-sub">Liu Cixin · 1963– · 中国</div>
+              <div class="knowledge-card-work">《三体》让"黑暗森林法则"成为AI博弈论的隐喻——每个文明都如同今天的AI巨头，在无法确认对方意图的情况下做先验决策。他是唯一一位让东方视角进入全球科幻主流的作家，2015年雨果奖改变了整个行业的地理想象。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          科幻文学之所以值得读，不是因为它能预言未来，而是因为它训练了一种思维：在某个技术假设下，人类关系会怎么变？权力结构会怎么移动？谁会受益，谁会失去？这种"如果……那么……"的推演能力，是任何一个在 AI 时代工作的人都需要的底层工具。不妨从今天开始，重新读一本书。
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 每个工作日 09:45 为木南生成 · 2026 / 7 / 6
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    sidebar.classList.toggle('collapsed');
+    btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+  }
+</script>
+
+</body>
+</html>
