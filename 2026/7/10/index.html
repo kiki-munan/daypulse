@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/10</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 40%, #c4653a 80%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/7/10/index.html" class="active">2026 / 7 / 10</a></li>
+        <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+        <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+        <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+        <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 10</div>
+      <div class="day-week">星期五</div>
+      <div class="day-tag">世界杯八强赛日 · WAIC倒计时一周</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">6月CPI同比升1%、PPI同比升4.1%，储蓄国债今日开售，财政政策持续发力</div>
+            <div class="news-item-desc">国家统计局数据：6月CPI同比+1.0%，PPI同比+4.1%；食品价格环比下降带来物价温和格局。与此同时，财政部今日启动第五、六期储蓄国债发行，3年期1.63%、5年期1.7%，最大发行额合计600亿元，是普通储户参与国债的重要窗口。</div>
+            <a class="news-item-link" href="http://finance.sina.com.cn/stock/t/2026-07-10/doc-inihhrai8333598.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国汽车6月出口首破百万，新能源超越燃油车占出口总量57%，创历史新高</div>
+            <div class="news-item-desc">中汽协数据：6月整车出口103.7万辆，同比增75.1%，新能源出口52.3万辆同比增超160%——首次出口量超过燃油车。产业链本地化正成为中国车企在欧洲、东南亚市场的长期落地策略，"产品出海"升级为"模式出海"。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870280741948195301" target="_blank">→ 上海证券报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">WAIC 2026 下周启幕：展览面积首破10万㎡，300+新品全球首发，华为超节点真机亮相</div>
+            <div class="news-item-desc">7月17-20日，世界人工智能大会将在上海"三地四馆"举行，主题"智能伙伴 共创未来"。本届大会1100余家企业参展，9位图灵奖/诺贝尔奖得主到场，首次创办高水平国际学术会议WAIC Academic。华为Atlas 950超节点真机、全球首款AI智能体手机、多款人形机器人即将亮相，是AI产业下半年最重磅的一次集体现身。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870048743197478864" target="_blank">→ 央视网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI 推出 GPT-5.6 全系列，豆包/千问7月15日下线智能体，AI C端进入规范调整期</div>
+            <div class="news-item-desc">GPT-5.6 正式按Token计费上线，覆盖Sol/Terra/Luna三规格；同日，豆包、千问宣布7月15日下线智能体功能，AI伴聊类产品进入监管收紧期。平台"放水养鱼"（微信AI小程序1亿Token扶持）与监管"立规划界"同步进行，AI产业从演示走向生产的分水岭正在形成。</div>
+            <a class="news-item-link" href="https://www.huadengshang.com/news-seo.php?id=412" target="_blank">→ 华青科技日报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">燧原科技获证监会批准科创板IPO，拟募资60亿，国产AI芯片"四小龙"再添资本助力</div>
+            <div class="news-item-desc">作为国内AI训练芯片的重要玩家，燧原科技获准注册，五代、六代AI芯片研发进入加速通道。港交所同日创单日7个IPO纪录——科技产业的资本化浪潮在量与质上都在加速。</div>
+            <a class="news-item-link" href="https://news.pedaily.cn/202607/566067.shtml" target="_blank">→ 投资界</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">世界杯营销进入八强赛，蒙牛/海信/联想押注官方赞助，品牌"精算时代"取代"砸钱时代"</div>
+            <div class="news-item-desc">2026世界杯商业规模预计110亿美元，但中国企业官方赞助总额较上届缩水64%——不是不投，而是转向绑定球星/球队、玩梗破圈、押注冷门等更高ROI的策略。乐高、阿迪达斯的电影级广告，王老吉押注哈兰德"抽象"人设，代表世界杯营销逻辑的根本转变：从"全程在场"到"精准出圈"。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870205117769766914" target="_blank">→ 百家号·品牌营销观察</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">三大影视协会艺人署名新规今日正式实施：法定本名、笔画排序，整治"撕番"顽疾</div>
+            <div class="news-item-desc">腾讯视频率先落地，艺人统一使用法定本名，按姓氏笔画排序，规范头衔表述。这一规则对内容平台、品牌方的艺人合作协议均有直接影响——以后"番位"博弈将更多在合约里而非公众舆论场中解决。</div>
+            <a class="news-item-link" href="https://www.sina.cn/news/detail/5313270862840821.html" target="_blank">→ 新浪新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">《镖人：风起大漠》拿下百花奖7项提名，陈丽君越剧跨界银幕引发行业关注</div>
+            <div class="news-item-desc">第38届大众电影百花奖提名名单出炉，古装武侠片《镖人》成最大赢家，于适、李云霄、陈丽君、刘耀文均获提名。越剧演员陈丽君的跨界突破被视为"传统艺术向流行文化破圈"的标志性事件，导演袁和平称其"演得无可挑剔"。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7879776328_1d5abd84806801zng6.html" target="_blank">→ 新浪娱乐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">邓紫棋"I AM GLORIA 2.0"世巡杭州站今起连开三天，夏季演出市场逆势爆发</div>
+            <div class="news-item-desc">7月杭州排了11场个唱，许嵩、郭富城、邓紫棋三代票房天花板打破"演出淡季"惯例。邓紫棋体育场级现场统治力、许嵩"文化偶像"圈层深度，展示了不同时代、不同逻辑的音乐商业化路径。演出经济正从一线城市向头部歌手+强二线城市的双核结构迁移。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1869476943267680844" target="_blank">→ 潮新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">霍尔木兹海峡商船交通"基本陷入停滞"，美光宣布2035年前美本土投资超2500亿美元</div>
+            <div class="news-item-desc">中东局势持续紧张：伊朗南部多地传出爆炸，英国海事分析公司报告称霍尔木兹海峡驶离波斯湾商船基本停滞——这条承运全球约20%石油的咽喉要道的紧张，正向大宗商品和供应链传导。与此同时，美光科技宣布巨额本土投资计划，AI存储的军备竞赛与地缘政治赛跑同步加速。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/headline/2026-07-10/detail-inihhkup5181253.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">小红书野球节 · 今日在虹口足球场举办，世界杯热度从线上烧到线下</div>
+            <div class="trend-meta">世界杯大事件 · 线下IP化 · 体育内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：小红书今日在上海虹口足球场举办"野球节"——12支民间球队踢五人制、市集派对、球星卡制作、水庆霞等名宿现场亮相。世界杯八强首个赛日选择做线下活动，是一次从"直播平台"到"活动主理人"的身份转化。<strong>对大事件策划的启示：</strong>顶级赛事IP可以反哺线下，但关键在于"参与感设计"——不是把直播搬到现场，而是让普通人也有"进场资格"。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870244484638861821" target="_blank">→ 小红书野球节官方介绍</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">哈兰德话题小红书阅读量近18亿，"00后球星"重构品牌押注逻辑</div>
+            <div class="trend-meta">体育营销 · 球星经济 · 00后消费文化</div>
+            <div class="trend-obs">💡 趋势观察：哈兰德中国账号1个月突破600万粉丝，超越挪威全国人口。王老吉押注"哈哈哈哈哈兰德"魔性文案、美的签约、中国品牌群体跟注。这一轮球星营销的底层变化是：<strong>从"仰望感"到"共玩感"</strong>——00后球星愿意配合品牌"土味"，用抽象梗拉近与中国用户的距离，这是梅西时代做不到的。小红书的世界杯直播内容覆盖184国，正在成为真正意义上的全球华语球迷广场。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870238746988969553" target="_blank">→ 每日经济新闻·哈兰德商业价值分析</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">鹿晗x范志毅直播预约中，《五哈》兄弟赴约"范门"，7月12日世界杯半决赛联动</div>
+            <div class="trend-meta">娱乐x体育跨圈 · 直播内容 · 小红书自制节目</div>
+            <div class="trend-obs">💡 趋势观察：鹿晗喊话"范大哥我来赴约"，直播定于7月12日世界杯半决赛日。这一组合的核心价值不在于"流量相加"，而在于<strong>"叙事连贯性"</strong>——《五哈》团队成员陆续造访范志毅，形成了一个有剧情逻辑的系列。内容大事件可以向此借鉴：单次活动的爆发力不如有"连续剧感"的系列玩法，用户会主动记住下一集。</div>
+            <div class="trend-source"><a href="https://k.sina.com.cn/article_7879776328_1d5abd84806801zcja.html" target="_blank">→ 新浪·鹿晗范志毅直播预约</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">"多名艺人发声讨债"冲上热搜，综艺《开放营业中》资金链断裂事件持续发酵</div>
+            <div class="trend-meta">行业生态 · 娱乐圈治理 · 舆情话题</div>
+            <div class="trend-obs">💡 趋势观察：赵品霖、左其铂、陆翊等多位艺人公开讨薪，综艺制作公司资金链问题浮出水面。这一话题在小红书的发酵逻辑是"情绪共鸣驱动"——"讨薪"天然与打工人共情。<strong>对内容方的启示：</strong>艺人商务合同的履约保障正在被公众讨论，MCN和内容公司的信用体系愈发重要，平台大事件在合作方资质审查上也应提高标准。</div>
+            <div class="trend-source"><a href="https://finance.sina.com.cn/wm/2026-07-10/doc-inihhkuh7206652.shtml" target="_blank">→ 新浪财经·艺人讨债事件</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">张真源"赔笑表情包"主动认领出圈，《密室大逃脱8》开播话题突破3亿阅读</div>
+            <div class="trend-meta">综艺话题 · 艺人人设运营 · 表情包经济</div>
+            <div class="trend-obs">💡 趋势观察：张真源正主下场配文"擦汗.jpg"，将窘迫瞬间变成社交货币，评论区互动再造二次传播。这是一次教科书级的<strong>"危机即机遇"转化</strong>——主动认领>被动响应，自嘲>解释。对品牌方的参考：当内容或产品被用户抓住"槽点"时，比沉默或公关稿更有效的是参与进去、一起玩。</div>
+            <div class="trend-source"><a href="https://ent.sina.cn/2026-07-09/detail-inihczph8267158.d.html" target="_blank">→ 新浪娱乐·张真源表情包事件</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 体育营销</div>
+        <div class="learning-title">从"砸钱"到"押注"：世界杯营销逻辑的三次进化</div>
+        <div class="learning-subtitle">2026美加墨世界杯正在重写大事件营销的底层规则</div>
+        <div class="learning-body">
+          <p>每四年一届的世界杯，是品牌营销圈最贵的一场赌局。2026年的美加墨世界杯，商业规模预计达到110亿美元——但有意思的是，中国企业在FIFA官方赞助层面的总投入比上届缩水了64%。</p>
+          <p>钱没有少花，逻辑变了。</p>
+          <p><strong>第一次进化：从Logo曝光到意义绑定。</strong>过去的体育营销，是把Logo贴在最显眼的地方。现在头部品牌讲的是"意义相关性"——乐高用"一块积木"重构"每个人都是世界杯的参与者"，阿迪达斯用街头野场融合精英球场，传递的是价值观而非产品信息。品牌的问题从"我能出现在哪"变成了"我和这个赛事的故事是什么"。</p>
+          <p><strong>第二次进化：从巨星仰望到共玩关系。</strong>哈兰德喊"哈哈哈哈哈兰德，哈王老吉"，亚马尔配合品牌玩梗——00后球星愿意"降格"共创，这是梅西C罗时代稀缺的。中国品牌嗅到了这个机会：用抽象和土味来破圈，反而比正经广告更容易在小红书等内容平台发酵。</p>
+          <p><strong>第三次进化：AI嵌入赛事底层。</strong>2026年世界杯被称为"首届AI世界杯"——联想的FIFA AI Pro、3D数字人、裁判视角增强系统已经成为赛事基础设施的一部分。技术从"赞助商"变成了"参与者"，中国科技企业在全球顶级赛事中的角色从市场买家升级为技术提供方。</p>
+          <p><strong>对小红书平台大事件策划的启示：</strong>IP联合活动的核心价值，不是"我们找到了大IP"，而是"我们和这个IP建立了一个说得通的故事"。当品牌、平台、用户三者的叙事找到交汇点，活动才能从"事件"变成"记忆"。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.163.com/dy/article/L1AVBHRF05198OFP.html" target="_blank">网易·AI驱动中国品牌重构世界杯赞助逻辑</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2056386368222368593" target="_blank">知乎·2026世界杯广告案例合集</a> ·
+          <a href="https://baijiahao.baidu.com/s?id=1870205117769766914" target="_blank">百家号·品牌豪赌世界杯</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">全球文化盛事 · 深度解读</span>
+      </div>
+      <div class="section-body">
+
+        <div class="festival-banner-placeholder">🤖</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">科技盛事</span>
+          <span class="festival-tag">AI · 产业</span>
+          <span class="festival-tag">上海</span>
+          <span class="festival-tag">全球治理</span>
+          <span class="festival-tag">倒计时7天</span>
+        </div>
+
+        <div class="festival-name">世界人工智能大会</div>
+        <div class="festival-name-en">WAIC · World Artificial Intelligence Conference</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从一场地方展到全球AI议程的压舱石</div>
+          <div class="festival-block-body">
+            <p>2018年，第一届WAIC在上海举办，彼时AI浪潮刚刚翻涌，大会更像是中国展示AI产业雄心的一次"宣言"。参展企业不到200家，议题多为技术前瞻，商业转化路径尚不清晰。</p>
+            <p>2019-2020年，大会规模快速扩张，马斯克、马云同台对话"AI是否威胁人类"成为历史性名场面，引发全球媒体关注。那一刻，WAIC从技术展变成了<strong>一个拥有全球话题调性的思想论坛</strong>。</p>
+            <p>2022年，新冠冲击下首次采用"云+展"混合形式，却借助线上扩大了海外受众触达。2023年，ChatGPT引爆的AI热潮让WAIC的关注度呈爆炸式增长——AI不再只是"下一代技术"，它是当下最重要的产业重组变量，大会随之成为每年一次的<strong>全球AI产业体检表</strong>。</p>
+            <p>历届主题的演进，是一部中国AI叙事的进化史：从"智慧城市"到"智联世界"，再到今年的<strong>"智能伙伴 共创未来"</strong>——从技术工具，到社会基础设施，到平等协作者，人类与AI关系的定义在持续漂移。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】2026届：规模、阵容、新品三项同创历史新高</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">10万㎡+</div>
+                <div class="festival-stat-label">展览面积 首次突破</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1100+</div>
+                <div class="festival-stat-label">参展企业数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">300+</div>
+                <div class="festival-stat-label">全球首发新品</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">140+</div>
+                <div class="festival-stat-label">论坛场次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">9位</div>
+                <div class="festival-stat-label">图灵奖/诺贝尔奖得主</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">三地四馆</div>
+                <div class="festival-stat-label">世博/张江/西岸</div>
+              </div>
+            </div>
+            <p>本届大会重磅嘉宾包括：强化学习之父理查德·萨顿（Richard Sutton）主旨演讲，深度学习三巨头之一约书亚·本吉奥现场解读联合国AI治理框架。这两个名字，几乎代表了现代AI技术的整个奠基史。</p>
+            <p>产品层面，华为Atlas 950超节点真机（业界目前最大规模超节点）、全球首款AI智能体手机、MiniMax M3多模态大模型、多款人形机器人灵巧手将集体亮相。这不是一场展览，更像是<strong>AI产业下半年的启动仪式</strong>。</p>
+            <p>运作模式上，WAIC采用"政府主导+市场参与"的双轮驱动：12个国家部委联合主办，背书了大会的官方权威性；而1100家企业自费参展、争夺新品首发舞台，又让大会拥有真实的商业热度。这一模式既保证了国际影响力，又避免了纯政府展会的沉闷感。</p>
+            <div class="festival-insight">
+              <strong>商业影响力：</strong>上海2025年394家规上AI企业产业规模超6370亿元，同比增39.5%。WAIC的周期性造势效应，已成为上海吸引AI产业链落地的核心杠杆之一。每一届大会期间，大量产业合作、投融资对接在幕后完成——它的价值远不止展台上的那些机器人。
+            </div>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】下届展望 · 对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p>WAIC的下届规划方向明确：学术与产业深度融合（WAIC Academic将成为固定赛道）、具身智能和智算成为两大核心展示主题、国际化程度进一步提升——AI全球治理的话语权争夺，将更多通过此类峰会完成。</p>
+            <p><strong>对小红书大事件业务的三点启发：</strong></p>
+            <p>① <strong>科技IP是内容平台的新流量增量入口。</strong>WAIC期间，海量AI新品首发内容天然适合在小红书种草——硬核产品用感性内容包装，正是平台的核心优势。今年WAIC开幕前，"人形机器人""AI手机"等话题已在站内发酵，大事件团队可以研究此类科技节点的内容策划模式。</p>
+            <p>② <strong>"三地四馆"是一种可借鉴的空间叙事结构。</strong>大事件不必只有一个主场，多场馆、多赛道、同期并行，反而能给不同受众提供各自的进入点——这与小红书覆盖泛兴趣人群的平台逻辑吻合。</p>
+            <p>③ <strong>首发文化的价值被大会证明。</strong>300+新品选择在WAIC全球首发，说明"首发资格"本身就是稀缺资产。大事件IP能否为合作品牌提供某种"首次"——不必是产品首发，可以是场景首创、形式首次——是提升IP商业价值的可探索方向。</p>
+            <div class="festival-insight">
+              <strong>一句话记忆点：</strong>WAIC是AI产业的年度"华山论剑"——不管你信不信AI，每年七月，所有玩家都必须在上海表个态。
+            </div>
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px;">
+          📖 来源：
+          <a href="https://baijiahao.baidu.com/s?id=1870040092043851260" target="_blank">央广网·WAIC 2026开幕预告</a> ·
+          <a href="https://stock.10jqka.com.cn/20260708/c678029564.shtml" target="_blank">同花顺·大会规模数据</a> ·
+          <a href="http://baijiahao.baidu.com/s?id=1870210201444391552" target="_blank">百家号·论坛活动日程</a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">策展式 · 今日图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">体育商业 × 明星经济</div>
+        <div class="knowledge-headline">运动场边的商业王国：那些把体育变成品牌资产的人</div>
+        <div class="knowledge-tagline">"当他们踢球，品牌在计算；当品牌算完，球已经进了。"</div>
+        <div class="knowledge-intro">
+          世界杯八强战今日开打，绿茵场上的每一脚射门背后，都有一套精密的商业计算机在运转。今天这幅图谱，画的不是球星本人，而是那些把体育和品牌、艺术、流行文化深度融合的开拓者——他们教会世界：体育不只是竞技，它是文化最有力的传播介质。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg/440px-Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg"
+              alt="Lionel Messi"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">莱昂内尔·梅西</div>
+              <div class="knowledge-card-sub">阿根廷 · 现役 · Inter Miami CF</div>
+              <div class="knowledge-card-work">37岁仍在本届世界杯出场的传奇。早期代言以体育品牌为主，如今已建立横跨运动、食品、金融、科技的多元品牌矩阵。成为阿迪达斯历史上最长约代言人（逾20年），并在退休规划上推动了职业球员的"品牌遗产化"思维。他的商业价值证明：<em>顶级球星是持续升值的媒体资产，而非一次性广告位。</em></div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Cristiano_Ronaldo_2022_FIFA_World_Cup.jpg/440px-Cristiano_Ronaldo_2022_FIFA_World_Cup.jpg"
+              alt="Cristiano Ronaldo"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">克里斯蒂亚诺·罗纳尔多</div>
+              <div class="knowledge-card-sub">葡萄牙 · 现役 · Al Nassr</div>
+              <div class="knowledge-card-work">Instagram全球关注量第一（逾6.8亿），是体育届最早意识到"社交媒体即个人媒体帝国"的人。NK品牌（自有内衣/香水线）年营收数亿美元，证明顶级运动员可以成为独立品牌创始人。2026世界杯仍在代表葡萄牙出战，创造了纯粹用实力续写个人IP的稀缺案例。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Erling_Haaland_2024-25_%28cropped%29.jpg/440px-Erling_Haaland_2024-25_%28cropped%29.jpg"
+              alt="Erling Haaland"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🇳🇴</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">厄林·哈兰德</div>
+              <div class="knowledge-card-sub">挪威 · 现役 · Manchester City</div>
+              <div class="knowledge-card-work">本届世界杯最大黑马。凭借率领挪威首进八强+场均进球的统治力，迅速跻身全球商业价值前三。在中国市场，王老吉"哈哈哈哈哈兰德"的抽象玩法证明：<em>00后球星的商业逻辑是"共玩"而非"仰望"</em>。哈兰德是第一个用魔性配合重构中国品牌世界杯营销风格的球星。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/David_Beckham_2012_%28cropped%29.jpg/440px-David_Beckham_2012_%28cropped%29.jpg"
+              alt="David Beckham"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏆</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">大卫·贝克汉姆</div>
+              <div class="knowledge-card-sub">英格兰 · 退役 · 品牌创始人</div>
+              <div class="knowledge-card-work">现代体育明星IP化的教科书。退役后不做代言人，做Inter Miami CF俱乐部老板，签下梅西完成了"运动员→商人→IP主理人"的三级跳。本届世界杯阿迪达斯广告中再次亮相，证明体育明星的商业生命可以跨越运动生涯继续燃烧。他的核心资产：<em>帅气+时尚+家庭感=永不过时的品牌符号。</em></div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">李娜</div>
+              <div class="knowledge-card-sub">中国 · 退役 · 网球运动员</div>
+              <div class="knowledge-card-work">中国体育明星商业化的先驱。2011年法网夺冠后，她成为第一位打破欧美主导的网球代言版图的中国运动员，Nike、劳力士等顶级品牌蜂拥而至。退役后她拒绝了大量商业邀约，走向低调教学——这种"主动稀缺"本身也是一种品牌管理。她的故事证明：<em>个人风格的独立性，才是中国运动员商业化最稀缺的资产。</em></div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Lamine_Yamal_2024_%28cropped%29.jpg/440px-Lamine_Yamal_2024_%28cropped%29.jpg"
+              alt="Lamine Yamal"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none;">🇪🇸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">拉明·亚马尔</div>
+              <div class="knowledge-card-sub">西班牙 · 现役 · FC Barcelona</div>
+              <div class="knowledge-card-work">2007年生，本届世界杯最年轻的顶级球星。年收入约4300万美元，已签约阿迪达斯长期合约。他的商业价值代表了一种新趋势：<em>品牌开始押注"成长型IP"而非"成熟型IP"</em>——赌的不是当下热度，而是未来10年的持续增值空间。中国市场对亚马尔的关注度正在快速上升。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          体育商业的本质，是把人类最原始的竞争本能，转化为全球共享的情感货币。无论是梅西的传承感、哈兰德的荒诞感，还是贝克汉姆的时尚感——每一种"感"的背后，都是一套持续经营的叙事体系。品牌借助球星，买的不是曝光，是一种情感的出借权。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 每个工作日 09:45 更新 · 仅供内部参考
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    sidebar.classList.toggle('collapsed');
+    btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+  }
+</script>
+
+</body>
+</html>
