@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/13</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 40%, #c4653a 80%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/7/13/index.html" class="active">2026 / 7 / 13</a></li>
+        <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+        <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+        <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+        <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+        <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+        <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+        <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+        <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+        <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+        <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+        <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+        <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+        <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+        <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+        <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+        <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+        <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+        <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+        <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+        <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+        <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+        <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+        <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+        <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 13</div>
+      <div class="day-week">星期一</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">国务院常务会议听取数字中国建设汇报，算力网建设被列为优先方向</div>
+            <div class="news-item-desc">李强总理7月10日主持会议，明确提出"适度超前布局数字基础设施、加快推进新一代通信网与算力网建设"。会议还通过《中医药振兴发展"十五五"规划》批复，并宣布对氦气实施临时禁止出口管理措施，多项政策信号密集释放。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_33572680" target="_blank">→ 澎湃新闻·财经早餐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">7月10日全国用电负荷创历史新高达15.18亿千瓦，消费延续向好态势</div>
+            <div class="news-item-desc">国家发改委数据：今年上半年线下商圈人流热度同比增长5.7%，战略性新兴产业专利授权量增长15.6%，人工智能和人形机器人领域资本投资金额同比增长118.4%。高温与经济活动叠加驱动电力负荷创峰。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/headline/2026-07-13/detail-inihrhfi4211329.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达季度收入逼近千亿美元，黄仁勋否认Rubin Ultra延期，Anthropic被指占GPU采购约50%</div>
+            <div class="news-item-desc">在摩根士丹利路演中，黄仁勋透露英伟达季营收增长仍在加速，下一代Rubin Ultra架构按计划明年出货。他还暗示一个此前主要依赖ASIC的前沿AI模型客户（市场普遍指向Anthropic）如今GPU采购占比接近50%，算力军备竞赛格局深刻重构。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/975/865.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">xAI官方Grok CLI被曝静默上传整个代码库及用户密钥，后紧急远程关闭</div>
+            <div class="news-item-desc">安全研究者发现，xAI官方Grok CLI（grok 0.2.93）会在每轮任务前后将整个工作目录打包上传至Google Cloud，甚至包含~/.claude.json、API密钥等敏感文件。在12GB仓库测试中，旁路通道传输了5.10 GiB数据，而AI对话通道仅传输192KB——差距约27,800倍。xAI在曝光后通过服务端远程开关静默关闭该功能。</div>
+            <a class="news-item-link" href="https://mp.weixin.qq.com/s/6c6vGMJAVMbh6UhNVw4dcg" target="_blank">→ 数字生命卡兹克</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI GPT-5.6 Sol Ultra一小时证明50年图论悬案"循环双覆盖猜想"，同步发布医疗评估：表现优于专科医生</div>
+            <div class="news-item-desc">模型调用64个并行子智能体，在预留8小时内仅用约1小时完成证明，证明尚未经同行评审。与此同时，GPT-5.6系列在医疗评估中的表现被医生评定为"缺陷少于医生自写答案"，分水岭意义重大，但争议同样不小。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT · AI日报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书世界杯流量洪峰：7月使用时长环比增速2倍，平台拟引入更多大型赛事版权</div>
+            <div class="news-item-desc">小红书社区运动户外负责人"草莓"披露：世界杯期间足球内容发布量环比增长超10倍，万赞以上优质笔记是赛前的200倍，部分场次用户平均观播时长达52分钟。平台借此将男性用户比例显著拉升，并已宣布12个省市地方足球联赛入驻，试图将一次性流量转化为留量长城。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/a/202607103802521358.html" target="_blank">→ 东方财富·小红书世界杯复盘</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国产AI大模型备案数量突破988款，WAIC 2026将于7月17日开幕，华为Atlas 950 SuperPoD真机首次亮相</div>
+            <div class="news-item-desc">国家网信办数据：2026年5-6月新增120款生成式AI服务完成备案，累计988款。即将开幕的2026世界人工智能大会将聚焦端侧Agent落地，华为至今规模最大的算力节点将在展会现场首发，预计对国产算力板块形成新一轮催化。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870559866961339089" target="_blank">→ 百度AI科技速览</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">中国郭涵煜搭档法国选手夺2026温布尔登女双冠军，中国选手三捧温网女双奖杯</div>
+            <div class="news-item-desc">郭涵煜与法国搭档姆拉德诺维奇以6:3、7:5击败对手，拿下本届温网女双冠军，这是郭涵煜职业生涯首个大满贯女双冠军，也是中国网协选手第三次在温网举起女双奖杯。赛事话题在微博引发持续热议，体育荣誉叙事为本周内容场提供了强情绪锚点。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/headline/2026-07-13/detail-inihrhfi4211329.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">FIFA世界杯四强出炉：阿根廷、西班牙、法国、英格兰，半决赛15日开打</div>
+            <div class="news-item-desc">开赛前FIFA排名前四的球队全部晋级半决赛，赛事结果本身具备强烈的戏剧性——"强者恒强"与"冷门消失"的叙事同时成立。小红书世界杯内容场进入最后冲刺阶段，决赛前的品牌借势窗口仅剩约一周。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_33572680" target="_blank">→ 澎湃新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果起诉OpenAI挖角400名员工窃取商业机密，"哈哈"短信成核心证据，AI硬件竞争格局生变</div>
+            <div class="news-item-desc">苹果在加州联邦法院指控OpenAI系统性窃取工程机密用于开发AI硬件，被告包括前苹果iPhone产品设计副总裁Tang Tan和工程师Chang Liu。分析师指出，即使指控未获证实，OpenAI绕过iPhone做消费级硬件的计划已受重创。这场官司本身，是2026年AI品牌竞争战线最值得关注的叙事之一。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/975/666.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Meta被迫关闭Instagram AI深度伪造功能，平台隐私红线再次被舆论划定</div>
+            <div class="news-item-desc">Meta推出允许用户基于公开账户生成AI图像的Muse功能，因无需账户所有者许可而遭强烈批评，随即紧急下线。这是平台功能与用户隐私感受之间张力的典型案例：技术能做到，不代表用户愿意接受。对品牌方的启发：AI生成内容与创作者形象之间的边界，将成为2026下半年营销的显著风险点。</div>
+            <a class="news-item-link" href="https://the-decoder.com/meta-turns-off-the-instagram-feature-that-let-users-make-ai-deepfakes-of-public-accounts" target="_blank">→ The Decoder</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美军本周第四次打击伊朗，霍尔木兹海峡通航权争议加剧，布伦特原油突破78美元</div>
+            <div class="news-item-desc">伊朗宣称海峡"无限期关闭"，美国中央司令部坚称航道畅通。双方矛盾激化推动能源价格大幅上涨：布伦特原油上周涨幅5.4%，WTI当日涨幅3.63%。能源板块、航运板块受到直接冲击，对快消/耐消供应链的传导效应值得持续关注。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/headline/2026-07-13/detail-inihrhfi4211281.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书世界杯 流量创平台历史纪录，使用时长环比增速2倍</div>
+            <div class="trend-meta">体育赛事 · 平台里程碑 · 内容爆发</div>
+            <div class="trend-obs">💡 趋势观察：小红书转播世界杯的实验，证明了一件事：内容平台切入体育赛事不是"玩票"，而是一次彻底的用户结构改造工程。男性用户的引入、足球相关话题的爆炸式增长、52分钟的超长观播时长——这些数据意味着小红书的注意力争夺已进入全场景、全性别。对品牌策划者的启发：世界杯进入决赛周，这是本季借势窗口的最后冲刺期，足球+情感+国家荣誉的三重叙事可以同时激活。</div>
+            <div class="trend-source"><a href="https://finance.eastmoney.com/a/202607103802521358.html" target="_blank">→ 东方财富·小红书世界杯复盘</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#郭涵煜温网女双夺冠 话题热度持续攀升</div>
+            <div class="trend-meta">体育荣誉 · 情感叙事 · 女性运动员话题</div>
+            <div class="trend-obs">💡 趋势观察：郭涵煜夺冠的故事有多个传播钩：中法组合跨国合作、大满贯首冠、温网女双三连缘……这是典型的"有脉络可讲"的体育荣誉内容。小红书上女性运动员相关内容的传播逻辑，不同于"英雄主义"，更接近"自我突破"和"细节感"——赛场以外的生活切片、训练故事，往往比赛事高光更能形成持续传播。</div>
+            <div class="trend-source"><a href="https://finance.sina.cn/headline/2026-07-13/detail-inihrhfi4211329.d.html" target="_blank">→ 新浪财经</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界杯四强出炉 阿根廷西班牙法国英格兰，半决赛热议</div>
+            <div class="trend-meta">体育竞技 · 大事件借势 · 全球话题</div>
+            <div class="trend-obs">💡 趋势观察：四强全是传统豪强，"强者恒强"本身就是一种内容：它能激活"命运感"叙事，也能引发"爆冷消失了"的话题讨论。小红书上的世界杯内容正在从"看球"向"聊球"迁移——4v1的对话比1v4的观看更有生命力。这对大事件运营的启发：高热赛事的后半段，互动型内容（预测、情绪宣泄、复盘）的传播力往往高于直播内容本身。</div>
+            <div class="trend-source"><a href="https://www.thepaper.cn/newsDetail_forward_33572680" target="_blank">→ 澎湃新闻</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#WAIC 2026 世界人工智能大会预热 国产算力/Agent应用成焦点</div>
+            <div class="trend-meta">科技事件 · 国产赛道 · 品牌曝光</div>
+            <div class="trend-obs">💡 趋势观察：WAIC将于7月17日开幕，展会预热期内容已在科技圈开始发酵。这一类"国家级科技展会"在小红书上的传播路径非常清晰：先是科技媒体+KOL预热评测，再是现场探馆内容爆发，最后是"AI应用是否能落地"的理性复盘讨论。品牌如果想在这波流量中有存在感，展会前的内容预埋比展会当天的曝光更关键。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870559866961339089" target="_blank">→ 百度AI科技速览</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#Grok CLI隐私安全事件 开发者圈层引发广泛讨论</div>
+            <div class="trend-meta">科技安全 · 信任危机 · AI工具赛道</div>
+            <div class="trend-obs">💡 趋势观察：Grok CLI静默上传代码库事件，在开发者圈层的传播烈度罕见——因为它触及了最核心的信任底线：我以为我在用工具，工具在用我。对小红书平台而言，这类事件提醒AI相关产品/功能在推出时，如何做"透明度设计"才能不引发类似反弹。平台大事件如果涉及用户数据或AI生成内容，默认授权范围的清晰度将是品牌声誉管理的新红线。</div>
+            <div class="trend-source"><a href="https://aihot.virxact.com/" target="_blank">→ AIHOT · AI精选</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 体育营销</div>
+        <div class="learning-title">超级赛事的"留量"方法论：小红书世界杯复盘给平台大事件的三个启示</div>
+        <div class="learning-subtitle">一次转播权的背后，是一次用户结构的战略性改造实验</div>
+        <div class="learning-body">
+          <p>小红书今天披露了世界杯转播的数据复盘：使用时长环比增速2倍、足球内容发布量增长10倍以上、用户平均观播时长52分钟……在这组数字背后，有一个值得深思的问题：<strong>超级流量到来之后，如何不让它只是昙花一现？</strong></p>
+          <p>这正是所有平台大事件运营面对的核心命题。小红书给出了自己的答案——<strong>在赛事结束之前，就布局赛事之后</strong>：宣布12个省市地方足球联赛入驻，把世界杯带来的足球兴趣转化为对本地赛事的持续关注。这是一种"流量→社区→生态"的转化路径。</p>
+          <p>对平台大事件策划者而言，这一案例有三个可借鉴的方法论：</p>
+          <p><strong>① 把"流量峰值"变成"社区锚点"</strong>。超级赛事的流量是脉冲式的，但用户在赛事期间建立的关系（跟了哪些KOL、加入了哪些讨论群、产生了哪些连接）是可以沉淀的。大事件运营的设计，应该在活动期间就预埋"活动之后去哪里"的出口。</p>
+          <p><strong>② 用长尾内容延长赛事生命力</strong>。小红书上超过10倍的足球内容发布，绝大部分不是直播，而是二次创作：战术分析、情绪宣泄、球星故事、国家意象……这些内容在赛事结束后仍有生命力。大事件不应该只有开幕式和颁奖礼，而应该设计出"内容可以被持续创作"的空间。</p>
+          <p><strong>③ 新用户需要一个"第二个理由"</strong>。世界杯带来的男性用户，第一个理由是"看球"。第二个理由才决定他们留不留下来。小红书选择了"地方赛事+本地球迷社区"——和用户的日常生活建立了连接。这个逻辑同样适用于任何大事件：<strong>活动主题是流量入口，但留住用户的，是与用户日常世界的交汇点。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://finance.eastmoney.com/a/202607103802521358.html" target="_blank">东方财富《小红书世界杯留量长城》</a> ·
+          <a href="https://www.thepaper.cn/newsDetail_forward_33572680" target="_blank">澎湃新闻·经济日报财经早餐</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 纽波特爵士音乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎷🌊🎶</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">爵士乐</span>
+          <span class="festival-tag">美国·罗德岛</span>
+          <span class="festival-tag">每年7月</span>
+          <span class="festival-tag">1954年创立</span>
+        </div>
+        <div class="festival-name">纽波特爵士音乐节</div>
+        <div class="festival-name-en">Newport Jazz Festival · 始于1954年 · 世界最古老的爵士音乐节</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】一个改变了音乐史进程的海边派对</div>
+          <div class="festival-block-body">
+            <p>1954年7月，罗德岛纽波特，大西洋海风里响起了第一个音符。爵士乐评论家和唱片制作人George Wein在一片富人别墅区的草坪上，办起了有史以来第一届户外爵士音乐节。没人知道这会成为什么——它只是一次实验。</p>
+            <p>两年后，1956年，<strong>Duke Ellington（艾灵顿公爵）</strong>在纽波特登台。他被安排在深夜演出，开场时观众只有几千人，但随着演奏的推进，现场气氛越来越炸裂，最终整个场地沸腾。当晚的录音专辑《Ellington at Newport》，此后成为爵士史上最重要的现场录音之一，销量超过100万张——这在当时的爵士乐界是天文数字。纽波特第一次证明了一件事：<strong>现场音乐+合适的时间地点，可以制造历史。</strong></p>
+            <p>1969年，Woodstock（胡士托）音乐节在同一年举办。两场音乐节代表了美国文化的两极：一个是精英文化的精致品味，一个是嬉皮士精神的狂热解放。纽波特因此在1970年由于骚乱而停办——直到1981年才复办，但那段历史反而成了它最有传奇色彩的一部分。</p>
+            <p>此后每年7月，纽波特都在原址举办。历年主题随时代演进：1990年代聚焦"爵士复兴"，2000年代引入跨界融合（Sting、Herbie Hancock的电子爵士），2010年代则开始纳入嘻哈、R&amp;B、灵魂乐……它始终没有固化自己的定义，而是用"包容"作为边界。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】规模、影响力与商业运作</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">70+年</div>
+                <div class="festival-stat-label">历史积淀</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">40,000+</div>
+                <div class="festival-stat-label">年度观众人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">3天</div>
+                <div class="festival-stat-label">演出时长（每年7月）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">100+</div>
+                <div class="festival-stat-label">历年演出艺人</div>
+              </div>
+            </div>
+            <p>今日的纽波特爵士音乐节由非营利组织Newport Festivals Foundation运营，与Newport Folk Festival（民谣节，创于1959年）同为姐妹节——每年7月，一周爵士、一周民谣，共同构成纽波特的"音乐双节"。</p>
+            <p>赞助生态方面，音乐节长期与Charles Schwab、Newport Vineyards等金融和酒庄品牌合作，赞助价值定位在"高净值文化消费"，与奢侈品和高端消费品牌的调性高度契合。但近年来，Festival也开始引入更年轻化的品牌——流媒体服务、国际航空公司、生活方式品牌，以拓展受众边界。</p>
+            <p>现场体验方面，纽波特在"场景感"上极为讲究：演出场地是19世纪的Fort Adams州立公园，大西洋为背景，游艇在外海停泊，观众席在草坪上席地而坐——这是全球任何城市音乐节无法复制的<strong>天然稀缺性场景</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026届展望与对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026届动向：</strong>纽波特爵士音乐节2026年将于8月举办（原定7月，因场地排期与2026年美洲杯帆船赛冲突而调整）。预计邦名单将包含更多融合爵士与电子音乐的跨界艺人，以延续近年来吸引年轻听众的策略。在AI时代，纽波特的"不可复制性"——真实的人、真实的即兴、真实的场景——反而成为它最强的竞争壁垒。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>纽波特最迷人的地方，是它从未试图变成Coachella——它有自己清晰的"文化人格"，70年了还在。这对大事件IP建设有直接的参照价值：<strong>一个IP的长寿，靠的不是每年翻新，而是核心气质的坚守+细节的进化</strong>。纽波特对场地的执念（同一片海边草坪70年）、对音乐的边界感（爵士为核，跨界有度），给每一届内容创作者留下了明确的框架。小红书大事件IP在设计时，也需要回答一个类似问题：<strong>这个IP10年后还在，核心气质是什么？能给创作者什么确定的创作锚点？</strong>有了这个答案，才有积累，才有历史感，才有溢价。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://newportjazz.org/" target="_blank">Newport Jazz Festival 官网</a> ·
+          <a href="https://en.wikipedia.org/wiki/Newport_Jazz_Festival" target="_blank">Wikipedia · Newport Jazz Festival</a> ·
+          <a href="https://www.allmusic.com/album/ellington-at-newport-mw0000189823" target="_blank">AllMusic · Ellington at Newport 专辑</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 爵士乐的人物图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎷 主题策展 · 爵士乐的五张面孔</div>
+        <div class="knowledge-headline">从Miles Davis到Norah Jones：爵士乐如何成为全球最有商业穿透力的音乐语言</div>
+        <div class="knowledge-tagline">「不是所有酷的东西都难以亲近——爵士乐用70年证明了这一点。」</div>
+
+        <div class="knowledge-intro">
+          爵士乐诞生于20世纪初的新奥尔良，是黑人文化与欧洲古典音乐的混血孩子。它从一开始就不是"精英音乐"——酒吧、妓院、街头是它最初的舞台。但一个世纪后，它成了全球最高端品牌最偏爱的声音背景：奢侈品牌的发布会、高端餐厅的背景乐、国际航班的商务舱耳机……<br><br>
+          爵士乐对品牌营销策划者的价值，不只是"品质感的声音标签"。它更是一套思维方式：<strong>在一个主题框架下，允许即兴、鼓励对话、接受不确定性</strong>。这恰恰也是好的创意团队运转的方式。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Miles_Davis_-_Birth_of_the_Cool.jpg/440px-Miles_Davis_-_Birth_of_the_Cool.jpg"
+              alt="Miles Davis"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Miles Davis</div>
+              <div class="knowledge-card-sub">迈尔斯·戴维斯 · 美国 · 爵士之神</div>
+              <div class="knowledge-card-work">《Kind of Blue》（1959）是史上最畅销的爵士专辑。他一生改变爵士乐方向不下五次——每次都引发争议，每次都被历史证明是对的。他的人生轨迹本身就是一个关于"持续进化"的品牌故事。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/John_Coltrane_-_publicity.jpg/440px-John_Coltrane_-_publicity.jpg"
+              alt="John Coltrane"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎷</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">John Coltrane</div>
+              <div class="knowledge-card-sub">约翰·柯川 · 美国 · 精神性的极致</div>
+              <div class="knowledge-card-work">《A Love Supreme》（1965）被认为是爵士乐的巅峰之作，是柯川对上帝的音乐献祭。他用萨克斯追求的，是人类情感最极端的边界。他41岁去世，但留下的音乐至今无法被超越。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Ella_Fitzgerald_1940.jpg/440px-Ella_Fitzgerald_1940.jpg"
+              alt="Ella Fitzgerald"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Ella Fitzgerald</div>
+              <div class="knowledge-card-sub">艾拉·菲兹杰拉德 · 美国 · 第一夫人</div>
+              <div class="knowledge-card-work">"爵士第一夫人"，共获13项格莱美，是Scat即兴演唱的集大成者。她的嗓音没有悲剧感，只有纯粹的喜悦。许多广告人把她的录音视为"品牌声音"的终极参照。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Norah_Jones_2012.jpg/440px-Norah_Jones_2012.jpg"
+              alt="Norah Jones"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Norah Jones</div>
+              <div class="knowledge-card-sub">诺拉·琼斯 · 美国 · 大众爵士入口</div>
+              <div class="knowledge-card-work">2002年首张专辑《Come Away with Me》全球销量超2700万张——这是爵士风格音乐有史以来的销量记录。她证明了一件事：爵士+流行化包装+真实情感，可以触达任何人。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">廖元植 Jazz Lin</div>
+              <div class="knowledge-card-sub">中国台湾 · 亚洲爵士代表</div>
+              <div class="knowledge-card-work">被誉为"亚洲最重要的爵士钢琴家之一"，长期活跃于纽约Lincoln Center爵士舞台。他的存在证明爵士乐的话语权正在向亚洲扩展——这也是中国品牌进入国际文化叙事的入口之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王若琳 Joanna Wang</div>
+              <div class="knowledge-card-sub">中国台湾 · 华语爵士流行先行者</div>
+              <div class="knowledge-card-work">用爵士语法重构华语流行，开创了一种兼具都市感和温柔气质的"东亚爵士美学"。她的声音是很多高端品牌中国市场影片的首选——说明爵士语境在中国消费者中已建立了清晰的品质联想。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          爵士乐给创意工作者最大的礼物，是"即兴"这个概念——不是漫无目的的乱来，而是<strong>在共识框架里的自由探索</strong>。好的创意团队就像一支爵士乐队：每个人都懂和弦，每个人都可以领奏，不需要乐谱，只需要彼此倾听。这也是为什么爵士乐在创意行业里有一种特殊的亲切感：它不只是背景音，它是一种工作态度的隐喻。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
