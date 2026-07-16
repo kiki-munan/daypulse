@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/8</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #fefce8 0%, #fbbf24 40%, #dc2626 70%, #1e3a8a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/7/8/index.html" class="active">2026 / 7 / 8</a></li>
+        <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 08</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <!-- 宏观·经济 -->
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">IMF今日发布《世界经济展望》更新，全球增长预期料继续承压</div>
+            <div class="news-item-desc">北京时间7月8日，IMF发布半年度《世界经济展望》更新版本，地缘冲突叠加关税压力使全球经济复苏路径更加曲折。与此同时，中国6月末外汇储备降至34163亿美元，黄金储备连续第20个月增持，显示央行配置结构持续优化。美联储一年期通胀预期升至3.67%，为2023年9月以来新高，全球资产价格波动加剧。</div>
+            <a class="news-item-link" href="http://finance.sina.com.cn/headline/2026-07-08/doc-inifzwqf1463436.shtml" target="_blank">→ 新浪财经·今日财经摘要</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国务院批复《旅游强国"十五五"规划》，2030年国内出游目标83亿人次</div>
+            <div class="news-item-desc">规划明确以"文旅深度融合"为主线，到2030年国内出游人次目标达83亿、出游总花费达7.7万亿元。消息落地当日，旅游板块集体高开，岭南控股一字涨停。世界杯热潮与暑期消费季的双重催化，让2026年文旅成为内需最强方向之一。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870109073498823266" target="_blank">→ 百家号·旅游板块分析</a>
+          </div>
+        </div>
+
+        <!-- 科技·AI -->
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">xAI 正式更名 SpaceXAI，马斯克"太空+AI+社交"帝国完成品牌统一</div>
+            <div class="news-item-desc">7月7日，xAI官方账号正式更名为@SpaceXAI，并发布新Logo融合动画，标志着马斯克三大商业板块（SpaceX、Grok/AI、X社交）的完整整合。2026年2月SpaceX全资收购xAI后，合并实体估值达1.25万亿美元。SpaceXAI计划每月发布从头训练的新模型，Grok 4.5私测接近Claude Opus水准。品牌整合不只是名字变化，而是"多行星文明+超级智能"叙事的一体化落地。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870029649351650046" target="_blank">→ 财联社·SpaceXAI更名</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026GAIC全球AI大会今日北京开幕，谷歌向德国核聚变初创投4.11亿欧元</div>
+            <div class="news-item-desc">GAIC（7月8-9日）以"连接AI产业链动全球"为主题，在中关村国际技术交易中心召开，呈现AI产业链上下游最新图谱。同日，谷歌宣布向Proxima Fusion注资4.11亿欧元，支持其建设欧洲首个商用核聚变电站——AI与能源交叉赛道的资本押注，正在成为科技投资的新主轴。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870106378792701006" target="_blank">→ 百家号·7月8日投资日历</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">苹果折叠屏iPhone进入量产阶段，下半年出货量预计700-800万台</div>
+            <div class="news-item-desc">供应链分析师郭明錤披露，2026下半年折叠iPhone组装出货量将达700-800万台，Q3约50-100万台。苹果折叠屏产品的正式量产，意味着"折叠时代"不再是PPT愿景，将深刻影响手机内容生态——竖屏、折叠双形态的创作场景，是平台内容形式的下一个变量。</div>
+            <a class="news-item-link" href="http://finance.sina.com.cn/headline/2026-07-08/doc-inifzwqf1463436.shtml" target="_blank">→ 新浪财经·行业新闻</a>
+          </div>
+        </div>
+
+        <!-- 行业·消费 -->
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">世界杯带动夜间消费井喷：外卖、球衣、文创三线齐开，体育经济正在溢出赛场</div>
+            <div class="news-item-desc">2026美加墨世界杯进入八强战阶段，中国观赛热情持续推高关联消费：深夜外卖订单激增、球迷文创爆卖、商场大屏聚客。义乌世界杯周边出货量同比2022年增长超3倍，"上海之夏"消费季以世界杯为IP锚点联动多商圈。体育大事件如何撬动跨品类消费，是当下品牌联名与平台大事件策划的直接参考样本。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870102847985105472" target="_blank">→ 百家号·世界杯带热消费</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">日本品牌 PITTA MASK 以"七七"做七夕营销引众怒，被指触碰历史红线</div>
+            <div class="news-item-desc">7月6日，PITTA MASK在中国社交平台发布"明天就是七夕"营销帖，将7月7日（七七事变纪念日）包装为浪漫节点，抽奖截止日期还涉及"731"字样。舆情发酵后品牌被迫撤帖，事件再次引发品牌历史敏感性的广泛讨论。跨国品牌的本地化营销，不是翻译问题，是历史认知问题。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870106268650705099" target="_blank">→ 百家号·PITTA MASK事件</a>
+          </div>
+        </div>
+
+        <!-- 娱乐·文化 -->
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">世界杯八强出炉：C罗、内马尔泪别，梅西改写历史，哈兰德首届即震全场</div>
+            <div class="news-item-desc">八分之一决赛全部结束，法国、西班牙、英格兰、阿根廷、比利时、摩洛哥、挪威、瑞士晋级八强。梅西攻入21球续写历史，哈兰德7球等于挪威此前三届世界杯总和。41岁的C罗和内马尔相继泪别——青春的谢幕时刻，往往是流量最饱和的社交爆点。从世界杯赛场到小红书情感叙事，这届比赛提供了最完整的"离别与传承"内容素材。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870108575568745712" target="_blank">→ 百家号·世界杯八强出炉</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">黄灿灿《乘风2026》"大大方方"话题突破3.2亿阅读，"内娱活人感天花板"引发持续共鸣</div>
+            <div class="news-item-desc">综艺收官后，黄灿灿凭借"恭喜灿灿拿到全季通告费"等坦率表达，持续在小红书、微博发酵。网友总结其"大方"四维度：坦荡争取、真实自嘲、细腻体谅、清醒边界感。这股"去精致包装、做真实的人"的文化偏好，正在重构平台KOL的价值判断标准。</div>
+            <a class="news-item-link" href="https://ent.sina.cn/2026-07-08/detail-inifzwqh8233933.d.html" target="_blank">→ 新浪娱乐·黄灿灿话题分析</a>
+          </div>
+        </div>
+
+        <!-- 国际·地缘 -->
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美军对伊朗发动"惩戒性打击"，霍尔木兹海峡紧张推动油价单日涨逾5%</div>
+            <div class="news-item-desc">7月7日，美国中央司令部宣布对伊朗多目标发动打击，回应其袭击霍尔木兹海峡商船行为。布伦特原油日内涨5.58%破76美元，黄金失守4100美元，美国国债收益率升至四周高点。与此同时，美军财政部撤销伊朗石油销售通用许可证，封锁威胁升级。能源价格波动将传导至全球供应链，今年下半年的品牌成本端面临新一轮压力。</div>
+            <a class="news-item-link" href="http://finance.sina.com.cn/headline/2026-07-08/doc-inifzwqf1463436.shtml" target="_blank">→ 新浪财经·国际地缘摘要</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界杯八强战 阿根廷3-2逆转埃及 梅西21球续写传奇</div>
+            <div class="trend-meta">体育赛事话题 · 情感叙事赛道</div>
+            <div class="trend-obs">💡 趋势观察：阿根廷0-2落后13分钟连扳3球的逆转剧情，是本届世界杯流量最高的单场内容爆点。小红书上球迷的实时情感记录、赛后长图文、"梅西最后一届"情感内容，构成了平台上最具自发性的内容海啸之一。对大事件策划的启示：真正的用户自传播，往往发生在"不确定性被解决的那一刻"——策划一个能制造悬念又能给出答案的活动结构，是创造自传播爆点的底层逻辑。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870108575568745712" target="_blank">→ 百家号·世界杯八强全记录</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#黄灿灿大大方方的 话题突破3.2亿阅读 "活人感"成内容审美关键词</div>
+            <div class="trend-meta">娱乐话题 · 真实人格赛道</div>
+            <div class="trend-obs">💡 趋势观察：黄灿灿"开口谈钱、坦率争取"的形象打法，戳中了一批被"精致人设"审美疲劳的用户。小红书上关于她的讨论，大量是"我也想成为这样的人"而非"我喜欢她"——这是更深层次的共鸣机制。品牌选代言人，与其找"完美偶像"，不如找"真实的人"。平台大事件选KOL，也应关注这一信号：用户正在用行动投票给那些"不表演"的人。</div>
+            <div class="trend-source"><a href="https://ent.sina.cn/2026-07-08/detail-inifzwqh8233933.d.html" target="_blank">→ 新浪娱乐·黄灿灿话题深度分析</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#PITTA MASK 七七营销翻车 日本品牌历史敏感性再受审视</div>
+            <div class="trend-meta">品牌舆情 · 营销合规赛道</div>
+            <div class="trend-obs">💡 趋势观察：这类事件在小红书的传播路径固定：发现截图 → 博主扒料 → 情绪放大 → 官号回应缺席 → 舆情顶峰。值得注意的是，这次的舆情热度并非来自KOL引导，而是用户自发——说明历史情感底线已经内化为公众的"文化本能"。对策划人员的启示：任何涉及特定日期的活动策划，都需要一张"历史敏感日历"作为审核底线，7月7日是铁线，不容触碰。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870106268650705099" target="_blank">→ 百家号·PITTA MASK事件完整梳理</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#上海之夏消费季 世界杯+迪士尼十周年+RED LAND联动布局</div>
+            <div class="trend-meta">文旅消费 · 城市IP营销赛道</div>
+            <div class="trend-obs">💡 趋势观察："上海之夏"以11项国际化标杆活动构建消费季矩阵，包括小红书第二届RED LAND。这是小红书平台级IP在城市消费生态中的一次重要落地——从内容种草平台到城市生活组织者的角色迁移正在发生。对平台大事件部门而言，"城市主场"和"国际活动"是两个高价值的IP扩张方向，值得持续关注RED LAND的产品逻辑。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1869766719013996705" target="_blank">→ 百家号·2026上海之夏启幕</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#7·8全国保险公众宣传日 第14届 品牌借势内容涌现</div>
+            <div class="trend-meta">行业节点 · 金融内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：今日是第14个"全国保险公众宣传日"，以"奋进'十五五'"为年度主题。保险、金融类品牌在小红书的内容密度预计今日明显提升。对节点营销策划者的参考价值：行业性纪念日是一类被低估的流量节点——它精准触达特定受众，且竞争强度低于情感节日，是垂直品牌的借势优良窗口。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1869492672835499202" target="_blank">→ 百家号·2026保险宣传日</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 体育营销</div>
+        <div class="learning-title">体育大事件的营销溢出效应：从世界杯看品牌如何"蹭"到正确的热度</div>
+        <div class="learning-subtitle">当赛场成为全球最大的注意力黑洞，品牌的机会在哪里？</div>
+        <div class="learning-body">
+          <p>今天，世界杯八强全部出炉。阿根廷逆转、C罗谢幕、哈兰德封神——每一个情节都制造了刷屏级流量。但对大多数品牌而言，这些流量是"看得见、够不着"的：正版赞助贵得离谱，蹭热度翻车风险极高，那么正确的体育营销姿势是什么？</p>
+          <p>关键在于理解<strong>体育大事件的"情感溢出机制"</strong>。世界杯的流量不只发生在赛场上，它会以五种形态向外溢出：①赛前预测（参与感）②赛中实时（当下感）③赛后复盘（记忆感）④传奇谢幕（情感感）⑤赛事周边消费（行动感）。每一种溢出都对应不同的内容赛道和产品逻辑。</p>
+          <p>今日案例：<strong>7-Eleven起诉耐克</strong>——耐克将新款Air Max 95的发售日定在7月11日（正好是7-Eleven年度促销日），配色涉嫌模仿7-Eleven标志性三色条纹，被起诉侵权。这件事的营销学意义在于：耐克的"踩线"未必是意外，它制造了一个"有争议的话题"，而争议本身就是一种注意力资产。品牌"蹭"体育赛事的边界，从来不只是版权问题，更是"你的争议值不值得你承担的成本"的商业判断。</p>
+          <p>对平台大事件策划的直接启发：<strong>大事件IP不需要垄断赛事热度，而是需要找到自己独占的情感切片</strong>。世界杯的"离别叙事"（C罗、内马尔谢幕），是任何品牌都可以合理借势的情感领域；而"实时赛况"类流量，则几乎被官方赞助商锁死。识别赛事热度的"开放地带"和"封闭地带"，是大事件营销的基础功课。</p>
+          <p>更长远的问题：<strong>当世界杯结束，这波体育热度会留下什么？</strong>2022年卡塔尔世界杯之后，小红书上的"足球女孩"内容增长了430%，体育消费兴趣向女性人群的渗透速度超出所有预期。这一次，哈兰德的表现可能成为"足球进入Z世代"的最重要引信。平台大事件在体育赛道的布局，值得提前研判。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://baijiahao.baidu.com/s?id=1870108575568745712" target="_blank">百家号《世界杯八强完整战报》</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2056868958037356548" target="_blank">知乎《7-Eleven起诉耐克：品牌碰瓷的边界》</a> ·
+          <a href="https://baijiahao.baidu.com/s?id=1870102847985105472" target="_blank">百家号《世界杯带热哪些消费》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 环法自行车赛</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🚴‍♂️🏔️🇫🇷</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">体育文化盛事</span>
+          <span class="festival-tag">法国 · 全球巡回</span>
+          <span class="festival-tag">每年7月</span>
+          <span class="festival-tag">正在进行中</span>
+        </div>
+        <div class="festival-name">环法自行车赛</div>
+        <div class="festival-name-en">Tour de France · 始于 1903 年 · 世界上最古老、最负盛名的自行车赛事</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从报纸的营销噱头，到人类耐力文明的史诗</div>
+          <div class="festival-block-body">
+            <p>1903年，法国《自行车》杂志主编亨利·德斯格朗日（Henri Desgrange）策划了第一届环法赛——初衷是为了拯救一份快要倒闭的报纸，靠举办一场惊天大赛来吸引读者。60名选手从巴黎出发，2428公里，6个赛段。冠军莫里斯·加林用了94小时33分钟完成全程。</p>
+            <p>这是体育史上最迷人的创业故事之一：<strong>一个媒体人为了卖报纸而发明了一项赛事，结果这项赛事活了123年，比报纸活得更久。</strong></p>
+            <p>在漫长的历史里，环法见证了人类最戏剧性的时刻。1914年，赛事因一战中断；1940年，又因二战停办。战后复赛的第一届，冠军在颁奖台上哭了——不只是为奖杯，是为了那些没能回来的人。1967年，英国车手汤姆·辛普森在旺杜山坡上骑车死去，死因是服用兴奋剂；1999年至2005年，兰斯·阿姆斯特朗七连冠，后被查出是史上最大规模的系统性兴奋剂欺诈。荣耀与丑闻，是这项赛事的两条平行叙事线。</p>
+            <p>标志性传统：<strong>黄色领骑衫（Maillot Jaune）</strong>诞生于1919年，颜色来自《自行车》杂志的纸张颜色。穿上它，就是当日总积分第一名——那件衫是一件荣誉，也是一个目标，是整场赛事最强的视觉符号。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球收视第三、沿途经济超15亿欧元的流动节日</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">21</div>
+                <div class="festival-stat-label">赛段数量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">3500+km</div>
+                <div class="festival-stat-label">总赛程长度</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">3500万</div>
+                <div class="festival-stat-label">沿途现场观众（估计）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">190+</div>
+                <div class="festival-stat-label">全球转播国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">€15亿</div>
+                <div class="festival-stat-label">沿线城市经济带动</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">7月</div>
+                <div class="festival-stat-label">2026年 进行中</div>
+              </div>
+            </div>
+            <p>环法是全球收视量第三的体育赛事（仅次于奥运会和世界杯），但它有一个完全不同的观赛文化：<strong>它是一场流动的节日，而非固定场馆的赛事</strong>。观众不需要买票入场，只需站在路边等待——骑手疾驰而过的那几秒钟，就是他们的全部体验。</p>
+            <p>这种开放性，催生了一种独特的"沿途文化"：小镇居民在房屋外墙画画、球迷带着各国旗帜野营在山顶等候、沿途村庄举办地方市集……环法所到之处，每一个赛段的终点城市都相当于得到了一次全球直播的曝光机会。这种"流动的大事件"模式，是全球IP运营者持续研究的样本。</p>
+            <p>商业模式上，环法的主要收入来源是：全球转播权、车队赞助（车队名称含赞助商名）、主办城市付费（赛段起终点城市需向ASO支付"出场费"）。这一"城市买IP曝光权"的模式，对小红书大事件的城市落地合作有直接参考价值。</p>
+            <p>2026届环法于6月27日出发，目前正处于比赛进程中。今年看点：塔代·波加查尔卫冕之路是否会被约纳斯·文盖加尔德阻断，两人的多年对决被誉为"21世纪费德勒-纳达尔"式的时代对决。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2027届规划与对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2027届展望：</strong>ASO（赛事主办方）正在积极将女子环法（Tour de France Femmes）与男子赛事并轨推广，商业化水平逐年提升。同时，赛事数字化产品（实时地图、骑手数据可视化）持续完善，沉浸式观赛体验成为吸引年轻受众的核心工具。</p>
+            <p>中国市场方面，随着国内骑行热潮持续升温，环法正在从"体育迷专属"向"生活方式受众"破圈。2026年，国内多个骑行品牌赞助了环法相关报道及骑行社群活动。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>环法最核心的设计哲学是"让赛事流动到观众面前，而非让观众流动到赛场"——这一点与小红书的内容传播逻辑高度相似：最好的大事件，是让内容流向用户，而非强迫用户找内容。此外，环法的"黄色领骑衫"机制是一个绝妙的悬念设计——每天都有可能换人，每天都有新的故事。这种"动态排行榜+每日叙事单元"的结构，是IP大事件激活持续参与感的参考范本。最后，环法的沿途经济模型说明：一个IP到来，它带来的不仅是流量，而是一套激活城市、激活商业的完整生态——这正是平台大事件IP应该向甲方证明自己能做到的价值。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.letour.fr/en/" target="_blank">Tour de France 官网</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E7%8E%AF%E6%B3%95%E8%87%AA%E8%A1%8C%E8%BD%A6%E8%B5%9B" target="_blank">维基百科·环法自行车赛</a> ·
+          <a href="https://www.amaury-sport-organisation.fr/" target="_blank">ASO 赛事主办方</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 体育与文化</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🏅 主题策展 · 当体育成为神话：改变时代的运动员</div>
+        <div class="knowledge-headline">超越赛场：六位运动员如何用身体改写了文化史</div>
+        <div class="knowledge-tagline">「冠军不是在比赛中创造的，冠军是在那些无人注视的日日夜夜中铸就的。」——拳王阿里</div>
+
+        <div class="knowledge-intro">
+          今天，C罗和内马尔谢幕，哈兰德封神，梅西续写传奇。体育的魔力在于：它用最直接的方式，呈现了人类意志的边界。但真正伟大的运动员，往往超越了赛场本身——他们变成了一种文化符号，一种时代的缩影，一个让不懂体育的人也愿意谈论的名字。<br><br>
+          这张图谱，关于那些"成为神话"的人——他们是如何做到的，以及，这件事对品牌营销和内容创作意味着什么。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Michael_Jordan_in_2014.jpg/440px-Michael_Jordan_in_2014.jpg"
+              alt="迈克尔·乔丹"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">迈克尔·乔丹</div>
+              <div class="knowledge-card-sub">Michael Jordan · 美国 · 篮球</div>
+              <div class="knowledge-card-work">Air Jordan 不只是球鞋，是一个文化帝国。乔丹让篮球成为全球最时髦的运动，也让Nike从运动品牌变成了文化品牌。"他不是人，是一个想法。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Muhammad_Ali_NYWTS.jpg/440px-Muhammad_Ali_NYWTS.jpg"
+              alt="穆罕默德·阿里"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">穆罕默德·阿里</div>
+              <div class="knowledge-card-sub">Muhammad Ali · 美国 · 拳击</div>
+              <div class="knowledge-card-work">拒绝越战征召，用拳台发出政治宣言。"我是最伟大的"不是自大，是对种族压迫的正面反击。他让体育成为了社会运动的舞台。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Serena_Williams_2013_US_Open.jpg/440px-Serena_Williams_2013_US_Open.jpg"
+              alt="塞雷娜·威廉姆斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">塞雷娜·威廉姆斯</div>
+              <div class="knowledge-card-sub">Serena Williams · 美国 · 网球</div>
+              <div class="knowledge-card-work">23个大满贯，黑人女性，体型不符合"传统审美"——她用胜利击碎了所有关于女性运动员"应该是什么样子"的偏见。品牌Nike、耐克与她的合作，是体育营销史上最有价值的长期押注之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">⚽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">利昂内尔·梅西</div>
+              <div class="knowledge-card-sub">中国媒体 · 足球 · 阿根廷</div>
+              <div class="knowledge-card-work">从巴塞罗那到巴黎到迈阿密，从神童到老将。2022年捧起大力神杯，填补了"唯一遗憾"。今届世界杯21球续写历史——他是那种让人忍不住想要见证他每一场比赛的运动员。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Usain_Bolt_Olympics_cropped.jpg/440px-Usain_Bolt_Olympics_cropped.jpg"
+              alt="尤塞恩·博尔特"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚡</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">尤塞恩·博尔特</div>
+              <div class="knowledge-card-sub">Usain Bolt · 牙买加 · 短跑</div>
+              <div class="knowledge-card-work">9.58秒，人类跑步速度的极限。但他最出名的不是速度，是在终点线前那个"比划弓箭"的庆祝动作——那一刻，他把体育变成了表演艺术。运动员的"仪式感"，是品牌内容策划永远值得研究的素材。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">郭晶晶</div>
+              <div class="knowledge-card-sub">中国 · 跳水 · 四届奥运会</div>
+              <div class="knowledge-card-work">被称为"跳水女皇"，退役后成为中国运动员商业化最成功的样本之一。从赛场到婚姻到社交媒体，她是中国体育明星如何完成"运动员→生活方式符号"转型的教科书案例。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          体育明星成为文化神话的共同路径是：<strong>在赛场上做了别人做不到的事，然后在赛场外说了别人不敢说的话</strong>。阿里反对越战，塞雷娜捍卫女性身体自主，乔丹用球鞋重新定义了"酷"。对品牌大事件策划者来说，体育IP的核心价值不是成绩，而是那个"赛场外的故事"——那才是可以被传播、被讲述、被记住的东西。今天C罗和内马尔的谢幕，正在成为这样的故事。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
