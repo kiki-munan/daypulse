@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/7/17</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0a1628 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/7/17/index.html" class="active">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+      <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+      <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+      <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+      <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+      <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+      <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+      <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+      <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+      <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+      <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+      <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+      <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+      <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+      <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+      <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+      <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+      <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 07 · 17</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">中东局势骤升级，伊朗威胁关闭曼德海峡，欧美股市集体跳水、黄金跌破4000美元关口</div>
+            <div class="news-item-desc">北京时间7月16日晚，中东局势急剧升温：伊朗警告胡塞武装，若美国袭击其电力基础设施将封锁红海石油运输线，并称曼德海峡封锁选项"仍在桌面上"。欧美股市及大宗商品同步下挫，德国DAX、纳指期货跌超1%，现货黄金跌2%至约3973美元/盎司触两周低点，现货白银跌近4%。加密货币市场比特币跌近2%，能源担忧与通胀预期双双升温。</div>
+            <a class="news-item-link" href="https://3g.fx678.com/index.php/news/detail/202607170650552462" target="_blank">→ FX678 · 7月17日财经早餐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美股纳指大跌1.47%，芯片股遭大规模抛售盖过强劲财报；洪灏：人民币被低估，中国资本市场重估是未来五年最大机会</div>
+            <div class="news-item-desc">美股周四收跌，台积电上调年度资本支出至600-640亿美元，反而引发"算力扩张成本过重"担忧，VanEck半导体ETF下跌逾4%。与此同时，在"2026新浪全球资本峰会"上，著名经济学家洪灏指出人民币是全球最被低估货币，预判将迎主升浪，带来A股价值重估窗口期。</div>
+            <a class="news-item-link" href="https://caifuhao.eastmoney.com/news/20260717060829970910210" target="_blank">→ 东方财富 · 昨夜今晨财经热点</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Kimi K3 正式发布：2.8T 参数开源巨模，原生视觉+百万 token 上下文，12家信源同时爆料</div>
+            <div class="news-item-desc">月之暗面发布 Kimi K3，采用 Kimi Delta Attention 和 Attention Residuals 架构，首个开源 3T 量级模型，支持原生视觉理解与 100 万 token 超长上下文窗口。今日 12 个信源同时跟进报道，成为 AI HOT 榜单第 1 名热点。权重将于两周后开放，Agent 赛道所有团队应重点关注。</div>
+            <a class="news-item-link" href="https://www.kimi.com/blog/kimi-k3" target="_blank">→ Kimi Blog · Kimi K3</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">xAI 推出 Grok Automations：定时或邮件触发自动执行任务，AI 从"问答"正式迈向"自主干活"</div>
+            <div class="news-item-desc">xAI 为 Grok 引入 Automations 功能，支持按计划（每日/每周/自定义）或邮件触发（过滤发件人/主题）全自动运行任务并汇报结果。定时功能对所有用户免费开放，邮件触发需 SuperGrok 订阅。这是 AI 真正走向"主动工作流"的实质性升级，对内容创作者和营销从业者意义重大。</div>
+            <a class="news-item-link" href="https://x.ai/news/grok-automations" target="_blank">→ xAI 官方 · Automations in Grok</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">全球 AI 治理迎重大里程碑：世界人工智能合作组织在上海正式成立，29 国签署协定，总部落地中国</div>
+            <div class="news-item-desc">7月16日，成立世界人工智能合作组织（WAICO）协定签署仪式在上海举行，中国外交部长王毅代表中国签署，哈萨克斯坦、巴基斯坦等29个国家成为创始成员国。总部设在上海，这一政府间国际组织的成立是全球 AI 治理从倡议走向落地的关键节点，长远利好中国 AI 企业的合规出海。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/977/793.htm" target="_blank">→ IT之家 · 世界AI合作组织成立</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书拿下世界杯版权50天：App使用时长环比增速提升2倍，发布笔记日增速是6月3倍</div>
+            <div class="news-item-desc">小红书户外运动负责人"草莓"用数据复盘世界杯效应：开赛当日足球搜索量是2022年卡塔尔世界杯首日的3倍，发布量更是同期的27倍。这一数据揭示的核心逻辑：对小红书而言世界杯不只是流量，而是催生内容与用户留存的"社区温度"放大器。对IP大事件营销的启发：版权不是目的，是社区内容生产的"酵母"。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870921312318827535" target="_blank">→ 百家号 · 小红书世界杯50天复盘</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">LV热门包二手价跳水，韩股总市值三周蒸发约9.3万亿元——奢侈品与高端消费双双承压</div>
+            <div class="news-item-desc">微博热搜"LV热门包二手价跳水"登榜，"LV起诉风波后客流锐减"同步上榜，折射出消费者对奢侈品品牌信任度的动摇。同时，韩国资本市场7月以来累计触发37次临停、8次熔断，大量散户账户被强制平仓，散户消费信心受挫信号已向全球传导。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=LV%E7%83%AD%E9%97%A8%E5%8C%85%E4%BA%8C%E6%89%8B%E4%BB%B7%E8%B7%B3%E6%B0%B4" target="_blank">→ 微博热搜 · LV热门包二手价跳水</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">2026世界杯决赛确定：梅西6分钟双助逆转英格兰，阿根廷 vs 西班牙 7月20日决战纽约</div>
+            <div class="news-item-desc">北京时间7月16日凌晨，阿根廷2-1逆转英格兰晋级决赛，梅西第85、91分钟连送两次助攻，世界杯生涯总助攻升至12次刷新历史纪录。决赛将于北京时间7月20日凌晨3时在纽约大都会球场举行，对阵卫冕冠军阿根廷与欧洲冠军西班牙。微博"阿根廷西班牙争夺大力神杯"热搜持续升温，世界杯营销决战窗口正式开启。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1870916474507263200" target="_blank">→ 百家号 · 决赛对阵确定</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">肖战演唱会开启，周星驰回应"被偷票房"，薛之谦新歌《媚人》发布——娱乐话题密集爆发</div>
+            <div class="news-item-desc">肖战演唱会相关热搜登上微博前十，周星驰以"3个问号"回应票房争议话题发酵，薛之谦新歌同日上线。娱乐话题与世界杯赛事双线并行，为品牌在今日提供了多维度借势窗口。对内容策划者而言：娱乐情绪和体育激情同时在场，是少见的高能量流量场。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%82%96%E6%88%98+%E6%BC%94%E5%94%B1%E4%BC%9A" target="_blank">→ 微博热搜 · 肖战演唱会</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">欧盟依据 DMA 裁定 Google 必须开放 Android 和 Search，第三方 AI 助手获得重大准入机会</div>
+            <div class="news-item-desc">欧盟依据《数字市场法案》作出裁定，Google 必须向竞争对手开放 Android 和 Google Search 的核心入口，允许第三方 AI 助手和搜索引擎获得更大访问权限。这是继美国司法部对 Google 反垄断诉讼之后，全球范围内最具实质性的平台开放监管动作。对整个 AI 应用生态：围墙花园正在被监管一块块拆除，开放竞争时代加速到来。</div>
+            <a class="news-item-link" href="https://www.theverge.com/policy/966438/eu-google-android-ai-interoperability-search-data-dma" target="_blank">→ The Verge · EU Google DMA 裁定</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#世界杯决赛冲刺 阿根廷梅西话题全面引爆</div>
+            <div class="trend-meta">体育赛事话题 · 情感+生活方式赛道</div>
+            <div class="trend-obs">💡 趋势观察：小红书拿下本届世界杯转播权，开赛后日发布笔记增速达6月的3倍，发布量是2022年同期的27倍。今日梅西逆转英格兰的剪辑、分析、情感叙事正在平台持续发酵。对大事件策划：世界杯的高情绪密度内容，证明了"情感共鸣+参与感"才是平台社区的真正护城河——这比任何一次品牌活动的方法论都更直观。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870921312318827535" target="_blank">→ 小红书世界杯50天复盘报道</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小红书 HYPIC 论文：联合北大、上交提出混合注意力大模型位置无关缓存系统</div>
+            <div class="trend-meta">平台技术研究 · AI/LLM赛道</div>
+            <div class="trend-obs">💡 趋势观察：小红书技术团队（dots.llm）发布 HYPIC，将混合注意力大模型的首 token 延迟降低 3.25 倍，可持续 QPS 提升 1.66 倍。这是小红书 Dots 部门成立以来在 AI 基础研究上对外高调输出的第一篇顶级成果。对平台营销策划：Dots 一级部门的 AI 技术积累，正在为小红书打造"技术护城河"，这也意味着未来品牌在平台上的 AI 营销能力将持续升级。</div>
+            <div class="trend-source"><a href="https://mp.weixin.qq.com/s/RWveWvw9yBH6YQINBQ-XjA" target="_blank">→ 小红书技术公众号 · HYPIC 论文</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#以后快递地址只写到小区 微博热搜74万热度引发地址隐私讨论</div>
+            <div class="trend-meta">政策/生活话题 · 用户权益赛道</div>
+            <div class="trend-obs">💡 趋势观察：快递地址缩减到小区级别的新规讨论，在微博以74万热度高居榜首，溢出到小红书上成为"安全感""隐私保护"等情绪话题的讨论载体。对品牌而言，这一类"政策触发的生活感知变化"类话题，往往是进入用户心智的低门槛切入点——用"具体的政策"讲"普遍的感受"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BB%A5%E5%90%8E%E5%BF%AB%E9%80%92%E5%9C%B0%E5%9D%80%E5%8F%AA%E5%86%99%E5%88%B0%E5%B0%8F%E5%8C%BA" target="_blank">→ 微博热搜 · 快递地址只写到小区</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#小鹏 MONAL03 价格杀疯了 新理想L6 24.98万开售——新能源价格战持续升温</div>
+            <div class="trend-meta">汽车/科技消费 · 价格敏感赛道</div>
+            <div class="trend-obs">💡 趋势观察：小鹏 MONAL03 和新一代理想 L6 同日登榜微博热搜，价格战策略成为当日汽车品牌的最大话题。小红书汽车内容赛道一直是品牌种草的重要阵地。对大事件策划：价格敏感型消费品的营销逻辑，与情感型 IP 活动截然不同——前者打"稀缺与价值"，后者打"体验与归属感"，两者在内容策略上互为参照。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%B0%8F%E9%B9%8FMONAL03%E4%BB%B7%E6%A0%BC%E6%9D%80%E7%96%AF%E4%BA%86" target="_blank">→ 微博热搜 · 小鹏MONAL03</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#WAIC 2026 今日上海开幕：超300款全球首发 AI 产品即将亮相</div>
+            <div class="trend-meta">科技事件 · AI赛道 · 平台生态</div>
+            <div class="trend-obs">💡 趋势观察：世界人工智能大会今日在上海开幕，微博热搜"超300款全球首发AI产品即将亮相"22万热度入榜。百度秒哒3.5、金山WPS Comate等均借势发布。对小红书商业中台：WAIC期间大量AI产品密集亮相，是观察各类AI工具能否在小红书商业化场景中"真正落地"的绝佳时机——应关注哪些工具有可能改变平台内容策划/投放流程。</div>
+            <div class="trend-source"><a href="https://baijiahao.baidu.com/s?id=1870915769650068057" target="_blank">→ 21早新闻 · WAIC2026开幕</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 赛事营销方法论</div>
+        <div class="learning-title">为什么小红书的世界杯押注赢了：从"流量思维"到"社区温度"的方法论迁移</div>
+        <div class="learning-subtitle">拿下版权只是起点——真正的问题是，你能让用户"参与"进来吗？</div>
+        <div class="learning-body">
+          <p>2026年美加墨世界杯，小红书用10亿级别的版权投入换来一个极具说服力的数据：发布量是2022年同期的27倍。这个数字背后，藏着一套和传统体育营销截然不同的逻辑。</p>
+          <p>传统平台做赛事，逻辑是<strong>"流量分发"</strong>：赛事带来人流，平台做好导流和广告变现，一本万利。但小红书的做法是<strong>"内容催化"</strong>：放弃赛前贴片广告，用零摩擦的直播体验让用户第一时间进入；在评论区、在弹幕里、在每一篇笔记里，世界杯不只是一场比赛，而是数百万个"具体的我"表达具体感受的场域。</p>
+          <p>这个逻辑的核心，和大事件 IP 营销的核心是同一件事：<strong>你能让参与者感到"这是我的"吗？</strong>景区NPC之所以火，是因为每一个和NPC互动的人，都拍到了一段别人没有的画面；小红书世界杯内容爆发，是因为每一个在深夜等候凌晨场次的用户，都找到了"说出我此刻感受"的出口。</p>
+          <p>对平台大事件策划的直接启发：一个 IP 活动的内容产出量，不是由品牌的投放预算决定的，而是由<strong>"用户有没有被给予表达动机"</strong>决定的。27倍的发布量不是因为小红书的推荐算法，而是因为小红书让用户觉得"来这里聊球，是对的"。</p>
+          <p>结论很清晰：<strong>大事件的顶层设计不应问"我们要曝光多少人"，而应问"我们想让用户产出什么内容，我们为他们创造了多少表达的理由"。</strong>流量是结果，内容动机才是原因。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://baijiahao.baidu.com/s?id=1870921312318827535" target="_blank">百家号《拿下世界杯版权50天，小红书的一点人生经验》</a> ·
+          <a href="https://1118.cctv.com/2026/07/01/ARTItlcqFlQrhYYWytpksKZ3260701.shtml" target="_blank">央视《小红书携手总台深耕世界杯营销》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 勒帕罗克音乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎸🌿🎶</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">音乐节</span>
+          <span class="festival-tag">法国·卡纳克</span>
+          <span class="festival-tag">每年7月</span>
+          <span class="festival-tag">凯尔特/世界音乐</span>
+        </div>
+        <div class="festival-name">勒帕罗克音乐节</div>
+        <div class="festival-name-en">Festival du Bout du Monde / Le Bout du Monde · 始于1995年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从布列塔尼渔港到世界音乐朝圣地</div>
+          <div class="festival-block-body">
+            <p>1995年，法国布列塔尼半岛最西端的小镇克罗宗（Crozon）——字面意思正是"世界的尽头"（Le Bout du Monde）——一群当地人决定在这片大西洋拍岸的崖边，举办一个小型音乐节，汇聚来自不同文化的音乐人，让世界的声音在这片"尽头"交汇。</p>
+            <p>最初的规模只有数千人，更接近村民自发的文化庆典。但随着口耳相传，它的内容哲学开始引发共鸣：<strong>没有主流流行音乐，没有商业包装，只有真正根植于各地文化土壤的声音</strong>——西非鼓乐、东欧民谣、拉丁节奏、凯尔特传统、印度西塔琴……每一年的选片，都像是一份跨文化的礼物清单。</p>
+            <p>2005年起，音乐节从克罗宗扩展至附近小镇卡纳克（Châteaulin）地区，舞台从1个扩展至多个，同时保留了"在大西洋边的悬崖上听音乐"的户外核心体验。这种独特的自然与音乐的叠加，成为其无法复制的记忆标签。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】布列塔尼最有灵魂的文化出口</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">55,000+</div>
+                <div class="festival-stat-label">年度观众人数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">30+</div>
+                <div class="festival-stat-label">国家参演艺术家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">3天</div>
+                <div class="festival-stat-label">每年7月底举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">5个</div>
+                <div class="festival-stat-label">主要演出舞台</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026/7</div>
+                <div class="festival-stat-label">法国·布列塔尼</div>
+              </div>
+            </div>
+            <p>勒帕罗克的最大特色，是它的<strong>地理身份本身就是内容</strong>：布列塔尼半岛是欧洲大陆最西端的"尽头"，大西洋的风、古老的灯塔、凯尔特文化的遗迹，构成了与音乐融为一体的独特背景。站在悬崖边听西非鼓，面朝大海听拉丁吉他，这种体验在全球没有第二个。</p>
+            <p>音乐节坚持非商业化路线，组织团队为非营利协会，票价保持亲民（三日通票约130-150欧元），并设有大量绿色出行激励措施和垃圾分类系统。这种理念上的一致性，让它在欧洲文化节日市场中拥有极高的口碑美誉度和复访率——很多观众每年从全法甚至全欧驱车赶来，像一种宗教仪式。</p>
+            <p>2026年7月，音乐节如期举行，官方公布的25个演出团队来自非洲、亚洲、欧洲、拉丁美洲，其中包括几内亚、科特迪瓦等西非国家的传统音乐人，以及来自中国的器乐融合乐团——这是中国音乐人首次进入该节日主舞台名单，引发法国媒体关注。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】"世界尽头"的启示与对小红书大事件业务的借鉴</div>
+          <div class="festival-block-body">
+            <p><strong>下届展望：</strong>音乐节组织方计划2027年起引入"驻留艺术家"计划，让参演音乐人在音乐节前一个月住进布列塔尼渔村，与当地居民共同生活、创作，在演出时呈现真正"与土地融合"的现场作品。这意味着内容从"表演"向"共创"进化。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件业务的启发：</strong>勒帕罗克证明了一件事——<strong>当"地点"本身成为内容的一部分，活动就拥有了无法被复制的稀缺性</strong>。它不是在一个中性的场地办音乐节，它是在"世界的尽头"办一场音乐节，这四个字就已经构成了故事。这与小红书大事件IP策划的核心命题高度共鸣：慢人节选在阿美泽草甸、设计周选在798、年度颁奖选在什么地方……地点不是后期装饰，是叙事的第一锤。另外，勒帕罗克30年坚守非商业路线、维持亲民票价，带来的是比任何一次商业投入都更高的用户忠诚度和NPS——这对IP活动的长线运营同样是一个清醒的提醒：<strong>克制比过度商业化更难，也更值钱。</strong>
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.festival-boutdumonde.com/" target="_blank">Festival du Bout du Monde 官网</a> ·
+          <a href="https://fr.wikipedia.org/wiki/Festival_du_bout_du_monde" target="_blank">Wikipedia · Festival du Bout du Monde</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 世界音乐图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎵 主题策展 · 六张面孔，六块大陆，世界音乐的流动图谱</div>
+        <div class="knowledge-headline">你听过的最远的声音，从哪里来？</div>
+        <div class="knowledge-tagline">「音乐是人类最古老的语言——在所有文明建立文字之前，它就已经在旅行。」</div>
+
+        <div class="knowledge-intro">
+          今天借勒帕罗克音乐节（世界尽头音乐节）的主题，做一张世界音乐的策展图谱——这不是流行乐或古典乐，而是那些真正"从土地里长出来"的声音：用喉音歌唱的图瓦人、用西非克拉木鼓讲故事的格里欧特、用三弦悲叹命运的三味线演奏家……<br><br>
+          理解世界音乐，是理解IP内容多样性的一把钥匙。当小红书要做一个"文化IP"的活动，从哪里汲取多元文化的能量？这六位艺术家/乐团，是六条不同的路径。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Youssou_N%27Dour_2011.jpg/440px-Youssou_N%27Dour_2011.jpg"
+              alt="优素福·恩杜尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥁</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">优素福·恩杜尔</div>
+              <div class="knowledge-card-sub">Youssou N'Dour · 塞内加尔</div>
+              <div class="knowledge-card-work">西非姆巴拉音乐的灵魂人物，也是格莱美得主。他的声音融合了沃洛夫族口传传统与现代电音，是世界音乐走向主流的最重要桥梁之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Cesaria_Evora_2006.jpg/440px-Cesaria_Evora_2006.jpg"
+              alt="塞萨莉亚·伊福拉"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">塞萨莉亚·伊福拉</div>
+              <div class="knowledge-card-sub">Cesária Évora · 佛得角</div>
+              <div class="knowledge-card-work">被称为"赤足女皇"，因总是赤脚登台而得名。她唱莫娜音乐，用葡萄牙语和克里奥尔语诉说海洋的哀愁与离散的思念，是殖民史和乡愁最动人的声音之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Oumou_Sangare_2010.jpg/440px-Oumou_Sangare_2010.jpg"
+              alt="乌穆·桑加雷"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎶</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">乌穆·桑加雷</div>
+              <div class="knowledge-card-sub">Oumou Sangaré · 马里</div>
+              <div class="knowledge-card-work">马里瓦苏鲁音乐的代言人。她的音乐直接批评包办婚姻和对女性的压迫，在男性主导的音乐场景中以女性视角发声，被誉为"非洲的女权歌声"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Buena_Vista_Social_Club_film.jpg/440px-Buena_Vista_Social_Club_film.jpg"
+              alt="布宜诺斯维斯塔社交俱乐部"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">布宜诺斯维斯塔社交俱乐部</div>
+              <div class="knowledge-card-sub">Buena Vista Social Club · 古巴</div>
+              <div class="knowledge-card-work">1997年Wim Wenders的同名纪录片让这批平均年龄70+的古巴音乐老人举世闻名。他们用颤抖的手指和浑厚的嗓音，演绎了20世纪古巴的son、bolero与mambo——时间本身成了最好的乐器。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🪗</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">图瓦民间歌手</div>
+              <div class="knowledge-card-sub">胡图音 · 蒙古/俄罗斯图瓦共和国</div>
+              <div class="knowledge-card-work">一个人同时发出多个音高——这就是图瓦喉音歌唱（Khoomei）。声带、咽腔、鼻腔同时共鸣，创造出宛如草原风声和马蹄声的和声。这是目前已知最古老的人类发声技术之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🪘</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Toumani Diabaté</div>
+              <div class="knowledge-card-sub">图马尼·迪亚巴特 · 马里</div>
+              <div class="knowledge-card-work">柯拉（Kora）是一种21弦西非竖琴，迪亚巴特来自几内亚格里欧特家族——历代口传历史与乐曲的专业传唱者。他将柯拉与爵士、弗拉门戈融合，让这门濒危乐器走向了全世界的音乐厅。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          世界音乐对 IP 策划的最大启发，不是"把这些音乐人请来表演"，而是它们共同揭示的一条原理：<strong>最有张力的内容，永远来自真实的文化土壤，而不是拼凑的风格混搭</strong>。勒帕罗克音乐节之所以55000人专程赶赴"世界的尽头"，是因为他们知道在那里听到的每一个声音，都不是为了取悦市场而生产的——它来自某个真实的地方，某个真实的人，某种真实的生命经验。这，才是内容的终极尊严。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
