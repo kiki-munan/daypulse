@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/5</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 52px; background: linear-gradient(135deg, #2d1b4e 0%, #7b2d8b 40%, #e05c8a 75%, #f5b347 100%); border-radius: 0; }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/8/5/index.html" class="active">2026 / 8 / 5</a></li>
+        <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+        <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+        <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+        <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+        <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+        <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 05</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行 8 月 5 日开展 5000 亿元买断式逆回购，MLF 7 月净投放 1000 亿</div>
+            <div class="news-item-desc">央行以固定数量、利率招标方式操作 3 个月期买断式逆回购，到期日为 11 月 5 日，净投放 2000 亿元流动性。7 月数据同步披露：MLF 净投放 1000 亿，结构性货币工具净投放 1744 亿，流动性支撑态势延续。</div>
+            <a class="news-item-link" href="https://caifuhao.eastmoney.com/news/20260805090551332526640" target="_blank">→ 东方财富</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">上半年服务进出口总额 3.78 万亿，同比增长 8.3%；知识密集型服务出口占比过半</div>
+            <div class="news-item-desc">商务部数据显示，旅行服务出口和运输服务进口增长较快，反映对外经济活动持续修复。知识密集型服务出口结构持续优化，是下半年扩大外贸的重要发力点。</div>
+            <a class="news-item-link" href="https://weibo.com/ttarticle/p/show?id=2309405328441817038874" target="_blank">→ 财经早餐</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic 与云初创 Volta 签署 100 亿美元算力协议，买的是速度而非服务器</div>
+            <div class="news-item-desc">Volta 估值仅 24 亿美元，算力来自比特币矿商 Bitdeer 挪威站点（121MW），芯片由 NVIDIA 供应、Dell 组装。Anthropic 为抢排期接受了超大规模云合同前所未有的交易对手风险——算力稀缺时代，速度正在重写采购逻辑。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AI HOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Qwen3.8-Max 发布：2.4T 参数开源模型登顶编码协作榜，AI HOT 48h 热度 No.1</div>
+            <div class="news-item-desc">通义千问最新旗舰开源模型，凭借极强的编码与多轮协作能力夺得 Chatbot Arena 首位。开源大模型竞赛进入参数规模的新维度——2.4 万亿参数意味着推理部署门槛再次被推高，但开放权重仍是最强的生态武器。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AI HOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">GPT-5.6 Luna 降价 80% 确认永久生效；OpenAI 发布 GPT-Live 实时音频新架构</div>
+            <div class="news-item-desc">Luna 永久降价（$0.20/$1.20 per M token）与 Anthropic Fable 5 高定价（$50/M token）形成分层叙事，AI 路由器正成为新战略层。同期 GPT-Live 实现边说边听，推理与工具调用全程音频流不中断。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AI HOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">工信部首部 L3/L4 自动驾驶强制性国标发布，2027 年 7 月实施</div>
+            <div class="news-item-desc">《智能网联汽车 自动驾驶系统安全要求》（GB 44721—2026）从推荐性升级为强制性，安全准入从弹性门槛变为硬性红线。自动驾驶研发与测试流程需对照新基准重新校准，2027 年前留给行业的窗口期正在收窄。</div>
+            <a class="news-item-link" href="http://mp.cnfol.com/32038/article/1785891194-142614241.html" target="_blank">→ 中金在线</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美国拟禁采购中国新型号光模块，全球铜库存突破 100 万吨创史上最大单月流入</div>
+            <div class="news-item-desc">FCC 拟限制中国光模块进口，中方强硬回应；与此同时，COMEX 铜溢价高位吸引全球铜流入美国，7 月进口量超 20 万吨创纪录。硬科技供应链的地缘博弈正进入新一轮密集期。</div>
+            <a class="news-item-link" href="https://caifuhao.eastmoney.com/news/20260805065116223052390" target="_blank">→ 东方财富</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">微博热搜：笔试第一被花钱劝退（206 万）、泰航拒绝 20+ 名中国乘客（120 万）</div>
+            <div class="news-item-desc">今日舆论热点呈现"个体权益保护"叙事——笔试第一遭竞争者买通劝弃考引发公平焦虑，泰航事件触发出行安全与跨国歧视讨论。两个话题分别映射国内就业竞争与国人出境形象的长期社会情绪。</div>
+            <a class="news-item-link" href="https://tophub.today/n/KqndgxeLl9" target="_blank">→ 微博热搜榜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《重案六组》消失的警号、内娱"新四大名著"、金鹰奖提名规则——文娱讨论度持续高位</div>
+            <div class="news-item-desc">老 IP 回归话题与新生代艺人热度同步涌现，虞书欣、张凌赫、王一博等流量明星持续撬动娱乐板块。内容消费的"怀旧 + 新生"双轨并行，给平台大事件的内容规划提供了充足的情绪锚点。</div>
+            <a class="news-item-link" href="https://tophub.today/n/KqndgxeLl9" target="_blank">→ 今日热榜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">欧盟 AI 法案透明度条款 8 月 2 日生效，合成内容强制标记，违规最高罚营收 3%</div>
+            <div class="news-item-desc">要求平台和品牌披露 AI 生成内容，合成音视频需添加机器可读标记。4 个月宽限期给存量产品缓冲，但新上线的 AI 创意内容已需即时标注。品牌在欧盟投放 AI 创意的合规成本正式进入必算项。</div>
+            <a class="news-item-link" href="https://www.theverge.com/ai-artificial-intelligence/974571/eu-ai-act-transparency-labels-rules-deepfakes" target="_blank">→ The Verge</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Palantir Q2 营收 19 亿美元同比增 93%，CEO 称前沿 AI 实验室"带有马克思主义色彩"</div>
+            <div class="news-item-desc">Karp 警告：AI 实验室正借企业 token 消耗汲取专有知识并反向竞争。这一担忧在数字营销圈具有高度现实感——品牌投入大模型训练数据等于让对手学习自己的策略？数据主权与 AI 合作边界的讨论将升温。</div>
+            <a class="news-item-link" href="https://techcrunch.com/2026/08/03/after-killer-quarter-palantir-ceo-alex-karp-calls-ai-industry-marxist" target="_blank">→ TechCrunch</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美伊就霍尔木兹海峡通航谈判取得积极进展，油价跌超 5%</div>
+            <div class="news-item-desc">贝森特称可能于 8 月 5 日前达成协议；伊朗放弃双向全面管控要求，考虑允许欧洲国家参与扫雷。霍尔木兹承载全球约 40% 贸易流量，一旦协议落地，能源价格与全球通胀预期将出现明显调整。</div>
+            <a class="news-item-link" href="https://baijiahao.baidu.com/s?id=1872643915108836413" target="_blank">→ 百家号财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 5 条</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">余承东竹知了头像梗爆火，鸿蒙智行官方下场回应</div>
+            <div class="trend-meta">微博热度 89 万 · 娱乐化品牌营销</div>
+            <div class="trend-obs">🔍 趋势观察：网友自发创作将科技 CEO 人格化，主动帮品牌制造 UGC 内容。鸿蒙选择官方下场互动而非压制，是近年企业「接梗」文化的典型教材。平台大事件策划可借鉴「留白给用户二创」的运营节奏。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%B8%BF%E8%92%99%E6%99%BA%E8%A1%8C%E5%9B%9E%E5%BA%94%E7%AB%B9%E7%9F%A5%E4%BA%86%E4%BA%8B%E4%BB%B6" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">全红婵自主对接代言，收益归个人——运动员商业化自主权引发大讨论</div>
+            <div class="trend-meta">微博热度 25 万 · 体育 × 商业</div>
+            <div class="trend-obs">🔍 趋势观察：头部运动员正从"国家资产"向"个人品牌"过渡，小红书已成顶级运动员个人 IP 孵化的重要阵地。品牌主与运动员的合作链路正在去中间层，直签潮对平台内容生态是正向激励。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%85%A8%E7%BA%A2%E5%A9%B5%E8%87%AA%E4%B8%BB%E5%AF%B9%E6%8E%A5%E4%BB%A3%E8%A8%80%E6%94%B6%E7%9B%8A%E5%BD%92%E4%B8%AA%E4%BA%BA" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">「内娱新四大名著」梗走红，网友自选当代经典 IP</div>
+            <div class="trend-meta">微博热度 11 万 · 内容讨论</div>
+            <div class="trend-obs">🔍 趋势观察：「XX 的四大名著」是小红书高频内容模板，此类列表型讨论天然适合种草与二创。对平台大事件业务而言，能够被用户主动列入「新四大名著」的 IP 联动，就意味着文化穿透力已超出营销范畴。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%86%85%E5%A8%B1%E6%96%B0%E5%9B%9B%E5%A4%A7%E5%90%8D%E8%91%97" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">「抱冬瓜降温」梗大规模传播，高温话题引爆生活方式内容</div>
+            <div class="trend-meta">微博热度 11 万+ · 生活 × 夏日</div>
+            <div class="trend-obs">🔍 趋势观察：高温季的生活小妙招永远是小红书爆款温床。从冬瓜到花露水再到各种 DIY 消暑法，平台每年 7-8 月都会出现同类爆发。品牌可在此窗口植入夏日使用场景，降低内容门槛。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8A%B1%E5%86%AC%E7%93%9C%E9%99%8D%E6%B8%A9%E7%AC%AC%E4%B8%80%E6%89%B9%E5%8F%97%E5%AE%B3%E8%80%85%E5%87%BA%E7%8E%B0" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">光模块、磷化铟概念爆发，科技股投资叙事在社交平台外溢</div>
+            <div class="trend-meta">微博热度 17 万 · 科技投资</div>
+            <div class="trend-obs">🔍 趋势观察：美国光模块禁令预期推动相关概念在普通用户圈层形成科普需求。小红书"财经投资 + 科普解读"赛道正在加速，平台大事件可考虑与光通信、AI 基础设施等硬科技 IP 的跨界联动机会。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%85%89%E6%A8%A1%E5%9D%97" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <span class="learning-label">今日主题</span>
+        <div class="learning-title">当 AI 定价开始分层：模型路由器成为下一个战略制高点</div>
+        <div class="learning-subtitle">来源：Tomer Tunguz（红杉资本 GP）博客 · 2026.08.04</div>
+        <div class="learning-body">
+          <p>一个看似反常的市场格局正在形成：<strong>算力还在喊不够，但 AI 定价却在分裂</strong>。Anthropic 的 Fable 5 定价 $50/M token，是 GPT-5.6 Luna 新价格（$1.20/M token）的 40 倍；两者之间，性能差距只有约 20%。</p>
+          <p>Tomer Tunguz 用「<strong>杰文斯悖论</strong>」解释这一结构：历史上，电力变便宜不会减少电力消耗，反而激发更多使用场景。AI 也是如此——Luna 降价让更多任务变得「值得用 AI 做」，Token 总消耗量反而可能上升，支撑高端算力的需求不减。</p>
+          <p>这种分层正在催生一个新的基础设施角色：<strong>模型路由器（AI Router）</strong>。OpenRouter、Google Cloud API Gateway 等平台，已经开始提供「虚拟模型名映射到后端」的能力——开发者不再硬绑定一个模型，而是按任务类型动态分配算力预算。</p>
+          <p>对营销从业者而言，这意味着什么？<strong>AI 创意生产的成本结构正在变得可精细化管理</strong>。Brief 阶段可以用 Luna 级模型快速发散，精修和最终输出用高端模型把控质量；广告文案批量化生产和旗舰品牌活动创意，可以用同一套框架但不同的模型层级来处理。</p>
+          <p>今天（8 月 5 日）Google Cloud API Gateway 刚刚公测了模型路由功能，支持 Gemini、Claude 与 OpenAI 的统一调度。这不是一个纯技术更新——它是品牌在 AI 时代精细化运营的基础设施雏形。</p>
+        </div>
+        <div class="learning-source">
+          参考来源：<a href="https://www.tomtunguz.com/what-if-gpu-prices-double" target="_blank">Tomer Tunguz 博客</a> ·
+          <a href="https://developers.googleblog.com/a-unified-api-for-ai-model-routing" target="_blank">Google Developers Blog</a> ·
+          <a href="https://aihot.virxact.com/" target="_blank">AI HOT 精选</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日深挖</span>
+      </div>
+      <div class="section-body">
+        <div class="festival-banner-placeholder">🎉🥁🌍</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">每年 8 月末</span>
+          <span class="festival-tag">英国伦敦</span>
+          <span class="festival-tag">街头嘉年华</span>
+          <span class="festival-tag">加勒比文化</span>
+          <span class="festival-tag">欧洲最大</span>
+        </div>
+
+        <div class="festival-name">诺丁山狂欢节</div>
+        <div class="festival-name-en">Notting Hill Carnival</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">📖 过去 · 发展脉络</div>
+          <div class="festival-block-body">
+            <p><strong>1966 年，一场抗议种族歧视的街头游行</strong>，在伦敦西区的诺丁山悄然变成了狂欢。彼时大量来自特立尼达、牙买加等加勒比岛屿的移民在这里聚居，他们把家乡的 Carnival 传统——鲜艳的羽毛服装、钢鼓音乐（Steel Pan）、Soca、Reggae——搬到了伦敦街头。</p>
+            <p>创始人 <strong>Rhaune Laslett</strong> 和加勒比社区艺术家 <strong>Claudia Jones</strong>（「西印度公报」创始人）从最初数百人的街头聚会开始，用文化表达对抗社会排斥。经历了 1976 年与 1981 年因社会矛盾引发的街头冲突后，节日在 80 年代逐步被伦敦官方接纳，并转型为受管理的正式文化活动。</p>
+            <p>历年主题始终围绕「<strong>文化融合、反种族歧视、加勒比传统传承</strong>」，每年推出不同的彩车设计竞赛主题，从 Windrush 纪念年（2018）到新冠后的重生（2022），每届都嵌入了时代叙事。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">📊 现在 · 规模与商业影响</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">200 万+</div>
+                <div class="festival-stat-label">两天参与人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">£1 亿+</div>
+                <div class="festival-stat-label">年均经济带动</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">50+</div>
+                <div class="festival-stat-label">钢鼓乐队数量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">8 月末</div>
+                <div class="festival-stat-label">每年固定档期</div>
+              </div>
+            </div>
+            <p>诺丁山狂欢节是<strong>欧洲规模最大的街头文化活动</strong>，也是英国夏日旅游的标志性节点。每年 8 月最后一个周末（今年为 8 月 23-25 日）举办，周日为儿童日，周一为成人主游行日。活动不设门票，完全免费，以"街头即舞台"的形态覆盖诺丁山全区约 8 公里游行路线。</p>
+            <p><strong>商业模式高度去中心化</strong>：数百个街边摊贩（主要是加勒比食物和工艺品）、酒水商贩、周边品牌赞助构成收入来源。活动本身不向品牌收取"活动版权费"，但主办方 London Notting Hill Carnival Enterprise Trust（LNHCET）负责整体组织和安保协调，融资来自伦敦文化遗产基金和赞助商。</p>
+            <p>近年越来越多的时尚品牌（Boohoo、ASOS）和音乐流媒体平台将 Carnival 风格纳入夏日营销创意，彩虹色羽毛、非洲鼓点、Soca 节奏已成为视觉标识语言。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🔭 未来 · 对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p>诺丁山狂欢节的运营模式提供了一个反传统节庆的思维样本：<strong>没有主舞台、没有核心艺人阵容、没有门票围栏</strong>，城市本身就是会场，路人即观众也即表演者。这种"沉浸式全城漫游"的参与结构，是内容 IP 活动的一种终极形态。</p>
+            <p>对平台大事件业务的启发在于：</p>
+            <p><strong>① 「无围栏化」的话题设计</strong>——不把参与门槛设为购票或打卡，而是让每个路人都能自然生产内容。小红书的城市活动如果能设计出"走在街头就能加入"的机制，内容密度会成倍放大。</p>
+            <p><strong>② 文化真实性作为防御壁垒</strong>——Carnival 历经 60 年不被商业稀释，因为它扎根于真实的移民社区叙事。平台大事件要有穿透力，也需要找到能引发真实情感共鸣的文化锚点，而非纯粹的流量堆砌。</p>
+            <p><strong>③ 多元亚文化的主流化路径</strong>——加勒比移民文化用 60 年成为伦敦夏天的城市身份。小红书站内的各种亚文化群落（户外、二次元、非遗手工）同样具备成为大事件 IP 的潜力，关键在于找到触发主流情感的切口。</p>
+            <div class="festival-insight"><strong>今年 2026 年诺丁山狂欢节</strong>恰好在 8 月 23-25 日举行，正值小红书秋季营销旺季前夕。与多元文化、街头美学、音乐节节奏感相关的选题，接下来 3 周窗口值得重点关注。</div>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">🔗 来源参考</div>
+          <div class="festival-block-body">
+            <a class="news-item-link" href="https://www.nhcarnival.org/" target="_blank">→ 诺丁山狂欢节官网</a> ·
+            <a class="news-item-link" href="https://en.wikipedia.org/wiki/Notting_Hill_Carnival" target="_blank">→ Wikipedia</a> ·
+            <a class="news-item-link" href="https://www.visitlondon.com/things-to-do/whats-on/special-events/notting-hill-carnival" target="_blank">→ Visit London</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">策展式图谱</span>
+      </div>
+      <div class="section-body">
+        <span class="knowledge-theme">加勒比音乐 · 当代流行根源</span>
+        <div class="knowledge-headline">从钢鼓到 Afrobeats：热带律动如何征服世界</div>
+        <div class="knowledge-tagline">今天的 Carnival，明天的全球主流——每一种街头音乐，都曾是边缘的声音</div>
+        <div class="knowledge-intro">
+          诺丁山狂欢节的音乐语系，是 20 世纪最重要的几条全球化音乐脉络之一。它的根在加勒比，但最终长成了今天我们熟悉的 R&B、Reggaeton、Dancehall 乃至 Afrobeats 的一部分。认识这张图谱，就是认识当代流行音乐最重要的文化基因之一。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <!-- Bob Marley -->
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Bob-Marley.jpg/440px-Bob-Marley.jpg"
+              alt="Bob Marley"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Bob Marley</div>
+              <div class="knowledge-card-sub">1945–1981 · 牙买加 · Reggae 之王</div>
+              <div class="knowledge-card-work">《No Woman No Cry》《Redemption Song》——将 Reggae 与反压迫精神绑定，成为全球化最成功的非英语流行音乐符号之一。</div>
+            </div>
+          </div>
+
+          <!-- Beyoncé -->
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Beyonce_RESIST_Tour.jpg/440px-Beyonce_RESIST_Tour.jpg"
+              alt="Beyoncé"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">👑</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Beyoncé</div>
+              <div class="knowledge-card-sub">1981— · 美国 · R&B / Neo-Soul</div>
+              <div class="knowledge-card-work">《Lemonade》《Renaissance》深度融合非裔美国人与加勒比黑人音乐传统，将祖先文化变成全球最高商业价值的流行语言。</div>
+            </div>
+          </div>
+
+          <!-- Rihanna -->
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Rihanna_Fenty_2018.png/440px-Rihanna_Fenty_2018.png"
+              alt="Rihanna"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">💎</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Rihanna</div>
+              <div class="knowledge-card-sub">1988— · 巴巴多斯 · Pop / Dancehall</div>
+              <div class="knowledge-card-work">从 Carnival 文化走出的 Rihanna，以 Fenty Beauty 将非洲 + 加勒比肤色美学带入全球美妆主流，创业估值超 28 亿美元。</div>
+            </div>
+          </div>
+
+          <!-- Drake -->
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Drake_July_2016.jpg/440px-Drake_July_2016.jpg"
+              alt="Drake"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🍁</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Drake</div>
+              <div class="knowledge-card-sub">1986— · 加拿大 · Rap / Dancehall</div>
+              <div class="knowledge-card-work">将牙买加 Dancehall 节奏植入加拿大黑人说唱，《One Dance》引爆全球 Afrobeats 热潮。"文化混血"是他最大的商业武器。</div>
+            </div>
+          </div>
+
+          <!-- 蔡依林 -->
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">🌺 蔡依林 Jolin Tsai</div>
+              <div class="knowledge-card-sub">1980— · 台湾 · C-Pop / 多元文化</div>
+              <div class="knowledge-card-work">《玫瑰少年》《Red Elf》等融合了拉丁、Reggaeton 节奏与华语词作，是华语乐坛率先将加勒比节拍与本土叙事结合的里程碑艺人。</div>
+            </div>
+          </div>
+
+          <!-- Burna Boy -->
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Burna_Boy_Cannes_2022.jpg/440px-Burna_Boy_Cannes_2022.jpg"
+              alt="Burna Boy"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="knowledge-card-img-placeholder" style="display:none">🌍</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Burna Boy</div>
+              <div class="knowledge-card-sub">1991— · 尼日利亚 · Afrobeats</div>
+              <div class="knowledge-card-work">Afrobeats 当代最高声量代表，多次登上诺丁山 Carnival 舞台。《Last Last》等作品将非洲节律带入全球 Billboard 主榜，完成"边缘到中心"的文化弧线。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          从诺丁山街头的钢鼓声，到今天 Spotify 全球榜前十中随处可见的 Afrobeats 节拍——文化的迁徙路径往往比商业逻辑更深刻。每一个"边缘声音"被主流接纳的时刻，都是品牌占据文化先机的窗口。懂音乐根源的人，往往最先看到下一波流行的形状。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 每个工作日 09:45 生成 · 2026 年 8 月 5 日
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    if (sidebar.classList.contains('collapsed')) {
+      sidebar.classList.remove('collapsed');
+      btn.textContent = '◀';
+    } else {
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+    }
+  }
+</script>
+
+</body>
+</html>
