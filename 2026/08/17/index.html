@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/17</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --weekend-bg: #f7f3ec; --weekend-border: #d4c9b8;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-badge { display: inline-block; font-size: 10px; font-weight: 600; background: var(--weekend-bg); border: 1px solid var(--weekend-border); color: var(--accent); padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .weekend-card { display: flex; gap: 16px; padding: 16px; margin-bottom: 12px; background: var(--weekend-bg); border: 1px solid var(--weekend-border); border-radius: 10px; transition: box-shadow 0.15s; }
+    .weekend-card:last-child { margin-bottom: 0; }
+    .weekend-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .weekend-emoji { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+    .weekend-body { flex: 1; min-width: 0; }
+    .weekend-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; line-height: 1.4; }
+    .weekend-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .weekend-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 8px; }
+    .weekend-comment { font-size: 11.5px; color: var(--accent); font-style: italic; line-height: 1.5; padding-left: 10px; border-left: 2px solid var(--accent); }
+    .weekend-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+    .weekend-tag.tag-business { background: #fef0e7; color: #b45309; }
+    .weekend-tag.tag-tech { background: #e8f0fe; color: #1a73e8; }
+    .weekend-tag.tag-society { background: #fce8e6; color: #d93025; }
+    .weekend-tag.tag-ent { background: #f3e8fd; color: #8430ce; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } .weekend-card { flex-direction: column; gap: 8px; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/dairy-knows/2026/08/17/index.html" class="active">2026 / 8 / 17 · 周一</a></li>
+      <li><a href="/dairy-knows/2026/08/03/index.html">2026 / 8 / 3 · 周一</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 17</div>
+      <div class="day-week">星期一
+        <span class="day-badge">📌 含上周末补录</span>
+      </div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 含周末回顾</span>
+      </div>
+      <div class="section-body">
+
+        <!-- 周末概览（周一补录模块） -->
+        <div class="news-panel">
+          <div class="news-panel-title">🕐 周末回顾 · 8/15–8/16</div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">⚽</div>
+            <div class="weekend-body">
+              <div class="weekend-title">贝佐斯财团正式入股利物浦：91亿拿下30%股权，科技巨头体育版图再扩张</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-business">资本</span>
+                <span class="weekend-tag tag-business">体育IP</span>
+                8/15 官宣 · 华尔街日报/利物浦官方
+              </div>
+              <div class="weekend-desc">8月15日，利物浦官方确认，所有者芬威体育集团与1892控股公司达成最终协议。该财团由印度钢铁大亨米塔尔女婿Amit Bhatia牵头，成员包括亚马逊创始人贝佐斯（通过K5 Global）和Facebook联合创始人Eduardo Saverin。交易金额约70亿美元（约91亿人民币），收购俱乐部约30%股权，创下足球俱乐部少数股权交易历史最高纪录。</div>
+              <div class="weekend-comment">「硅谷的钱不再只流向芯片和模型，开始流向球场。」科技巨头集体入场体育IP，看中的不是转播权，而是全球化粉丝社区的长期情感资产。足球是最古老的"社交网络"——现在它正在被重新定价。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🌊</div>
+            <div class="weekend-body">
+              <div class="weekend-title">印尼弗洛勒斯岛7.7级强震：至少47人遇难，环太平洋地震带持续活跃</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-society">自然灾害</span>
+                <span class="weekend-tag tag-society">社会</span>
+                8/15清晨 · 印尼东部
+              </div>
+              <div class="weekend-desc">8月15日清晨，印尼弗洛勒斯岛附近海域发生7.7级强烈地震，震源深度较浅，引发海啸预警。地震造成建筑物大面积损毁，已确认至少47人死亡，多人失踪。海啸预警在数小时后解除。这是印尼本月第二次重大地震事件，环太平洋地震带活跃度持续攀升。</div>
+              <div class="weekend-comment">当自然灾害频率上升，"韧性基建"从政策文件里的概念变成了真金白银的投资机会。应急科技、灾害预警系统、灾后重建供应链——这些赛道在2026下半年可能迎来政策与资本的双重加速。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🔋</div>
+            <div class="weekend-body">
+              <div class="weekend-title">Nvidia洽谈向SB Energy投资30亿美元：AI军备竞赛从芯片延伸到"电力"</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-tech">AI基建</span>
+                <span class="weekend-tag tag-business">能源</span>
+                8/15–16 · Reuters / The Information
+              </div>
+              <div class="weekend-desc">据Reuters和The Information报道，Nvidia正洽谈向软银旗下子公司SB Energy投资最多30亿美元。SB Energy正在俄亥俄州开发一座超大规模数据中心，该项目与OpenAI的算力需求直接挂钩。这笔投资标志着Nvidia从"卖铲子"（GPU芯片）向"挖金矿"（AI基础设施全链条）的战略升级。</div>
+              <div class="weekend-comment">AI竞争的终局不是"谁的模型更强"，而是"谁有足够的电力跑模型"。当Nvidia开始投能源公司，说明行业已经意识到：算力瓶颈的尽头是电力瓶颈。下一个AI独角兽可能不是做大模型的——而是搞电力的。</div>
+            </div>
+          </div>
+
+          <div class="weekend-card">
+            <div class="weekend-emoji">🎬</div>
+            <div class="weekend-body">
+              <div class="weekend-title">暑期档票房狂飙：总票房破95亿，8月单月破30亿，《八仙！》成最大黑马</div>
+              <div class="weekend-meta">
+                <span class="weekend-tag tag-ent">电影</span>
+                <span class="weekend-tag tag-business">消费</span>
+                截至8/15 · 猫眼/灯塔
+              </div>
+              <div class="weekend-desc">截至8月15日，2026年暑期档总票房突破95亿元，连续36天单日票房过亿。8月单月票房已破30亿，《蜘蛛侠：崭新之日》《欢迎来龙餐馆》《八仙！》分列月度前三。其中，国产动画《八仙！》累计票房破9亿，成为暑期档最大黑马。年度总票房已突破252亿元。</div>
+              <div class="weekend-comment">"中国神话宇宙"正在复制漫威的IP构建路径——但速度更快。《八仙！》的成功说明观众对本土文化IP的买单意愿远高于预期。对品牌来说，"东方美学+现代叙事"的内容公式正在被市场验证。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Nvidia投资SB Energy 30亿美元，AI基础设施"全链条"布局加速</div>
+            <div class="news-item-desc">这是Nvidia继芯片供应之外，首次深度介入下游数据中心能源端。投资标的SB Energy为软银子公司，正在俄亥俄州建设为OpenAI服务的超大规模数据中心。分析认为，此举意味着Nvidia正从"GPU供应商"转型为"AI基础设施运营商"，打通从芯片→算力→能源的完整链路。</div>
+            <a class="news-item-link" href="https://www.reuters.com/business/nvidia-talks-invest-3-billion-sb-energy-part-openai-data-center-deal-information-2026-08-15/" target="_blank">→ Reuters</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">标普500周线三连阳，周四首破7800点后小幅回落</div>
+            <div class="news-item-desc">美股标普500指数本周累涨0.4%，周四盘中创7816.70点历史新高。周五小幅回落，道指跌107点（-0.2%）。市场对AI基建投资持续乐观，但地缘风险（印尼地震、中东局势）构成短期扰动。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/world/2026-08-15/doc-ininiqkw3862105.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">贝佐斯+萨维林+米塔尔家族：科技+金融跨界财团重塑足球IP价值</div>
+            <div class="news-item-desc">1892控股公司的成员组合极具话题性：贝佐斯（电商+太空）、Saverin（社交网络）、Amit Bhatia（钢铁+能源）。三位跨界巨头的入场，标志着体育IP投资逻辑从"传统富豪的玩具"向"科技资本的全球化社区入口"转变。对品牌营销的启示：足球俱乐部正成为"超级连接器"——粉丝经济+全球化叙事+情感共鸣。</div>
+            <a class="news-item-link" href="https://cn.wsj.com/articles/jeff-bezos-bets-on-sports-with-7-billion-liverpool-deal-8e11b9ac" target="_blank">→ 华尔街日报</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《八仙！》票房破9亿：国产动画"神话宇宙"方法论跑通</div>
+            <div class="weekend-desc" style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin-bottom:6px;">从《哪吒》到《八仙！》，中国动画电影正在建立一套可复制的"传统神话+现代情感"公式。对品牌的启示：本土文化IP的商业化不再是"情怀溢价"，而是经过票房验证的内容资产。品牌跨界联名时，"东方美学"已从风险选项变成安全选项。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/cul/2026/08-15/10678329.shtml" target="_blank">→ 中国新闻网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">社会 · 民生</div>
+          <div class="news-item">
+            <div class="news-item-title">印尼7.7级地震致47人遇难，海啸预警解除，灾后重建启动</div>
+            <div class="news-item-desc">弗洛勒斯岛为印尼东部旅游岛屿，地震造成大量建筑损毁和人员伤亡。印尼国家灾害管理局已启动紧急救援。此次地震再次提醒环太平洋地区的灾害应对能力建设。对中国出海企业而言，东南亚基建项目的抗震标准和灾害风险预案需要重新评估。</div>
+            <a class="news-item-link" href="https://www.news.cn/world/20260815/8e596c50a09e4b748b6eef8d226451d9/c.html" target="_blank">→ 新华网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">宇树科技IPO暗盘火热：发行价150.80元，估值冲刺千亿</div>
+            <div class="news-item-desc">机器人明星企业宇树科技科创板IPO暗盘交易活跃。发行价150.80元/股，网上申购每中一签需缴款约7.54万元。公司此前拟募资42.02亿元，按不低于10%公开发行比例计算，上市估值约420亿元，暗盘交易中估值进一步攀升。美团、腾讯、阿里和雷军均为早期股东。</div>
+            <a class="news-item-link" href="https://sputniknews.cn/20260810/1072703036.html" target="_blank">→ 俄罗斯卫星通讯社</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#贝佐斯买球队 科技巨头入场体育IP引爆社交讨论</div>
+            <div class="trend-meta">商业财经赛道 · 体育IP方向</div>
+            <div class="trend-obs">💡 趋势观察：贝佐斯买利物浦的消息在小红书引发"富豪为什么都爱买球队"的讨论热潮。用户关注的不是足球本身，而是"资本为什么从芯片转向球场"。对品牌的启示：体育IP正在成为"高端品牌叙事"的新入口——当用户开始讨论"贝佐斯为什么买利物浦"时，品牌可以做的是讲述"情感资产 vs 财务资产"的故事。</div>
+            <div class="trend-source"><a href="https://cn.wsj.com/articles/jeff-bezos-bets-on-sports-with-7-billion-liverpool-deal-8e11b9ac" target="_blank">→ 华尔街日报·贝佐斯入股利物浦</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI电力焦虑 Nvidia投30亿给能源公司，"算力尽头是电力"成共识</div>
+            <div class="trend-meta">科技内容赛道 · AI基建方向</div>
+            <div class="trend-obs">💡 趋势观察：Nvidia投资SB Energy的新闻在科技圈快速传播，"算力的尽头是电力"成为小红书科技博主的热门论断。用户从关注"谁的GPU更强"转向"谁有足够的电跑GPU"。对品牌的启示：AI叙事正在从"模型竞赛"转向"基础设施竞赛"——品牌在做AI相关内容时，可以切入"能源+AI"这个新视角。</div>
+            <div class="trend-source"><a href="https://www.reuters.com/business/nvidia-talks-invest-3-billion-sb-energy-part-openai-data-center-deal-information-2026-08-15/" target="_blank">→ Reuters·Nvidia投资SB Energy</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#八仙 国产动画黑马破9亿，"东方神话宇宙"成暑期档最大赢家</div>
+            <div class="trend-meta">娱乐内容赛道 · 文化IP方向</div>
+            <div class="trend-obs">💡 趋势观察：《八仙！》的票房走势在小红书引发"中国动画方法论"的讨论——为什么国产神话动画越来越能打了？用户反馈集中在"不再是简单复刻传说，而是用现代情感重新包装"。对品牌的启示："传统文化+现代情感"的内容公式已从电影验证到消费领域——品牌做国潮联名时，核心不是"复古元素堆砌"，而是"传统内核+当代情绪"。</div>
+            <div class="trend-source"><a href="https://www.chinanews.com.cn/cul/2026/08-15/10678329.shtml" target="_blank">→ 中国新闻网·暑期档票房</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#宇树科技 机器人独角兽上市在即，"人形机器人元年"叙事持续升温</div>
+            <div class="trend-meta">科技内容赛道 · 机器人方向</div>
+            <div class="trend-obs">💡 趋势观察：宇树科技IPO暗盘火热，小红书"人形机器人"话题热度持续走高。用户关注的核心问题是"机器人什么时候能进我家"。对品牌的启示：2026年被定义为"人形机器人商业化元年"，品牌在做科技内容营销时，"从实验室到客厅"的叙事弧线最容易引发用户共鸣。</div>
+            <div class="trend-source"><a href="https://sputniknews.cn/20260810/1072703036.html" target="_blank">→ 俄罗斯卫星通讯社·宇树科技IPO</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI基础设施的"第三层瓶颈"</div>
+        <div class="learning-title">算力的尽头是电力：从Nvidia投资能源公司看AI产业链重构</div>
+        <div class="learning-subtitle">当芯片不再是瓶颈，下一个卡脖子的环节是什么？</div>
+        <div class="learning-body">
+          <p>8月15日，Nvidia宣布洽谈向软银子公司SB Energy投资最多30亿美元。这不是一笔普通的财务投资——它标志着AI产业链的权力结构正在发生根本性转变：<strong>从"谁有最强芯片"到"谁有最多电力"</strong>。</p>
+          <p><strong>AI基础设施的三层瓶颈模型：</strong></p>
+          <p><strong>第一层：芯片（2023-2024瓶颈）。</strong>过去两年，AI产业的核心焦虑是"谁拿到了足够的H100/B200"。Nvidia凭借GPU垄断地位成为最大赢家。但芯片产能正在爬坡，这一层瓶颈正在缓解。</p>
+          <p><strong>第二层：数据中心（2025瓶颈）。</strong>当芯片不再稀缺，"把芯片装进去的地方"成了新瓶颈。超大规模数据中心建设周期18-24个月，供给严重滞后于需求。这催生了CoreWeave、Lambda等"GPU云"公司的崛起。</p>
+          <p><strong>第三层：电力（2026正在成为瓶颈）。</strong>当一个数据中心的耗电量等同于一座小城市时，"电从哪来"就成了终极问题。微软、谷歌、亚马逊已纷纷签署核电/可再生能源长期购电协议。Nvidia直接投资能源公司，意味着行业意识到：<strong>电力不是AI的"配套"，而是AI的"前提"</strong>。</p>
+          <p><strong>对品牌营销的启示：</strong>当客户需要做AI品牌传播时，"AI=烧电"的叙事正在从技术圈向大众扩散。品牌可以切入的叙事角度包括：</p>
+          <p>• <strong>"绿色AI"</strong>——强调可再生能源供电、碳中和数据中心<br>
+          • <strong>"效率AI"</strong>——同等算力下更低的能耗<br>
+          • <strong>"普惠AI"</strong>——边缘计算降低对集中式电力的依赖</p>
+          <p>更深层的启示是：<strong>产业链瓶颈的迁移速度，决定了品牌叙事的更新速度</strong>。当行业讨论从"芯片"转向"电力"时，还在讲"算力为王"的品牌就会显得过时。品牌营销人需要像投资人一样跟踪产业链变化——因为用户的注意力跟着瓶颈走。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.reuters.com/business/nvidia-talks-invest-3-billion-sb-energy-part-openai-data-center-deal-information-2026-08-15/" target="_blank">Reuters《Nvidia eyes investing $3 billion in SB Energy》</a> ·
+          <a href="https://www.gurufocus.com/news/9037285/nvidia-plans-up-to-3-billion-investment-in-sb-energy" target="_blank">GuruFocus《NVIDIA Plans Up to $3 Billion Investment in SB Energy》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 能源与算力</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">⚡ 主题策展 · "喂饱"AI需要多少电？</div>
+        <div class="knowledge-headline">一个数据中心的耗电量 = 一座小城市</div>
+        <div class="knowledge-tagline">「AI不是在云端运行的——它在发电厂旁边运行的。」</div>
+
+        <div class="knowledge-intro">
+          当我们在ChatGPT里打出一句话时，背后消耗的电力远超我们的想象。以下是2026年AI基础设施的能源真相：<br><br>
+          • <strong>一个超大规模数据中心：</strong>耗电量约200-500兆瓦，相当于一座50万人口城市的用电量。Nvidia投资的SB Energy俄亥俄项目预计需要超过1GW电力<br>
+          • <strong>一次GPT-4级别的推理：</strong>消耗约0.05度电——相当于给手机充一次电的1/20。但当日均请求量达到数十亿次时，总耗电量惊人<br>
+          • <strong>一次AI模型训练：</strong>训练一个前沿大模型的电力消耗，约等于一个家庭一年的用电量×1000倍<br>
+          • <strong>全球AI电力消耗（2026预估）：</strong>占全球总用电量的1.5%-2%，且以每年50%+的速度增长<br><br>
+          这意味着：AI的"天花板"不是算法，不是芯片，而是<strong>电力供应</strong>。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏭</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">数据中心 · 电力巨兽</div>
+              <div class="knowledge-card-sub">基础设施 · 能源消耗</div>
+              <div class="knowledge-card-work">一个100MW数据中心每年耗电约8.76亿度。其中40%用于服务器运算，30%用于冷却系统，20%用于网络设备，10%用于照明和安保。当Nvidia开始投资能源公司时，说明GPU厂商已经意识到：没有电，芯片就是一堆废硅。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">☢️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">核电复兴 · AI的"完美燃料"</div>
+              <div class="knowledge-card-sub">能源战略 · 2025-2030</div>
+              <div class="knowledge-card-work">微软与Constellation Energy签署20年核电购买协议，重启三里岛核电站；谷歌投资小型模块化核反应堆(SMR)；亚马逊签署风电+核电混合供电协议。核电视为AI时代的"理想能源"：稳定、零碳、不受天气影响。但建设周期10-15年，远水解不了近渴。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌞</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">可再生能源 · 间歇性的困境</div>
+              <div class="knowledge-card-sub">绿色能源 · 储能瓶颈</div>
+              <div class="knowledge-card-work">太阳能和风能是"最便宜的电"，但问题是：AI数据中心需要24/7不间断供电，而太阳会下山、风会停。解决方案是"储能"——但目前电池储能的成本仍然太高。SB Energy项目的核心挑战之一就是如何在俄亥俄州实现稳定的可再生能源供电。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🧊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">液冷革命 · 从风冷到水冷</div>
+              <div class="knowledge-card-sub">散热技术 · 能效提升</div>
+              <div class="knowledge-card-work">GPU功耗从A100的400W飙升到B200的1000W+，传统风冷已无法满足散热需求。液冷技术（将服务器浸入冷却液）成为标配，可将PUE（电力使用效率）从1.5降到1.1。这意味着：数据中心省电的关键不在"算"，而在"冷"。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          AI的"智能"是虚拟的，但AI消耗的电力是真实的。当Nvidia开始投资能源公司，当科技巨头纷纷签署核电协议，当数据中心的选址首先看"附近有没有发电厂"——我们就知道：AI革命的底层逻辑，不是硅，是瓦特。理解这一点，才能理解2026年AI产业的所有"反直觉"决策。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新 · 📌 今日含上周末(8/15-16)补录内容
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
