@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/13</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    /* Festival */
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 56px; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 35%, #4a2a6a 65%, #8a4a9a 85%, #c8a0e0 100%); border-radius: 0; }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    /* Knowledge */
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/8/13/index.html" class="active">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+      <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+      <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+      <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+      <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+      <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+      <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+      <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+      <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+      <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+      <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+      <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 13</div>
+      <div class="day-week">星期四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">6 方向动态 · 今日精选</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行发布2026年Q2货币政策执行报告，继续实施适度宽松，流动性保持充裕</div>
+            <div class="news-item-desc">报告指出综合运用货币政策工具，保持社会融资规模合理增长；金价油价今日联袂上涨，国际大宗商品市场情绪偏暖。消费端数据显示上半年离婚登记138.3万对，而60万亿消费蓝海预期升温，"国补+政策托底"叙事仍在推进。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-08-13/doc-ininchpe0289246.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">朱镕基同志逝世，微博热搜第一位，全网缅怀</div>
+            <div class="news-item-desc">消息在各平台迅速发酵，热度105万+。作为改革开放关键时期的核心决策者，其经济治理思路对"硬着陆"与市场化改革的把握至今被广泛引用。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%9C%B1%E9%95%95%E5%9F%BA%E5%90%8C%E5%BF%97%E9%80%9D%E4%B8%96" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">DeepSeek V4 Pro 正式版发布：1.6T 参数 MoE，1M 上下文，逼近 Claude Fable 5 体验</div>
+            <div class="news-item-desc">DeepSeek V4 Pro 与 Grok 4.6 在 2 小时内先后发布，双双被业内评为"Fable 5 级 Agent 能力替代选项"。V4 Pro 输出每百万 token 仅需 0.87 美元，与 Fable 5 的 50 美元形成数量级价格差距，大幅拉低企业自动化任务的成本门槛。</div>
+            <a class="news-item-link" href="https://www.eigent.ai/zh-CN/blog/deepseek-v4-pro" target="_blank">→ Eigent AI</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">微软首发自研推理模型 MAI-Thinking-1，xAI Grok 4.6 同日上线 Cursor</div>
+            <div class="news-item-desc">MAI-Thinking-1 从零构建，已在 Microsoft Foundry 上线，Azure 生态获自研推理选项。Grok 4.6 由 SpaceXAI 与 Cursor 联合发布，在多项 Agent 编码与知识工作基准上追平 GPT-5.6 Sol。阿里 Qwen3.8-2.4T-A95B 同日开源，Qwen-Max 级权重首次向公众放开。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT 热点聚合</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">ChatGPT 与 Gemini 双双突破 10 亿月活，AI 大众化里程碑</div>
+            <div class="news-item-desc">OpenAI 披露 ChatGPT 月活超 10 亿，Google CEO 皮查伊宣布 Gemini 月活达 10 亿，成其史上增长最快产品。Gemini 从 2 月 7.5 亿到现在增速更猛，安卓端深度集成优势显现，AI 竞争焦点正从模型能力转向平台生态渗透。</div>
+            <a class="news-item-link" href="https://www.theverge.com/ai-artificial-intelligence/978113/chatgpt-gemini-1-billion-users" target="_blank">→ The Verge</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">Alo Yoga 正式进军中国，赠品包被炒至 350 元；Lululemon 的高端瑜伽运动赛道迎来劲敌</div>
+            <div class="news-item-desc">号称"比 Lululemon 还贵"的美国运动品牌 Alo Yoga 进入中国市场引发关注，赠品包二级市场价迅速飙升。运动健身消费在情绪驱动（悦己）和身份标签两个维度持续升温，奢运融合赛道仍有空间。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=Alo%E8%B5%A0%E5%93%81%E5%8C%85%E8%A2%AB%E7%82%92%E5%88%B0350%E5%85%83" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">胖东来许昌老店关闭，周边商户纷纷发声；星巴克部分原料曝光由蜜雪冰城代工</div>
+            <div class="news-item-desc">两则消费热议折射不同逻辑：胖东来的话题度折射线下零售重构与品牌情感依赖；星巴克供应链曝光引发"溢价质疑"，供应链透明度成消费品牌新考题。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%83%96%E4%B8%9C%E6%9D%A5%E8%AE%B8%E6%98%8C%E8%80%81%E5%BA%97%E5%85%B3%E9%97%AD" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">英仙座流星雨 8 月 13 日迎极大，今年无月干扰，堪称近年最佳观测条件</div>
+            <div class="news-item-desc">斯威夫特-塔特尔彗星碎片带每年 8 月飞掠，2026 年极大期恰逢新月前后，夜空能见度极好。12 日至 13 日凌晨 2-4 时为最佳窗口，每小时理论可见约 100 颗。微博热搜"流星雨"词条热度 24 万+，户外打卡内容将在小红书爆发。</div>
+            <a class="news-item-link" href="https://www.news.cn/tech/20260810/7e88993a6e5d47d0a9f73b7f9340348c/c.html" target="_blank">→ 新华网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">周星驰罕见露面接受专访；虞书欣×丁禹兮新剧《我欲乘风》引爆话题</div>
+            <div class="news-item-desc">周星驰现身媒体专访引发怀旧情绪，"大话西游式"解构叙事重新回热。《我欲乘风》热度已上榜微博，古偶赛道的 CP 粉经济与短视频二创仍是平台内容爆发的常态驱动力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%99%9E%E4%B9%A6%E6%AC%A3%E4%B8%81%E7%A6%B9%E5%85%AE+%E6%88%91%E6%AC%B2%E4%B9%98%E9%A3%8E" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">宇树科技机器人黄牛收购价涨至 410 元，实体消费品的"黄牛经济"延伸至科技产品</div>
+            <div class="news-item-desc">从球鞋到茅台，再到 AI 机器人，黄牛市场是消费品稀缺性叙事最直接的货币化体现。宇树的跑火印证了具身智能从 B 端走向 C 端的关注度迁移，也给品牌方带来"如何管理首发饥饿感"的新命题。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%AE%87%E6%A0%91%E7%A7%91%E6%8A%80%E9%BB%84%E7%89%9B%E6%94%B6%E8%B4%AD%E4%BB%B7%E6%B6%A8%E5%88%B0410%E5%85%83" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">微信群聊新功能：可彻底关闭通知；热议背后折射社群疲劳与品牌触达焦虑</div>
+            <div class="news-item-desc">微信生态这一功能更新在用户侧广受欢迎，但对依赖私域群运营的品牌而言意味着更高的内容质量要求——垃圾信息将被更彻底地屏蔽，只有真正有价值的社群才能留住用户。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%BE%AE%E4%BF%A1%E7%BE%A4%E8%81%8A%E5%8F%AF%E4%BB%A5%E5%BD%BB%E5%BA%95%E5%85%B3%E9%97%AD%E9%80%9A%E7%9F%A5%E4%BA%86" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">41 国涉华声明发酵，中方强硬回应："不过是废纸一张"</div>
+            <div class="news-item-desc">地缘政治压力持续，热度 48 万+。中美贸易关税暂停协议 90 天窗口期内，多边声明的话语博弈在外交层面加剧，对供应链及跨境营销的潜在扰动需持续观察。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=41%E5%9B%BD%E6%89%80%E8%B0%93%E6%B6%89%E5%8D%8E%E5%A3%B0%E6%98%8E%E4%B8%8D%E8%BF%87%E6%98%AF%E5%BA%9F%E7%BA%B8%E4%B8%80%E5%BC%A0" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 今日 5 条</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">英仙座流星雨极大，小红书打卡笔记爆发</div>
+            <div class="trend-meta">自然奇观 · 夜间天象 · 户外拍摄</div>
+            <div class="trend-obs">📌 趋势观察：每年流星雨事件都是小红书自然摄影、户外露营、情侣约会等多个垂类的天然流量爆发节点。2026 年无月干扰，今年极大条件为近年最佳，"英仙座"词条预计带动"户外天文"、"露营拍星"、"流星许愿"等 UGC 内容集中涌现，品牌可借势跨界联动自然景观话题。</div>
+            <div class="trend-source"><a href="https://www.xiaohongshu.com/explore" target="_blank">→ 小红书探索页</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">AI 工具上手攻略持续热销，"零基础12步"获百万曝光</div>
+            <div class="trend-meta">AI 生产力 · 工具教程 · 职场效率</div>
+            <div class="trend-obs">📌 趋势观察：AI 工具教程从极客社区溢出至大众消费圈已有明显信号。小红书用户对"怎么开始用 AI"的需求旺盛，语音输入法+任务框架的低门槛叙事（"背景-痛点-需求"）正在形成标准化教程格式，职场效率品类笔记热度连续走高。</div>
+            <div class="trend-source"><a href="https://www.xiaohongshu.com/explore" target="_blank">→ 小红书探索页</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">运动奢品 Alo Yoga 进中国，高端运动服赛道迎来新物种</div>
+            <div class="trend-meta">时尚穿搭 · 运动健身 · 品牌事件</div>
+            <div class="trend-obs">📌 趋势观察：Lululemon 教育了市场，Alo 来收割。小红书穿搭博主已开始密集种草 Alo 单品，"Alo vs Lululemon"对比笔记将是近期内容形态高频选题。对品牌方的启示：运动奢品的增量在于"仪式感+身份标签"的双重包装，内容侧需要强调材质故事与创始人叙事。</div>
+            <div class="trend-source"><a href="https://www.xiaohongshu.com/explore" target="_blank">→ 小红书探索页</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">《我欲乘风》古偶剧CP 热度登榜，二创短视频已提前预热</div>
+            <div class="trend-meta">影视娱乐 · CP 经济 · 古偶剧</div>
+            <div class="trend-obs">📌 趋势观察：古偶 CP 内容的小红书传播路径已形成固定范式——彩排节目单→演员花絮→二创短视频→品牌植入联动。虞书欣×丁禹兮组合已有基础粉丝盘，先发的内容卡位价值较高，品牌可关注剧集上线节奏做预热内容协同。</div>
+            <div class="trend-source"><a href="https://www.xiaohongshu.com/explore" target="_blank">→ 小红书探索页</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">胖东来许昌老店关店引发情感共鸣，"理想零售"叙事再掀讨论</div>
+            <div class="trend-meta">本土零售 · 消费情感 · 品牌故事</div>
+            <div class="trend-obs">📌 趋势观察：胖东来在小红书的内容价值已超越零售本身——它是一种"好生意应有的样子"的集体投射。老店关闭的情绪反应验证了品牌情感资产的深度积累，同时也提示零售品牌：有温度的告别比扩张公告更具传播力。</div>
+            <div class="trend-source"><a href="https://www.xiaohongshu.com/explore" target="_blank">→ 小红书探索页</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">本期主题</div>
+        <div class="learning-title">当 AI 把价格打穿，品牌叙事才是真正的护城河</div>
+        <div class="learning-subtitle">DeepSeek V4 Pro vs Claude Fable 5 带来的营销启示</div>
+        <div class="learning-body">
+          <p>今天一件事让整个 AI 行业再次震动——<strong>DeepSeek V4 Pro 以 0.87 美元/百万 token 的价格，实现了接近 Claude Fable 5（50 美元）的体验</strong>。这不是一个技术新闻，这是一个"价格破防"事件，而价格破防，是品牌最经典的叙事危机之一。</p>
+          <p>回看历史：每一次"质量差不多、价格便宜 N 倍"的竞品出现，都有品牌倒下，也有品牌活下来。活下来的，靠的不是继续比参数，而是<strong>把产品的"不可替代性"讲清楚</strong>——要么讲信任（"我们的数据不用于训练"），要么讲生态（"你所有的工作流都在这里"），要么讲情感（"这是属于你的专属 AI，而不是一个通用工具"）。</p>
+          <p>对营销人更直接的启示是：当商品化竞争不可避免，<strong>差异化叙事就是最后的阵地</strong>。Anthropic 的回应不会是降价，而会是讲"安全"和"可信赖"；OpenAI 的回应不会是降价，而会是讲"完整生态系统"。这是一种非常古老的品牌逻辑，在 AI 时代依然有效。</p>
+          <p>此外，今天 <strong>ChatGPT 与 Gemini 同时突破 10 亿月活</strong>，背后逻辑也值得玩味：Gemini 靠的是安卓操作系统的强制分发，而不是靠"比 ChatGPT 更好"。渠道捆绑，仍然是消费级产品突破圈层最有效的方式之一——这对小红书思考如何做大用户盘，同样有参考价值。</p>
+        </div>
+        <div class="learning-source">
+          参考来源：
+          <a href="https://www.eigent.ai/zh-CN/blog/deepseek-v4-pro" target="_blank">Eigent AI · DeepSeek V4 Pro 解析</a> ·
+          <a href="https://www.theverge.com/ai-artificial-intelligence/978113/chatgpt-gemini-1-billion-users" target="_blank">The Verge · ChatGPT & Gemini 10亿用户</a> ·
+          <a href="https://aihot.virxact.com/" target="_blank">AIHOT · AI行业热点聚合</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日选题 · 英仙座流星雨观测季</span>
+      </div>
+      <div class="section-body">
+        <div class="festival-banner-placeholder">☄️</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">年度天文盛事</span>
+          <span class="festival-tag">全球同步</span>
+          <span class="festival-tag">北半球最强流星雨</span>
+          <span class="festival-tag">2026 最佳观测年</span>
+        </div>
+
+        <div class="festival-name">英仙座流星雨</div>
+        <div class="festival-name-en">Perseid Meteor Shower · 每年 7 月中旬–8 月下旬，极大约 8 月 12–13 日</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从彗星到传说——1000 年的记录史</div>
+          <div class="festival-block-body">
+            <p>英仙座流星雨的记录可追溯至公元 36 年的中国古代天文文献，是有史以来被记载最早、最持续的天象之一。欧洲中世纪称其为"圣劳伦斯之泪"（Tears of St. Lawrence），因为极大期恰在圣劳伦斯节（8 月 10 日）前后，象征殉道者落下的眼泪化为星光。</p>
+            <p><strong>1862 年，美国天文学家斯威夫特与塔特尔相继发现同一颗彗星</strong>——斯威夫特-塔特尔彗星（109P/Swift-Tuttle），随后科学界确认英仙座流星雨正是地球穿越该彗星轨道碎片带时产生的视觉奇观。彗星轨道周期约 130 年，上一次近日点是 1992 年，下一次将在 2126 年。</p>
+            <p>20 世纪中叶以来，英仙座流星雨逐渐成为北半球天文爱好者最期待的年度天象——它出现在夏末假期，无需特殊设备，肉眼可见，ZHR（天顶每小时流星数）最高可达 100+，是全球三大流星雨之一。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】2026 年：近年条件最佳，全球同步打卡</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">100+</div>
+                <div class="festival-stat-label">颗/小时（理论极大值）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">新月前</div>
+                <div class="festival-stat-label">2026年月相干扰极小</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">8/12–13</div>
+                <div class="festival-stat-label">今年极大期（北京时间）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">60 km/s</div>
+                <div class="festival-stat-label">流星入射速度</div>
+              </div>
+            </div>
+            <p><strong>2026 年恰逢新月前夕</strong>，夜空背景亮度极低，是近年来观测条件最佳的一年。凌晨 2-4 时，辐射点（英仙座）升至地平线最高处，为最佳窗口。最佳观测地点：远离城市光污染的山区、草原、海边，北半球中纬度地区最优。</p>
+            <p>文化影响力上，流星雨的"许愿"仪式感使其成为横跨所有年龄层、所有文化背景的共情节点。微博热搜词条"流星雨"热度超 24 万，小红书、抖音"露营拍星"相关内容预计在今明两日集中爆发。NASA 等机构持续直播，全球天文爱好者同步观测，形成天然的国际话题共振。</p>
+            <div class="festival-insight">
+              <strong>商业维度：</strong>英仙座流星雨是户外装备（帐篷、睡袋、望远镜）、旅游民宿（山区/高原/海边）、摄影器材、饮料零食（夜间户外场景）等品类的天然内容营销节点。"夏末最后的浪漫仪式"叙事已在年轻消费群体中形成强烈情感共鸣，年均带动话题热度稳居天文领域第一。
+            </div>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】下届预告 · 对小红书大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p>2027 年英仙座流星雨极大期预计在 8 月 12-13 日，但届时月相条件稍差（接近上弦月）。<strong>2026 年是未来数年内观测条件最好的窗口之一</strong>，今年的内容积累对明年同档期依然有复用价值。</p>
+            <p>对小红书大事件业务的启示：<strong>天象类事件是"无需品牌发明，只需帮用户更好地参与"的完美大事件素材</strong>。它有精准的时间节点（极大日）、强情感共鸣（许愿/仪式感）、全年龄覆盖、UGC 天然动力，且不受商业化质疑。可参考的运营路径：① 提前 7 天内容预热 + 观测攻略种草；② 极大当晚发起"流星许愿"话题挑战；③ 次日复盘"最美打卡合集"持续引流；④ 与户外品牌共同发起限时活动，形成站内外内容共振。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">来源参考</div>
+          <div class="festival-block-body">
+            <p>
+              <a href="https://www.news.cn/tech/20260810/7e88993a6e5d47d0a9f73b7f9340348c/c.html" target="_blank" style="color:var(--accent);">新华网 · 英仙座流星雨2026观测指南</a> ·
+              <a href="https://starwalk.space/zh-Hans/news/all-you-need-to-know-about-the-perseids" target="_blank" style="color:var(--accent);">Star Walk · 英仙座流星雨全解析</a> ·
+              <a href="https://zh.wikipedia.org/zh-cn/%E8%8B%B1%E4%BB%99%E5%BA%A7%E6%B5%81%E6%98%9F%E9%9B%A8" target="_blank" style="color:var(--accent);">Wikipedia · 英仙座流星雨</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">策展视角 · 今期主题</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">科幻 · 未来想象 · 银河系书写者</div>
+        <div class="knowledge-headline">写星空的人：那些把宇宙变成文学的作家们</div>
+        <div class="knowledge-tagline">今天英仙座流星雨极大——宇宙不只是天文学家的领域，也是文学家最辽阔的画布。</div>
+        <div class="knowledge-intro">
+          流星划过的瞬间，人类从未停止追问：宇宙里还有什么？我们从哪里来？要去哪里？这些问题没有答案，但有文学。从阿西莫夫的基地帝国到刘慈欣的三体，从卡尔·萨根的宇宙到勒奎恩的黑暗左手，有一批人用文字把看不见的星际空间变成了可以居住的情感坐标。今晚抬头看流星，也可以想起他们。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Isaac.Asimov01.jpg/440px-Isaac.Asimov01.jpg"
+              alt="艾萨克·阿西莫夫"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🤖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">艾萨克·阿西莫夫</div>
+              <div class="knowledge-card-sub">美国 · 科幻三巨头之一 · 1920–1992</div>
+              <div class="knowledge-card-work">《基地》系列将"银河帝国的兴衰"压缩成一部心理史学预言，预知未来靠的不是魔法，而是数学统计。500 年的文明崩溃叙事至今仍是最宏大的史诗框架之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Carl_Sagan_Planetary_Society.JPG/440px-Carl_Sagan_Planetary_Society.JPG"
+              alt="卡尔·萨根"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌌</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">卡尔·萨根</div>
+              <div class="knowledge-card-sub">美国 · 天文学家 / 科普作家 · 1934–1996</div>
+              <div class="knowledge-card-work">《宇宙》与《暗淡蓝点》把科学写成了诗。"我们都是星尘"这句话，让无数普通人第一次觉得自己与宇宙是有关联的。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Ursula_K_Le_Guin.JPG/440px-Ursula_K_Le_Guin.JPG"
+              alt="厄休拉·勒奎恩"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌙</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">厄休拉·勒奎恩</div>
+              <div class="knowledge-card-sub">美国 · 科幻/奇幻女王 · 1929–2018</div>
+              <div class="knowledge-card-work">《黑暗的左手》描绘了一个没有性别的星球，用科幻框架探讨了人类对"他者"的认知边界。她的宇宙是社会实验室，每颗星球都是一面镜子。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🔭</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘慈欣</div>
+              <div class="knowledge-card-sub">中国 · 雨果奖得主 · 1963–</div>
+              <div class="knowledge-card-work">《三体》的"黑暗森林法则"重新定义了宇宙文明的关系模型——宇宙不是温馨的邻里，是永恒的博弈场。用物理学家的眼光写出了人类最深的宇宙孤独感。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Douglas_adams_portrait_cropped.jpg/440px-Douglas_adams_portrait_cropped.jpg"
+              alt="道格拉斯·亚当斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌠</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">道格拉斯·亚当斯</div>
+              <div class="knowledge-card-sub">英国 · 幽默科幻作家 · 1952–2001</div>
+              <div class="knowledge-card-work">《银河系漫游指南》用喜剧方式解构宇宙：生命、宇宙与万物的终极答案是"42"。当正经宇宙学让你焦虑，这本书告诉你——放松，宇宙本来就不打算给你一个严肃的答案。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Octavia_butler.jpg/440px-Octavia_butler.jpg"
+              alt="奥克塔维亚·巴特勒"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⭐</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">奥克塔维亚·巴特勒</div>
+              <div class="knowledge-card-sub">美国 · 非裔科幻第一人 · 1947–2006</div>
+              <div class="knowledge-card-work">《血孩子》《播种者寓言》在宇宙框架下书写种族、权力与生存。她的星际旅行不是逃离，而是以漫长的太空时间拷问人类文明最脆弱的部分。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          今夜仰头，流星划过的每一秒，都是斯威夫特-塔特尔彗星在 130 年轨道上留下的碎片——它们在大气层里燃烧，变成光，变成人类的愿望，也变成这些作家们书写的星光。我们看星星，不只是看物理，是看我们自己。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 2026.08.13 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
