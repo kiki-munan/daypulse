@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/27</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a2a3e 0%, #3a6b8a 50%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/8/27/index.html" class="active">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+      <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 27</div>
+      <div class="day-week">星期四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">"钟才文"署名文章解读中国宏观经济治理逻辑，释放"十五五"开局之年信心信号</div>
+            <div class="news-item-desc">8月25日，"钟才文"发文系统阐释中国宏观经济治理的内在逻辑。文章指出，2026年全年经济增长预期目标为4.5%—5%，上半年经济延续回升向好态势，前7个月工业增加值同比增长6.3%，货物贸易重回两位数增长。信号明确：稳中求进，以结构优化对冲外部不确定性。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/cj/2026/08-25/10683736.shtml" target="_blank">→ 中国新闻网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">金价大涨，投资者"终于熬出头"——避险情绪升温叠加美联储降息预期</div>
+            <div class="news-item-desc">国际金价突破关键阻力位，"金价大涨终于熬出头"登上微博热搜。分析指向双重驱动：地缘冲突（西藏泥石流、尼泊尔山洪）推高避险需求，叠加美联储9月降息预期增强。对消费品牌的启示：黄金珠宝、贵金属相关品类正在迎来新一轮内容窗口。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%87%91%E4%BB%B7%E5%A4%A7%E6%B6%A8%E7%BB%88%E4%BA%8E%E7%86%AC%E5%87%BA%E5%A4%B4" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达Q2营收962亿美元大超预期，Blackwell架构需求持续井喷</div>
+            <div class="news-item-desc">8月26日盘后，英伟达公布2027财年第二季度财报：营收962亿美元，远超华尔街预期。数据中心业务仍是核心增长引擎，Blackwell架构GPU需求"超出内部最乐观预估"。AI基础设施军备竞赛进入新一轮加速期，算力供给的天花板不断被自身打破。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%8B%B1%E4%BC%9F%E8%BE%BE%E4%BA%8C%E5%AD%A3%E5%BA%A6%E8%90%A5%E6%94%B6962%E4%BA%BF%E7%BE%8E%E5%85%83" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">比尔·盖茨发6000字长文警告：动荡的AI时代已经到来，人类尚无应对方案</div>
+            <div class="news-item-desc">8月26日，盖茨在个人网站发文《动荡的AI时代已经到来，我们的选择至关重要》，首次公开表示"希望一种技术发展得慢一点"。他警告AI可能导致大规模就业替代、被用于犯罪和生化恐怖主义，呼吁建立国际AI监督机构。这是科技界最具影响力的人物之一发出的最严厉警告。</div>
+            <a class="news-item-link" href="https://www.36kr.com/p/3956259918904455" target="_blank">→ 36氪</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">苹果秋季发布会定档9月9日：iPhone 18 Pro系列+首款折叠屏iPhone Ultra亮相</div>
+            <div class="news-item-desc">苹果2026秋季发布会确认9月9日举办，阵容被曝"史上最大胆"：仅发布iPhone 18 Pro、18 Pro Max及首款折叠形态新机iPhone Ultra三款手机，标准版推迟至明年。2nm A20 Pro芯片、全新钛金属配色、磁吸折叠铰链……苹果正在用"少而精"策略重塑旗舰叙事。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/roll/2026-08-25/doc-inipnuhw1626709.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">2026暑期文娱市场爆发：电影票房领跑，演出市场"一票难求"成常态</div>
+            <div class="news-item-desc">截至8月中旬，2026年暑期文化娱乐市场呈"电影领跑、演出火热、文博升温、非遗出圈"格局。演唱会票务"盲盒座位"、退票规则严苛等结构性问题引发行业讨论，一级票务市场改革呼声渐高。</div>
+            <a class="news-item-link" href="https://www.sina.cn/news/detail/5332911746190146.html" target="_blank">→ 新浪新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">安踏前CEO争议：前脚说"爱国"扭头搬家美国，品牌信任与高管个人言行绑定风险</div>
+            <div class="news-item-desc">安踏前高管因"言论与行动不一致"登上热搜，引发消费者对品牌立场的集体审视。事件再次提醒：在中国市场，品牌高管的个人表达与品牌价值观之间的"信用链"越来越短，社交媒体时代的品牌信任建设更加脆弱。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%AE%89%E8%B8%8F%E5%89%8DCEO%E5%89%8D%E8%84%9A%E8%AF%B4%E7%88%B1%E5%9B%BD%E6%89%AD%E5%A4%B4%E6%90%AC%E5%AE%B6%E7%BE%8E%E5%9B%BD" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">刘翔退役安置引全网热议：买断还是当教练？运动员"下半场"出路成公共议题</div>
+            <div class="news-item-desc">8月26日，奥运冠军刘翔微博在线求助"体育局让我买断或当教练"，迅速冲上热搜。刘翔坦言"没执教经验，当教练是毁人前途"。上海体育局当晚回应"将按规定做好保障"。话题折射运动员退役安置制度的结构性困境——金牌之后的人生，不该是一道二选一的选择题。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/2026-08-26/detail-iniprytk0875116.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">舒淇、朱一龙新片"众神归位"引期待，秋季档影视内容竞争升温</div>
+            <div class="news-item-desc">舒淇与朱一龙合作新片消息登上热搜，"众神归位"的表述引发影迷对阵容和品质的高度期待。2026秋季档影视内容竞争已提前预热，头部演员+品质IP的组合正在成为平台争夺注意力的核心筹码。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%88%92%E6%B7%87%E6%9C%B1%E4%B8%80%E9%BE%99%E4%BC%97%E7%A5%9E%E5%BD%92%E4%BD%8D" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">西藏吉隆泥石流致265人失联、3人遇难，多方救援力量紧急集结；尼泊尔山洪已致157人死亡</div>
+            <div class="news-item-desc">8月26日上午，因尼泊尔一侧发生大规模泥石流，西藏日喀则吉隆口岸重大灾情。应急管理部启动国家二级救灾响应，249名消防员及工程救援队伍赶赴现场，3万件救灾物资调拨。同日，尼泊尔山洪已致157人死亡、97具遗体被找到。吉隆口岸道路中断仍处于失联状态。首架中国救援队包机已飞往日喀则。</div>
+            <a class="news-item-link" href="https://www.news.cn/20260826/64a332b6bbcc4ef48b690c3661d4dd89/c.html" target="_blank">→ 新华网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#西藏泥石流救援 互助信息与祈福内容涌入</div>
+            <div class="trend-meta">灾害资讯 · 互助内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：重大灾害事件中，小红书正在成为"实用信息+情感支持"的双通道。救援进展、物资需求、寻人信息以图文笔记形式高速传播，同时"祈福""致敬救援人员"等情感内容构成社区温度层。品牌在此时不宜做商业推广，但可通过"提供实用信息"的方式参与公共议题，积累长期好感。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%A5%BF%E8%97%8F%E6%B3%A5%E7%9F%B3%E6%B5%81265%E4%BA%BA%E5%A4%B1%E8%81%943%E4%BA%BA%E9%81%87%E9%9A%BE" target="_blank">→ 微博热搜·西藏泥石流</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#刘翔退役安置 运动员"下半场"出路引发集体共情</div>
+            <div class="trend-meta">体育人物 · 社会议题赛道</div>
+            <div class="trend-obs">💡 趋势观察：刘翔以"在线求助"的方式将运动员退役安置议题推入公共视野，小红书上涌现大量"心疼刘翔""金牌之后的人生"等共情内容。这个事件的核心情绪是"英雄的落寞感"——与大众对"成功之后应该一帆风顺"的叙事预期形成强烈反差。品牌如果要做体育内容，"运动员的第二人生"是一个有温度、有深度的叙事方向。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%88%98%E7%BF%94%E5%8F%8D%E9%97%AE%E4%B8%8A%E6%B5%B7%E4%BD%93%E8%82%B2%E5%B1%80" target="_blank">→ 微博热搜·刘翔</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#苹果发布会定档 + #英伟达财报 科技消费双话题共振</div>
+            <div class="trend-meta">科技消费 · 决策内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：苹果发布会+英伟达财报同日发酵，小红书上"等iPhone 18还是买17""折叠屏到底值不值得买"等决策型内容开始集中涌现。从英伟达的算力基建到苹果的消费终端，AI产业链的"上游利好→下游消费决策"传导链条在小红书上有天然的种草土壤。数码博主的"发布会解读+购买建议"内容将在未来两周迎来流量高峰。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%8B%B9%E6%9E%9C%E5%8F%91%E5%B8%83%E4%BC%9A%E5%AE%9A%E6%A1%A3" target="_blank">→ 微博热搜·苹果发布会</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#金价大涨 消费者"熬出头"心态催生黄金内容热</div>
+            <div class="trend-meta">理财消费 · 珠宝赛道</div>
+            <div class="trend-obs">💡 趋势观察：金价突破关键点位，小红书上"终于熬出头"的情绪带动黄金相关内容热度。年轻用户的黄金消费正从"保值投资"转向"自我奖励"叙事——"金价涨了我也不卖，这是我给自己的底气"。对珠宝/黄金品牌而言，"佩戴即态度"的内容方向比"投资建议"更契合平台调性。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%87%91%E4%BB%B7%E5%A4%A7%E6%B6%A8%E7%BB%88%E4%BA%8E%E7%86%AC%E5%87%BA%E5%A4%B4" target="_blank">→ 微博热搜·金价大涨</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#暑期档影视 + #早春晴朗开播 娱乐内容消费进入秋季切换期</div>
+            <div class="trend-meta">影视内容 · 娱乐消费赛道</div>
+            <div class="trend-obs">💡 趋势观察：暑期档进入尾声，新剧开始密集上线抢滩秋季档。小红书上"暑期档最佳/最失望"盘点类内容与"秋季档追剧清单"种草类内容并行。平台娱乐内容的"季节性切换"窗口已开启，品牌可提前布局秋季档内容合作——从"夏日清凉感"过渡到"秋日氛围感"的视觉和情绪转变。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%97%A9%E6%98%A5%E6%99%B4%E6%9C%97%E5%BC%80%E6%92%AD%E4%B8%8B%E6%B2%89%E5%B8%82%E5%9C%BA%E5%8F%A3%E7%A2%91" target="_blank">→ 微博热搜·早春晴朗开播</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 品牌韧性</div>
+        <div class="learning-title">不确定时代的品牌韧性：当盖茨说"慢一点"，品牌该做什么？</div>
+        <div class="learning-subtitle">金价上涨、AI焦虑、地缘动荡——2026年8月的市场情绪教会我们什么</div>
+        <div class="learning-body">
+          <p>2026年8月26日，三件事同时发生：<strong>英伟达营收再创历史新高</strong>，AI军备竞赛的狂热到达新峰值；<strong>比尔·盖茨发出他职业生涯中最悲观的公开警告</strong>，说"希望一种技术慢一点"；<strong>黄金价格突破关键阻力位</strong>，投资者长舒一口气。</p>
+          <p>这三件事构成了一个精确的市场情绪切片：<strong>狂热、恐惧和避险</strong>同时存在。这不是异常，而是2026年的常态。</p>
+          <p>在这样的环境中，品牌面临的核心挑战是：<strong>如何在不确定的叙事中，成为用户的"确定感来源"？</strong></p>
+          <p>回看那些在市场波动期反而建立更强心智的品牌，它们通常做对了三件事：</p>
+          <p>第一，<strong>不否认不确定性，而是帮用户在其中找到"锚点"</strong>。Patagonia在每一次环境危机中不说"世界会好起来"，而是说"这是你此刻能做的具体一件事"。把焦虑转化为行动，比提供虚假安慰更有品牌力量。</p>
+          <p>第二，<strong>价值观表达比促销话术更有"抗波动性"</strong>。当所有人都在讨论AI替代焦虑时，一个品牌如果能清晰表达"我们相信人身上什么是AI无法替代的"——这种价值观锚定带来的用户认同，远比任何折扣都持久。</p>
+          <p>第三，<strong>产品长期主义是最好的"避风港叙事"</strong>。苹果选择在市场焦虑期宣布"只做三款手机"，本身就是一种信号：我们不加产品线，不追短期热点，我们把赌注押在对的东西上。这种"减法策略"在不确定时期反而更有说服力。</p>
+          <p>对小红书平台大事件策划的启示：当外部环境充满噪音，IP活动的角色不是"制造更多噪音"，而是<strong>成为用户情绪的安全容器</strong>。让用户在你的活动空间里，感受到"这件事是确定的、是值得投入时间的、是让我觉得自己没有白活的"——这就是品牌韧性的最高表现。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.36kr.com/p/3956259918904455" target="_blank">36氪《盖茨万字长文警告AI风险》</a> ·
+          <a href="https://www.chinanews.com.cn/cj/2026/08-25/10683736.shtml" target="_blank">中国新闻网《钟才文解读宏观经济治理》</a> ·
+          <a href="https://www.alixpartners.com/insights/102mm8m/2026/" target="_blank">AlixPartners《当消费者捂紧钱包，2026零售业如何破局》</a> ·
+          <a href="https://www.ogilvy.com/cn/ideas/baogao2026nianyijianlingxiuyingxiaoqushi" target="_blank">奥美《2026年意见领袖营销趋势报告》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 琉森音乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎻🏔️✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">古典音乐</span>
+          <span class="festival-tag">瑞士 · 琉森</span>
+          <span class="festival-tag">每年8–9月</span>
+          <span class="festival-tag">全球顶级</span>
+        </div>
+        <div class="festival-name">琉森音乐节</div>
+        <div class="festival-name-en">Lucerne Festival · 始于1938年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从托斯卡尼尼的避难所到世界古典音乐的圣殿</div>
+          <div class="festival-block-body">
+            <p>1938年，欧洲笼罩在战争阴云下。伟大的意大利指挥家<strong>阿尔图罗·托斯卡尼尼</strong>在瑞士中部湖畔小城琉森，组建了一支由欧洲流亡音乐家组成的超极管弦乐团。第一届音乐节的宣言是："在黑暗的时代，音乐是最后的光。"</p>
+            <p>这个起点赋予了琉森音乐节一个独特基因——它从一开始就不仅仅是一场音乐盛宴，而是<strong>一个关于"文明在危难中自我保存"的象征</strong>。战后，音乐节延续下来，规模逐渐扩大。卡拉扬、伯恩斯坦、阿巴多……20世纪最伟大的指挥家都在这里留下过足迹。</p>
+            <p>1998年，由法国建筑大师<strong>让·努维尔</strong>设计的KKL琉森文化和会议中心落成，其音乐厅被公认为世界上声学效果最好的空间之一。建筑本身就是一件艺术品——水面倒映在巨大的滑动墙板上，阿尔卑斯山的轮廓透过玻璃幕墙进入演奏者的视野。从此，琉森音乐节有了与它的声音理想匹配的"容器"。</p>
+            <p>2003年，<strong>克劳迪奥·阿巴多</strong>接任音乐节艺术总监，创立琉森节日管弦乐团——由马勒室内乐团核心成员与全球顶级独奏家组成的"超级乐团"。阿巴多在这里的最后一场音乐会（2013年），被乐迷称为"21世纪最催人泪下的音乐事件"之一。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】五周百余场演出，全球古典音乐的年度坐标</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">100+</div>
+                <div class="festival-stat-label">演出场次 / 每届</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">5周</div>
+                <div class="festival-stat-label">夏季音乐节周期</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10万+</div>
+                <div class="festival-stat-label">年度观众人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">30+</div>
+                <div class="festival-stat-label">参演国家与地区</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">8/13–9/13</div>
+                <div class="festival-stat-label">2026届举办日期</div>
+              </div>
+            </div>
+            <p>今天的琉森音乐节由三大支柱构成：<strong>夏季音乐节</strong>（8月中旬至9月中旬，核心板块，全球顶级交响乐团云集）、<strong>复活节音乐节</strong>（聚焦室内乐与声乐）、<strong>钢琴艺术节</strong>（两年一届，汇聚世界最重要的钢琴家）。此外，琉森节日管弦乐团常年巡演全球，成为音乐节品牌的流动大使。</p>
+            <p>音乐节的运作模式值得研究：它不依赖单一赞助，而是构建了<strong>"基金会+政府支持+票房+企业伙伴+个人捐赠"</strong>的多元资金结构。KKL音乐厅的建筑设计本身就是一个商业范本——多功能空间让建筑在非演出期间也能产生收入（会议、展览、企业活动）。</p>
+            <p>更重要的是，琉森音乐节在<strong>青年人才培养</strong>上的投入：Lucerne Festival Academy每年为全球年轻音乐家提供大师班和演出机会，免费参加且提供住宿补贴。这种"把未来投资作为核心使命"的理念，是它能持续88年不衰的底层逻辑。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】后疫情时代的古典音乐复兴与小红书大事件启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026届看点：</strong>夏季音乐节已进入第三周（8月13日开幕），本周末将上演马勒《第八交响曲"千人"》——这部需要千人编制的鸿篇巨制是琉森音乐节的标志性曲目。柏林爱乐、维也纳爱乐、皇家音乐厅管弦乐团等天团悉数登场。音乐节还在今年首次引入"AI与音乐"论坛，探讨技术如何改变古典音乐的创作与传播。</p>
+            <p>全球古典音乐市场在后疫情时代迎来复兴——年轻观众比例显著上升，短视频平台上的古典音乐内容播放量持续增长。"古典音乐不是精英的专属，而是所有需要安静的人的避难所"——这一叙事正在被新一代听众接受。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>琉森音乐节最打动人的，不是"请来了谁"，而是"创造了一个什么样的场域"。KKL音乐厅的设计让每个人在落座的瞬间就感受到"这一刻与众不同"。IP大事件的核心竞争力也是如此——不是阵容堆叠，而是<strong>创造一个让人愿意放下手机的"在场时刻"</strong>。另外，琉森音乐节的多元资金模式（政府+企业+票房+捐赠）对大事件商业化路径也有参考意义：不要把鸡蛋放在一个篮子里，让每个参与方都能在生态中找到自己的价值回报。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.lucernefestival.ch/en/" target="_blank">Lucerne Festival 官网</a> ·
+          <a href="https://www.myswitzerland.com/zh-hans/experiences/events/all-events/-/lucerne/" target="_blank">瑞士国家旅游局 · 琉森节庆</a> ·
+          <a href="https://www.classicpoint.net/en/festival/lucerne-festival-summer-2026/14" target="_blank">Classicpoint · Summer 2026</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 音乐革新者</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎵 主题策展 · 改变聆听方式的六双手</div>
+        <div class="knowledge-headline">从格伦·古尔德到坂本龙一：他们如何重新定义了"听"</div>
+        <div class="knowledge-tagline">「音乐不是声音的组织，是沉默的雕刻。」——坂本龙一</div>
+
+        <div class="knowledge-intro">
+          我们以为自己在"听音乐"，但大多数时候，我们只是在听那些已经被定义好的东西。有少数人，他们用一生的时间打破了"什么是音乐"的边界——让一架钢琴变成哲学现场，让电子噪音变成冥想入口，让沉默本身成为音符。<br><br>
+          今天策展六位"改变了人类聆听方式"的音乐家。他们的共同点不是风格，而是<strong>态度</strong>：拒绝接受"音乐应该是什么样"的预设，然后用作品证明世界可以更丰富。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Glenn_Gould_1969.jpg/440px-Glenn_Gould_1969.jpg"
+              alt="格伦·古尔德"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">格伦·古尔德</div>
+              <div class="knowledge-card-sub">Glenn Gould · 加拿大 · 1932–1982</div>
+              <div class="knowledge-card-work">32岁永久退出音乐会舞台，此后只用录音室"创作"。他证明了录音不是演出的附属品，而是一种全新的艺术形式。巴赫的哥德堡变奏曲因他而成为人类录音史上被讨论最多的钢琴作品。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Ryuichi_Sakamoto_at_New_Music_Media_Festival_2.jpg/440px-Ryuichi_Sakamoto_at_New_Music_Media_Festival_2.jpg"
+              alt="坂本龙一"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">坂本龙一</div>
+              <div class="knowledge-card-sub">Ryuichi Sakamoto · 日本 · 1952–2023</div>
+              <div class="knowledge-card-work">从YMO的电子先驱到《末代皇帝》的奥斯卡配乐，晚年录制雨声、脚步声作为音乐。他说："我每天都在收集声音，它们是我最后的乐器。"癌症晚期仍在创作，用音乐完成了对死亡的凝视。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Bj%C3%B6rk_at_Olympia%2C_Paris%2C_July_6%2C_2025_%2854650848409%29_%28cropped%29.jpg/440px-Bj%C3%B6rk_at_Olympia%2C_Paris%2C_July_6%2C_2025_%2854650848409%29_%28cropped%29.jpg"
+              alt="Björk"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🦢</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">比约克</div>
+              <div class="knowledge-card-sub">Björk · 冰岛 · 1965–</div>
+              <div class="knowledge-card-work">用"冰川下的火山"来形容她的声音最合适。从朋克少女到用VR做专辑、用125部手机组成乐器。她证明了技术不是冰冷的，可以是最亲密的情感容器。每张专辑都是一个全新的宇宙。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/David_Bowie_in_2000.jpg/440px-David_Bowie_in_2000.jpg"
+              alt="David Bowie"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⭐</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">大卫·鲍伊</div>
+              <div class="knowledge-card-sub">David Bowie · 英国 · 1947–2016</div>
+              <div class="knowledge-card-work">他不是一个音乐人，他是一整个"可能性"的宣言。Ziggy Stardust、瘦白公爵、盲人先知……每一个化身都在说："身份是你可以发明的东西。"去世前两天发布的《Blackstar》专辑，是他给自己的完美谢幕。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">崔健</div>
+              <div class="knowledge-card-sub">中国 · 1961–</div>
+              <div class="knowledge-card-work">1986年在北京工人体育馆唱出《一无所有》，中国摇滚乐从那一刻开始。他的音乐从来不只是旋律，而是一代人在集体主义叙事中寻找个人声音的勇气。"我要从南走到北，还要从白走到黑"——行走本身就是反抗。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Brian_Eno_at_the_Long_Now_Foundation.jpg/440px-Brian_Eno_at_the_Long_Now_Foundation.jpg"
+              alt="Brian Eno"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">布莱恩·伊诺</div>
+              <div class="knowledge-card-sub">Brian Eno · 英国 · 1948–</div>
+              <div class="knowledge-card-work">他发明了"氛围音乐"（Ambient Music）——一种"可以听也可以不听"的音乐。概念来自他住院时听到雨声与唱片机音量极小的古典乐混合的瞬间。他证明了：最革命性的音乐创新，有时来自一次被动的聆听。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六位音乐家的共同遗产是：<strong>"听"不是一种被动的接收，而是一种主动的选择</strong>。古尔德选择用录音室重新定义演奏，坂本龙一选择让雨声成为乐器，Björk选择让技术成为亲密，Bowie选择让身份成为作品，崔健选择让沉默之后的呐喊成为一代人的记忆，Eno选择让"不被注意"本身成为美学。<br><br>
+          对IP营销的启发：你不需要让用户"听到你的声音"——你需要给他们一个新的理由去"重新学会听"。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
