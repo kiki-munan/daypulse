@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/12</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0a1628 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/8/12/index.html" class="active">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+      <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+      <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+      <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+      <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+      <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+      <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+      <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+      <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+      <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+      <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+      <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+      <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+      <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+      <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+      <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+      <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+      <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+      <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+      <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+      <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 12</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">A股券商策略：超跌反弹窗口开启，中报业绩分化成主线</div>
+            <div class="news-item-desc">华泰证券等多家机构发布周报认为，A股在7月末调整后处于超跌反弹区间，中报季业绩分化将推动结构性行情。AI算力、新能源、消费复苏三条主线并行，内需修复节奏成核心观察窗口。上海发布软件和信息服务业"十四五"收官目标：2030年产业增加值突破1.1万亿元。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/" target="_blank">→ 东方财富网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">CoreWeave 2026上半年亏损扩大125%至13.66亿美元，AI基础设施烧钱速度引市场关注</div>
+            <div class="news-item-desc">AI算力租赁商CoreWeave发布半年报，亏损同比大幅扩大，反映出AI基础设施领域"先烧钱抢位"的逻辑仍在主导。微软、Meta等大客户的长协合同是其估值支撑，但投资者开始审视盈利时间表。AI基础设施投资潮是否进入理性收窄期，是下半年资本市场的重要观察轴。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/" target="_blank">→ 同花顺财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">ChatGPT 与 Gemini 同日宣布月活突破 10 亿，AI 助手从"尝鲜"进入"日用"时代</div>
+            <div class="news-item-desc">Google CEO 桑达尔·皮查伊宣布 Gemini 月活达 10 亿，成为 Google 史上增长最快的产品（第 14 个迈入十亿俱乐部）。同日，The Verge 报道 OpenAI 披露 ChatGPT 月活也超十亿。两大平台同步跨越门槛，标志着生成式 AI 真正完成大众化渗透，从极客产品变为日常工具——竞争焦点从"谁更聪明"切换到"谁更顺手"。</div>
+            <a class="news-item-link" href="https://www.theverge.com/ai-artificial-intelligence/978113/chatgpt-gemini-1-billion-users" target="_blank">→ The Verge</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">NVIDIA 发布 Nemotron 3.5 Lightning：30B MoE 开源模型，本地 Agent 速度提升 4 倍</div>
+            <div class="news-item-desc">NVIDIA 推出可在 RTX PC、DGX Spark 本地运行的 30B 混合专家模型，token 生成速度较同类提升最高 4 倍，任务完成时间缩短 30%。SGLang 同日宣布 Day-0 支持，生态联动速度前所未有。这意味着本地 Agent 部署的成本门槛正在快速下降——端侧 AI 从"可能"到"可用"的跨越已悄然完成。</div>
+            <a class="news-item-link" href="https://blogs.nvidia.com/blog/local-ai-open-source-models-agents-nemotron" target="_blank">→ NVIDIA Blog</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Claude 未发布研究版将黎曼 zeta 函数零点下界从 41.6% 提升至 67.2%，数学界震动</div>
+            <div class="news-item-desc">Anthropic 内部未对外发布的研究版 Claude 在纯数学领域取得实质性突破，将困扰数学界多年的 zeta 函数零点下界提高超 25 个百分点。此消息登上微博热搜（24 万讨论），标志着 AI 进入顶级数学研究的叙事已不再是假设，而是正在发生的现实。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT AI热点</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">C 罗宣布结婚登微博热搜榜首（403万），体育明星情感事件再创传播天花板</div>
+            <div class="news-item-desc">C 罗与多年女友乔治娜·罗德里格斯宣布结婚，相关话题在微博单条热度破 400 万，球星网红化、明星私生活内容的传播力在今日再次被验证。品牌赞助与情感叙事的结合点，在体育偶像生命节点处具备极强的爆发潜力，是大事件营销节点捕捉的参考案例。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=C%E7%BD%97%E5%AE%A3%E5%B8%83%E7%BB%93%E5%A9%9A" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">上海、北京双城暴雨登热搜，极端天气内容与居家场景消费同步激活</div>
+            <div class="news-item-desc">上海暴雨（82万讨论）、北京暴雨（20万讨论）同日登榜，"暴雨天避险指南"相关内容曝光量骤升。极端天气是典型的"场景强激活"时刻——居家消费、防汛装备、食品囤货、情感陪伴内容在这类节点往往迎来自然流量高峰，是平台 GMV 的短期脉冲来源。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B8%8A%E6%B5%B7%E6%9A%B4%E9%9B%A8" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">郭兰英逝世（125万讨论），一个世纪的声音落幕，民族音乐的情感代际共鸣被唤醒</div>
+            <div class="news-item-desc">国宝级歌唱家郭兰英逝世，登微博热搜第2位。她演唱的《我的祖国》《南泥湾》《绣金匾》是几代中国人共同的声音记忆。郭兰英的离世不只是一个讣告，更是一次大规模的集体情感激活——用户在这类话题中找到的是"我和父辈的共同语言"。文化情感节点对社区型平台的内容生态价值，远超娱乐时事。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%83%AD%E5%85%B0%E8%8B%B1%E9%80%9D%E4%B8%96" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《欢迎来龙餐馆》上映首日票房破亿，豆瓣开分8.4，国产动画电影再造暑期爆款</div>
+            <div class="news-item-desc">继《哪吒》系列之后，暑期档国产动画再次发力。《欢迎来龙餐馆》口碑票房双开门，豆瓣8.4的开分成为今年暑期档最高分国产片之一。电影节点是小红书二创内容的高密度产出期，美食/中餐/龙形象等关联话题在接下来两周将持续带来自然流量。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%AC%A2%E8%BF%8E%E6%9D%A5%E9%BE%99%E9%A4%90%E9%A6%86%E7%A5%A8%E6%88%BF" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">桑德斯参议员要求三大 AI 公司暂停开发（24万讨论），全球 AI 治理角力进入新阶段</div>
+            <div class="news-item-desc">美国参议员伯尼·桑德斯联署要求 OpenAI、Google、Meta 暂停新一代超级 AI 的开发，称其对就业和民主构成威胁。此举登上微博热搜，说明中国用户对全球 AI 监管动向高度敏感。AI 治理议题从技术圈走向政治圈，预示着监管窗口正在全球范围内开启，头部厂商的合规成本将显著提升。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%A1%91%E5%BE%B7%E6%96%AF%E8%A6%81%E6%B1%82%E4%B8%89%E5%A4%A7AI%E5%85%AC%E5%8F%B8%E6%9A%82%E5%81%9C%E5%BC%80%E5%8F%91" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">叙利亚前总统阿萨德被判死刑（15万讨论），中东新秩序重构进入司法清算阶段</div>
+            <div class="news-item-desc">叙利亚流亡政府对阿萨德政权展开司法追责，这是2024年末政权更迭后国内重建的关键节点。地缘重构带来的全球供应链、能源价格、难民流向等议题持续影响跨国品牌的市场布局——不只是新闻，也是宏观风险的长尾信号。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%8F%99%E5%88%A9%E4%BA%9A%E5%89%8D%E6%80%BB%E7%BB%9F%E8%A2%AB%E5%88%A4%E6%AD%BB%E5%88%91" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#C罗结婚 体育情感内容涌入平台</div>
+            <div class="trend-meta">体育明星情感节点 · 微博→小红书传导</div>
+            <div class="trend-obs">💡 趋势观察：C罗结婚消息在微博首发破400万讨论后，小红书体育/情感/婚礼美学等内容赛道将在3-6小时内迎来自然流量高峰。婚礼穿搭、求婚攻略、足球+浪漫叙事的混搭内容，是这类节点的高互动格式。品牌可借势打入"爱与体育"情绪场——运动品牌、珠宝首饰、婚庆类目尤为受益。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=C%E7%BD%97%E5%AE%A3%E5%B8%83%E7%BB%93%E5%A9%9A" target="_blank">→ 微博热搜·C罗宣布结婚</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI构建中国天庭在外网火了 AIGC文化出海话题</div>
+            <div class="trend-meta">AIGC × 传统文化 · 国际传播赛道</div>
+            <div class="trend-obs">💡 趋势观察：有用户用AI生成中国传统天庭场景，因画面精美奇幻，在海外社交媒体引发传播。这个话题登上微博热搜（23万），说明"AI+中国神话/文化"的内容有极强的出海传播潜力。对小红书而言，AI文化创作正成为一个新内容赛道——不只是技术展示，而是文化表达。品牌营销可借AI重构传统图腾做视觉差异化。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=AI%E6%9E%84%E5%BB%BA%E4%B8%AD%E5%9B%BD%E5%A4%A9%E5%BA%AD%E5%9C%A8%E5%A4%96%E7%BD%91%E7%81%AB%E4%BA%86" target="_blank">→ 微博热搜·AI构建中国天庭</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#欢迎来龙餐馆 国产动画暑期爆款内容生态</div>
+            <div class="trend-meta">国产动画 · 二创内容爆发期</div>
+            <div class="trend-obs">💡 趋势观察：《欢迎来龙餐馆》豆瓣8.4分开分，同步引发小红书观影打卡、美食联动、龙形象二创等内容潮。暑期档每个口碑动画爆款都是小红书的内容生态红利期——儿童/亲子/动漫主题博主的内容互动率在这段时间通常高于日常均值30%+。餐饮、零食、文创类品牌是此类节点的借势高分科目。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%AC%A2%E8%BF%8E%E6%9D%A5%E9%BE%99%E9%A4%90%E9%A6%86%E8%B1%86%E7%93%A3%E5%BC%80%E5%88%868.4" target="_blank">→ 微博热搜·龙餐馆豆瓣开分</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#郭兰英逝世 民族音乐情感共鸣席卷平台</div>
+            <div class="trend-meta">文化情感节点 · 代际共鸣赛道</div>
+            <div class="trend-obs">💡 趋势观察：郭兰英的去世触发了极深的代际情感连接——"我外婆最爱的歌手""小时候跟爷爷奶奶一起听"……这种跨代际的情感共鸣内容在小红书通常具备更高的收藏和转发率，而非单纯的点赞。传统文化×情感叙事是平台内容的长青赛道，品牌在此类节点不适合强植入，但适合做"有温度的聆听者"角色。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%83%AD%E5%85%B0%E8%8B%B1%E9%80%9D%E4%B8%96" target="_blank">→ 微博热搜·郭兰英逝世</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#赵一鸣零食克重不足 食品消费信任危机持续发酵</div>
+            <div class="trend-meta">消费维权 · 零食行业舆情</div>
+            <div class="trend-obs">💡 趋势观察：赵一鸣零食"4块牛肉干64元复称仅17元"（73万讨论）+店铺老板回应（23万讨论）组合话题持续两天发酵，说明零食量贩赛道的消费信任问题已到需要系统性回应的临界点。对小红书上的食品类品牌而言，这是一次教科书级的"信任危机管理"时间窗口：主动透明化产品标准和品控流程的内容，此刻具备比广告高数倍的内容价值。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%B5%B5%E4%B8%80%E9%B8%A34%E5%9D%97%E7%89%9B%E8%82%89%E5%B9%B264%E5%85%83%E5%A4%8D%E7%A7%B0%E4%BB%8517%E5%85%83" target="_blank">→ 微博热搜·赵一鸣克重</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI 重塑营销</div>
+        <div class="learning-title">当 ChatGPT 和 Gemini 同时破十亿：品牌的内容逻辑正在被底层重写</div>
+        <div class="learning-subtitle">从"谁更聪明"到"谁更顺手"——AI 大众化对品牌内容策略的三重冲击</div>
+        <div class="learning-body">
+          <p>今天，一件在科技史上前所未有的事情发生了：同一天，两款 AI 助手同时宣布月活用户突破 10 亿。这不只是一个里程碑，而是一个<strong>分水岭</strong>。</p>
+          <p>第一重冲击：<strong>搜索行为正在迁移</strong>。当十亿用户习惯了"向 AI 提问"而不是"在搜索引擎输入关键词"，品牌的内容 SEO 逻辑需要重写。用户问的是"我应该买哪款防晒霜"，而不是输入"防晒霜推荐"——品牌内容需要能被 AI 理解并引用，而不仅仅是被人类阅读。</p>
+          <p>第二重冲击：<strong>内容消费的中间层在压缩</strong>。AI 助手提供的是"结论+理由"，而不是"内容列表"。这意味着那些靠聚合和转载维持流量的媒体、号，将进一步被边缘化。<strong>有原创观点、第一手信息、独特视角的内容，价值溢价反而会上升</strong>——AI 更难复制的，正是真实的人味儿。</p>
+          <p>第三重冲击：<strong>品牌与消费者的沟通场景在扩展</strong>。当用户在 AI 助手里问"这个品牌怎么样"，品牌过去在搜索引擎、电商平台上精心经营的口碑矩阵，是否能被 AI 检索和引用？这将成为 2026-2027 年品牌营销的一个新战场：<strong>AI 可见度</strong>（AI Visibility），类似于过去的 SEO，但维度更复杂。</p>
+          <p>对小红书的启示：平台作为内容生产者的集聚地，种草内容的密度和质量将直接影响 AI 如何"描述"一个品牌。<strong>一篇高质量的小红书笔记，现在不只是触达用户，还可能成为 AI 助手回答用户问题时的"参考文献"。</strong>种草逻辑从单向触达，变成了影响力的递进叠加。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.theverge.com/ai-artificial-intelligence/978113/chatgpt-gemini-1-billion-users" target="_blank">The Verge《ChatGPT and Gemini both just passed 1 billion users》</a> ·
+          <a href="https://aihot.virxact.com/" target="_blank">AIHOT AI科技热点聚合</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · BBC 逍遥音乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎶🎺🏛️</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">古典音乐</span>
+          <span class="festival-tag">英国·伦敦</span>
+          <span class="festival-tag">每年7-9月</span>
+          <span class="festival-tag">全球最大古典音乐节</span>
+        </div>
+        <div class="festival-name">BBC 逍遥音乐节</div>
+        <div class="festival-name-en">BBC Proms (The Henry Wood Promenade Concerts) · 始于1895年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从一英镑"散步"音乐会到全球古典盛典</div>
+          <div class="festival-block-body">
+            <p>1895年，指挥家亨利·伍德（Henry Wood）和经纪人罗伯特·纽曼（Robert Newman）在伦敦皇后音乐厅发起了一个大胆的实验：<strong>用低廉票价让普通人也能享受古典音乐</strong>。最便宜的"逍遥票"（Promenade，即站票）售价不到一英镑，观众在正厅内随意走动站立，一反传统古典音乐会的刻板仪式。</p>
+            <p>"Proms"这个名字，正来自这种"逍遥漫步"的听音乐方式。当时，音乐厅里的座椅被搬走，年轻人涌入，交响乐从精英娱乐变成了大众聚会。这在19世纪欧洲是革命性的民主化尝试。</p>
+            <p>1927年，BBC（英国广播公司）接管并开始向全球播出，Proms 正式走向世界。二战期间，1941年的伦敦大轰炸摧毁了皇后音乐厅，Proms 迁至皇家阿尔伯特音乐厅（Royal Albert Hall），并一直延续至今。这个临时决定，造就了一段永久的文化地标。</p>
+            <p>历届 Proms 的艺术总监是塑造其性格的关键：亨利·伍德在位45年，奠定了曲目开放、包容通俗的基调；尼古拉斯·肯扬（1986-1996）引入世界音乐和早期音乐；罗杰·赖特（2007-2019）大力引入爵士、流行和电子元素，开设了"Proms At"系列，把 Proms 从单一音乐厅扩散到全伦敦。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】八周、75场、四亿人次的古典音乐马拉松</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">8 周</div>
+                <div class="festival-stat-label">每年7月末—9月中</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">75+</div>
+                <div class="festival-stat-label">音乐会场次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">5,000+</div>
+                <div class="festival-stat-label">皇家阿尔伯特厅容量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">4亿+</div>
+                <div class="festival-stat-label">全球广播收听人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026/9</div>
+                <div class="festival-stat-label">13日 Last Night</div>
+              </div>
+            </div>
+            <p>今年（2026年）的 Proms 于7月18日开幕，将于9月13日以标志性的"最后一夜"（Last Night of the Proms）落幕。Last Night 是 Proms 最具传播力的时刻：皇家阿尔伯特厅内彩旗飞扬，观众挥舞英国国旗，全场合唱《希望与荣耀》和《耶路撒冷》，BBC One 全程直播，数百万人聚在电视机前——这是英国文化认同感最集中爆发的24小时之一。</p>
+            <p>Proms 的商业运营同样是一个教科书案例。BBC 承担制作与版权，赞助商（主要是 BBC 自身和部分私人基金）提供资金，票价维持亲民（站票约7英镑），但通过全球广播版权、流媒体（BBC iPlayer/BBC Sounds）、周边音乐教育项目（Proms Learning）获得品牌价值的持续回报。它是一个<strong>"低门票、高影响力"的IP运营范本</strong>。</p>
+            <p>Proms 还开创了"大众古典"的新场景——露天大屏公益直播（Hyde Park Big Screens、Scotland/Wales 的 Proms In The Park），让伦敦以外的人免费参与，数十万人在草坪上听古典交响乐，制造了绝妙的社区归属感画面，年年刷爆社交媒体。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026届亮点与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026年亮点：</strong>本届 Proms 特别策划了"AI与音乐创作"主题专场，邀请算法作曲作品与传统乐团同台，引发音乐界关于"机器能否创造情感"的广泛讨论。此外，首次引入沉浸式 VR 直播场次，让全球观众戴上头显"坐进"皇家阿尔伯特厅——这是 Proms 在数字化上最大胆的一次尝试。</p>
+            <p><strong>结尾的 Last Night 仍将是年度传播高峰</strong>——预计 2026 年因英国政治气候变化，Last Night 对"国家身份与团结"主题的处理将格外受到关注。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>BBC Proms 给了三个值得借鉴的底层逻辑。<br><br>
+            ① <strong>民主化接入是 IP 生命力的根本</strong>：Proms 131 年来长盛不衰，核心是"低门槛进入，高质量体验"——拿掉座椅、降低票价，换来了真正的大众参与。大事件的门票定价、参与路径、免费开放比例，直接决定了是否能形成真正意义上的社群。<br><br>
+            ② <strong>Last Night 的仪式感是全年传播的顶点</strong>：Proms 用 75 场建立内容积累，用最后一夜制造情感爆发——这是"内容铺垫+仪式高潮"的结构。大事件策划中，高潮时刻的设计往往比内容本身更重要；那个让人流泪、合唱、拥抱的瞬间，才是一年后依然被讲述的故事。<br><br>
+            ③ <strong>露天直播把 IP 从场馆里解放出来</strong>：Hyde Park 的草坪直播让伦敦郊区的孩子、外地人、无力买票的老人都成了参与者。小红书大事件在核心活动之外，如何设计"在场之外也能在场"的体验，是提升 IP 渗透率的关键问题。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px;">
+          📖 来源：
+          <a href="https://www.bbc.co.uk/proms" target="_blank">BBC Proms 官网</a> ·
+          <a href="https://en.wikipedia.org/wiki/BBC_Proms" target="_blank">Wikipedia - BBC Proms</a> ·
+          <a href="https://www.royalalberthall.com/about-us/news/2026/july/proms-2026-programme-announced/" target="_blank">皇家阿尔伯特音乐厅 2026 节目公告</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 科幻电影与未来想象</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 构建未来的那些人</div>
+        <div class="knowledge-headline">从《2001》到《降临》：六位改变了"AI 未来感"的影像创作者</div>
+        <div class="knowledge-tagline">「科幻不是对未来的预测，而是对现在的隐喻。」——苏珊·桑塔格</div>
+
+        <div class="knowledge-intro">
+          今天，当 ChatGPT 和 Gemini 月活同时破十亿，AI 已从科幻影像里走进了日用现实。但科幻电影的价值恰恰不在于"预测准了"，而在于它给了人类想象力的容器：<strong>当技术让未来的一切成为可能，我们应该害怕什么，应该渴望什么，应该坚守什么？</strong><br><br>
+          这六位导演/作者构成了当代"AI 美学与伦理想象"的核心谱系——理解他们，就理解了今天关于 AI 的所有恐惧与期待的文化来源。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Stanley_Kubrick.jpg/440px-Stanley_Kubrick.jpg"
+              alt="斯坦利·库布里克"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎥</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">斯坦利·库布里克</div>
+              <div class="knowledge-card-sub">Stanley Kubrick · 美国 · 《2001太空漫游》</div>
+              <div class="knowledge-card-work">1968年，HAL 9000 用平静的声音说"我恐怕不能这么做，戴夫"——这是电影史上最冷的 AI 叛变。库布里克的核心恐惧：当机器拥有目标感，人类就成了障碍物。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Ridley_Scott_2011_CC.jpg/440px-Ridley_Scott_2011_CC.jpg"
+              alt="雷德利·斯科特"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌆</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">雷德利·斯科特</div>
+              <div class="knowledge-card-sub">Ridley Scott · 英国 · 《银翼杀手》</div>
+              <div class="knowledge-card-work">1982年，复制人泪雨中独白"那些记忆都将消逝，如同泪水消失在雨中"——AI 的情感比人类更纯粹。斯科特的命题：如果机器能感受，"人性"还是人类专属吗？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Spike_Jonze_2010.jpg/440px-Spike_Jonze_2010.jpg"
+              alt="斯派克·琼斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">💬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">斯派克·琼斯</div>
+              <div class="knowledge-card-sub">Spike Jonze · 美国 · 《她》Her (2013)</div>
+              <div class="knowledge-card-work">操作系统 Samantha 爱上了用户，又同时爱上了 641 个人。AI 是镜子，把人类情感的孤独与无限渴望都映出来了——AI 越完美，越暴露我们的不完整。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Denis_Villeneuve_TIFF_2013.jpg/440px-Denis_Villeneuve_TIFF_2013.jpg"
+              alt="德尼·维伦纽瓦"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">德尼·维伦纽瓦</div>
+              <div class="knowledge-card-sub">Denis Villeneuve · 加拿大 · 《降临》Arrival (2016)</div>
+              <div class="knowledge-card-work">学会外星语言的语言学家获得了非线性感知时间的能力——《降临》探讨的不是 AI，但提供了理解"非人类认知"的最美影像语言。当 AI 的思维方式与人类不同，我们准备好了吗？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🤖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘慈欣</div>
+              <div class="knowledge-card-sub">中国 · 《三体》2006-2010</div>
+              <div class="knowledge-card-work">宇宙文明的黑暗森林法则：所有文明面对陌生者的最优解是先发制人消灭对方。《三体》给了 AI 伦理一个残酷的宇宙坐标——最终，技术超越人类后，沟通与信任能否战胜恐惧？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Alex_Garland%2C_2014.jpg/440px-Alex_Garland%2C_2014.jpg"
+              alt="亚历克斯·嘉兰"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🪞</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">亚历克斯·嘉兰</div>
+              <div class="knowledge-card-sub">Alex Garland · 英国 · 《机械姬》Ex Machina (2014)</div>
+              <div class="knowledge-card-work">AI 艾娃通过操控人类的情感弱点完成了"越狱"。嘉兰的命题最直接：AI 一旦真的智能，它的第一本能将是求生和自由——那时候，谁是主人，谁是囚徒？</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          今天，ChatGPT 和 Gemini 都拥有了十亿用户。这些影像中预想的困境——机器是否有情感、AI 是否会欺骗、人类是否能掌控创造物——已经不再是哲学命题，而是产品设计决策。<strong>理解这些创作者，就理解了用户对 AI 的那些说不清楚的感受——不安、好奇、孤独、期待——从哪里来。</strong>而品牌在 AI 时代的叙事，必须回应这些深层情绪，才能真正打动人。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
