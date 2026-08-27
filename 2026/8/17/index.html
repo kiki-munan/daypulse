@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/17</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; position: relative; transition: width 0.25s ease; }
+    .sidebar.collapsed { width: 32px; overflow: hidden; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    /* Festival */
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 64px; background: linear-gradient(135deg, #1e1e2e 0%, #3a5a3a 40%, #6a9f6a 80%, #b8d4b8 100%); border-radius: 0; }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    /* Knowledge */
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; padding: 16px; }
+      .sidebar { width: 100%; }
+      .site-header { padding: 16px 20px; }
+      .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+      <div class="sidebar-label">归档日期</div>
+      <ul class="date-list">
+        <li><a href="/daypulse/2026/8/17/index.html" class="active">2026 / 8 / 17</a></li>
+        <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+        <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+        <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+        <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+        <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+        <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+        <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+        <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+        <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+        <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+        <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+        <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+        <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+        <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+        <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+        <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+        <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+        <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+        <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+        <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+        <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+        <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+        <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+        <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+        <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+        <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+        <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+        <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+        <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 17</div>
+      <div class="day-week">星期一</div>
+      <div class="day-tag">Gamescom 前夕</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 方向</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">国新办今日下午3时发布会：公布7月国民经济运行数据，GDP、CPI等关键指标待出炉</div>
+            <div class="news-item-desc">今日下午，国家统计局将向外公布2026年7月份国民经济运行情况。此前上半年GDP同比增长4.7%，符合全年预期目标。7月CPI已于本月9日公布同比上涨0.5%，全年宏观走势能否持续向好，今日数据将提供阶段性验证。</div>
+            <a class="news-item-link" href="https://m.jrj.com.cn/madapter/24h/2026/08/16102058132554.shtml" target="_blank">→ 金融界</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">7月居民存款减少6300亿元，"存款搬家"延续：资金持续向理财、基金迁移</div>
+            <div class="news-item-desc">央行数据显示，7月居民存款净减少6300亿，非银机构存款增加11100亿，资本市场吸引力持续高于银行存款。上半年已累计出现多次居民存款净流出，消费与投资行为的结构性变化正在加速。对平台而言，这意味着用户的财务决策重心正从"保值"向"增值"切换。</div>
+            <a class="news-item-link" href="https://www.bjnews.com.cn/detail/1786715890129550.html" target="_blank">→ 北京新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Cursor 正式并入 SpaceX，借助全球最大 GPU 集群构建更强编程模型，Grok 4.6 是首个成果</div>
+            <div class="news-item-desc">Cursor 完成自4月启动的收购流程，并入 SpaceX 体系后将获得马斯克系最大算力支撑。首个合作模型 Grok 4.6 已于上周三发布。此事件深刻改变编程工具市场的竞争格局——算力密度正在成为 AI 编码工具的核心护城河，低成本强模型的时代或加速到来。</div>
+            <a class="news-item-link" href="https://cursor.com/blog/joining-spacex" target="_blank">→ Cursor 官方博客</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Qwen 3.8 27B 开源发布：Apache 2.0 授权，仅27B参数超越闭源 Qwen 3.7-Plus，支持262K上下文</div>
+            <div class="news-item-desc">阿里通义千问兑现承诺，开源 Qwen3.8-27B，原生多模态稠密模型，Apache 2.0 授权，支持 YaRN 扩展到 1M tokens。但实测提示：默认推理强度 xhigh 会导致生成时间从137秒膨胀至21分钟——选模型时，默认参数配置比能力基准更影响本地部署体验。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT 精选</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI 与 Anthropic 掀起 API 价格战，中国 AI 厂商低价压制下的战略应对</div>
+            <div class="news-item-desc">两家领头羊针对中国 AI 模型低价竞争大幅降低 API 定价，这是一次防御性价格重构。Luna 模型（GPT-5.6 系）在同类 BrowseComp 任务上成本已从 $33.27 降至 $1.33，推动企业客户重新评估最优选择。</div>
+            <a class="news-item-link" href="https://arstechnica.com/ai/2026/08/openai-and-anthropic-in-price-war-as-chinese-ai-rivals-gain-ground" target="_blank">→ Ars Technica</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小红书技术开源 dots3-note Preview：280B 参数，主打长程 Agent 与多模态，512K 上下文</div>
+            <div class="news-item-desc">小红书技术团队开源最轻量版 dots3-note Preview，激活参数仅16B，针对复杂推理和长程 Agent 任务优化。这标志着小红书在 AI 全栈自研路上走出关键一步——从内容平台到模型开源玩家，AI 战略升级透明度正在提升。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT 精选</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026年夏季开源生态报告：中国实验室月度开源模型规模领先，Hugging Face 仓库数增至296万</div>
+            <div class="news-item-desc">Hugging Face 数据：1-8月公开仓库从243万增至296万，但85.6%的模型下载量不足200次。中国实验室月度最大开源模型在754B-2.78万亿参数之间，美国五个月低于130B。结构性差异正在塑造全球 AI 竞争格局。</div>
+            <a class="news-item-link" href="https://huggingface.co/blog/state-of-open-models-summer-2026" target="_blank">→ Hugging Face 博客</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">微博热搜：谷爱凌否认恋情、王曼昱瑞典大满贯夺冠、《披荆斩棘》排名引发讨论</div>
+            <div class="news-item-desc">今日微博热搜由体育赛事与娱乐八卦共同构成。王曼昱拿下瑞典大满贯女单冠军，成为继本周乒乓球热潮之后的又一国际赛场焦点；谷爱凌以回应速度和态度透明度树立了新的公众人物辟谣范式，带动话题热度超115万。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%8E%8B%E6%9B%BC%E6%98%B1%E7%91%9E%E5%85%B8%E5%A4%A7%E6%BB%A1%E8%B4%AF%E5%86%A0%E5%86%9B" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic 通报 Claude 故障登上微博热搜，AI 大模型服务中断成公众议题</div>
+            <div class="news-item-desc">Claude 一次服务中断事件意外登上微博热搜，说明 AI 工具已深度嵌入中国普通用户日常。当 AI 服务故障成为全民关注事件，意味着大模型从"科技新鲜感"已进入"基础设施依赖"的新阶段。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=Anthropic%E9%80%9A%E6%8A%A5Claude%E6%95%85%E9%9A%9C" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">胖东来"被涨租逼走却从不涨商户租"：商业伦理与品牌口碑的长期复利</div>
+            <div class="news-item-desc">胖东来话题再次冲上热搜，这次的导火索是一则关于商业租约的细节——被房东涨租逼走，却从未对商户涨租。这个细节折射出胖东来品牌口碑的底层逻辑：不靠流量运营，靠长期利益分配的一致性建立信任。热搜64万讨论量，自发传播远超付费广告。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%83%96%E4%B8%9C%E6%9D%A5%E8%A2%AB%E6%B6%A8%E7%A7%9F%E9%80%BC%E8%B5%B0%E5%8D%B4%E4%BB%8E%E4%B8%8D%E6%B6%A8%E5%95%86%E6%88%B7%E7%A7%9F" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">伊朗称美军已被驱逐，不得进入霍尔木兹海峡，中东紧张局势再升温</div>
+            <div class="news-item-desc">伊朗方面公开表态称美军舰艇已被驱逐出霍尔木兹海峡，海湾地区紧张态势再度升级。霍尔木兹是全球约20%石油通道，地缘博弈直接关联能源价格与全球供应链稳定性。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%BC%8A%E6%9C%97%E7%A7%B0%E7%BE%8E%E5%86%9B%E5%B7%B2%E8%A2%AB%E9%A9%B1%E9%80%90%E4%B8%8D%E5%BE%97%E8%BF%9B%E5%85%A5%E6%B5%B7%E5%B3%A1" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#王曼昱夺冠后比1庆祝 乒乓球热潮持续发酵</div>
+            <div class="trend-meta">体育赛事 · 情感共鸣内容 · 68万讨论</div>
+            <div class="trend-obs">💡 趋势观察：国乒赛季仍在高热期，王曼昱瑞典大满贯夺冠延续了上周以来的乒乓内容浪潮。小红书上"运动员高光+生活故事"双线并进——专业向的技战术分析与情感向的人物故事同步涌现。品牌做体育借势内容时，可优先切入"赛后情绪放大期"，找运动员/解说员的真实态度与反应切口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%8E%8B%E6%9B%BC%E6%98%B1%E7%91%9E%E5%85%B8%E5%A4%A7%E6%BB%A1%E8%B4%AF%E5%86%A0%E5%86%9B" target="_blank">→ 微博热搜·王曼昱瑞典大满贯冠军</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#居民存款7月又少了6300亿 理财热延续</div>
+            <div class="trend-meta">财经话题 · 消费行为变化 · 82万讨论</div>
+            <div class="trend-obs">💡 趋势观察：这个数据在微博已是82万热度。"存款搬家"现象在小红书正演化为一个新的内容赛道——从"如何理财"的教程向"为什么年轻人不存钱了"的情绪化叙事延展。对品牌而言，消费者的钱包在向灵活配置方向走，这意味着"值回票价"的价值主张比单纯"实惠"更有说服力。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%B1%85%E6%B0%91%E5%AD%98%E6%AC%BE7%E6%9C%88%E5%8F%88%E5%B0%91%E4%BA%866300%E4%BA%BF" target="_blank">→ 微博热搜·居民存款7月又少了6300亿</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#胖东来被涨租逼走却从不涨商户租 口碑叙事出圈</div>
+            <div class="trend-meta">品牌话题 · 商业伦理赛道 · 64万讨论</div>
+            <div class="trend-obs">💡 趋势观察：胖东来的品牌内容从未靠营销发力，却每隔数周就自发出圈一次。小红书用户在深度解析胖东来的商业模型，形成"真实案例+价值观认同"的复利传播。这为大事件内容提供了参照：真实的商业细节，比精心设计的宣传稿更具感染力。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%83%96%E4%B8%9C%E6%9D%A5%E8%A2%AB%E6%B6%A8%E7%A7%9F%E9%80%BC%E8%B5%B0%E5%8D%B4%E4%BB%8E%E4%B8%8D%E6%B6%A8%E5%95%86%E6%88%B7%E7%A7%9F" target="_blank">→ 微博热搜·胖东来被涨租逼走</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#为中国航天点赞 航天文化内容持续高热</div>
+            <div class="trend-meta">科技自豪感 · 国家叙事赛道 · 75万讨论</div>
+            <div class="trend-obs">💡 趋势观察：中国航天话题在小红书已形成稳定高热内容生态——从神舟飞船到天宫空间站，再到月球探测器，每一次里程碑都带动"航天科普+民族自豪感"的内容爆发。对品牌而言，科技自豪感叙事是当前最安全、可持续的情感共鸣切口之一。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%BA%E4%B8%AD%E5%9B%BD%E8%88%AA%E5%A4%A9%E7%82%B9%E8%B5%9E" target="_blank">→ 微博热搜·为中国航天点赞</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#考驾照的人为何变少了 年轻人出行观念重构</div>
+            <div class="trend-meta">生活方式话题 · 消费行为洞察 · 16万讨论</div>
+            <div class="trend-obs">💡 趋势观察：驾照话题折射出年轻一代出行偏好的深层变化——共享出行成熟、新能源车成本降低、公共交通提升，让"拥车"的必要性下降。小红书上已有大量"不考驾照的理由"类内容。这是汽车品牌需正视的结构性挑战，也是城市出行相关品类的机会信号。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%80%83%E9%A9%BE%E7%85%A7%E7%9A%84%E4%BA%BA%E4%B8%BA%E4%BD%95%E5%8F%98%E5%B0%91%E4%BA%86" target="_blank">→ 微博热搜·考驾照的人为何变少了</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">Today's Topic</div>
+        <div class="learning-title">当 AI 接管代码维护：388个PR背后，创意产业正在发生什么</div>
+        <div class="learning-subtitle">从「人执行」到「AI维护，人审核」——一个工程师的实验，折射营销行业的未来分工</div>
+        <div class="learning-body">
+          <p>这周 AI 圈最值得品味的不是哪个模型的跑分，而是 Boris Cherny 分享的一个实验：他让 Claude 接管了自家 App 的日常代码维护，设定定时例程，数周内自动开出 <strong>388 个 PR，180 个被合并</strong>。</p>
+          <p>这个实验的逻辑，和营销行业面临的转型逻辑高度同构。想一想，你手边有多少重复性的"维护工作"：<strong>报告格式化、素材归档、文案校对、数据更新</strong>……这些工作不是无意义的，但它们正在消耗大量创意人员的时间。</p>
+          <p><strong>Cherny 的做法给出了一个可以借鉴的框架：</strong>把日常任务拆分成可描述、可复用的"例程"（routine），让 AI 执行，人负责审核和调整。核心不是"让 AI 替代人"，而是"把人的注意力从执行层解放出来"。</p>
+          <p>对营销从业者来说，这意味着什么？**制造例程的能力**将成为核心竞争力——你能不能把"一个好的活动策划"拆解成可以反复执行的判断框架和操作步骤？能不能把"品牌口吻一致性"变成可供 AI 检查的规则清单？这种结构化思维，不是 AI 时代的消亡，而是升级。</p>
+          <p>当 Claude 自动审查代码并开 PR，其实在做的是：识别"偏差"、提出"修复方案"、等待"人类判断"。这个三步闭环，同样适用于内容审核、效果优化、创意迭代。</p>
+        </div>
+        <div class="learning-source">
+          参考来源：
+          <a href="https://x.com/bcherny/status/2088014489438621990" target="_blank">Boris Cherny (@bcherny) on X</a> ·
+          <a href="https://aihot.virxact.com/" target="_blank">AIHOT 精选</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">全球盛事 · 文化底蕴</span>
+      </div>
+      <div class="section-body">
+
+        <div class="festival-banner-placeholder">🎮</div>
+
+        <div class="festival-meta">
+          <span class="festival-tag highlight">游戏文化</span>
+          <span class="festival-tag">8月24-30日</span>
+          <span class="festival-tag">科隆 德国</span>
+          <span class="festival-tag">本周开幕</span>
+        </div>
+
+        <div class="festival-name">科隆游戏展</div>
+        <div class="festival-name-en">gamescom · Cologne, Germany · 全球最大电子游戏展会</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从德国本土到全球游戏界圣地</div>
+          <div class="festival-block-body">
+            <p>gamescom 诞生于 <strong>2009 年</strong>，是德国贸易展览联合会（Koelnmesse）与德国游戏行业协会（game）共同创办，在原 ECTS（欧洲电子游戏展）停办后填补了欧洲市场空缺。首届即吸引约 24.5 万人参加，创业内纪录。</p>
+            <p>不同于东京 TGS 更偏本土消费者导向，gamescom 一开始就定位为 <strong>B2B+B2C 双轨模式</strong>：专业贸易日（Business Area）与消费者开放日并行。这套模式使它成为全球游戏发行商年度最重要的媒体曝光窗口之一。</p>
+            <p>历届主题涵盖"游戏改变世界"到"点燃未来的激情"，近年开始向 <strong>游戏文化节</strong>（games culture festival）方向转型——不只是发布新游戏，而是在科隆市内举办城市级嘉年华。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】2026届：全球规模最大，数字触达超6亿</div>
+          <div class="festival-block-body">
+            <p>2026 年 gamescom <strong>8月24-30日</strong>在科隆举行，为期7天。展览面积超过 22 万平方米（合 30+ 个标准足球场），来自超过 50 个国家的千余家参展商云集于此。</p>
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">35万+</div>
+                <div class="festival-stat-label">现场参观者（2025年357,000人，创纪录）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">6.3亿+</div>
+                <div class="festival-stat-label">2025年全球数字触达人次（仅周六）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1,000+</div>
+                <div class="festival-stat-label">参展商，来自 50+ 个国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">7天</div>
+                <div class="festival-stat-label">其中2天专业贸易日，5天公众开放日</div>
+              </div>
+            </div>
+            <p><strong>Opening Night Live（ONL）</strong>是 gamescom 的最大媒体事件，由主持人 Geoff Keighley（也是 The Game Awards 创始人）主持，吸引全球玩家守夜观看，已成为游戏行业的"奥斯卡预告夜"。</p>
+            <p>2026 届主题为 <strong>"Games spark excitement for the future"（游戏点燃对未来的热情）</strong>，多位德国政要确认出席开幕式，凸显游戏产业在欧洲经济政策中的战略地位提升。</p>
+            <div class="festival-insight">
+              <strong>商业影响力：</strong>gamescom 周期内，游戏媒体全球报道量激增，是 3A 游戏发行商最集中的媒体窗口。科隆市在展会期间的酒店溢价超过 300%，周边消费带动效应按亿欧元计。主流品牌（RedBull、Razer、AMD、ASUS ROG 等）将此作为全球最重要的年度展台之一。
+            </div>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】游戏展会的进化方向 & 对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p>gamescom 正在从"展会"向"全年文化节点"演化：<strong>gamescom latam</strong>（拉丁美洲站）于2026年5月在圣保罗举办，已刷新纪录；gamescom 亚洲站持续拓展，游戏节的地理版图在扩张。</p>
+            <p><strong>对小红书大事件业务的三点启发：</strong></p>
+            <p>① <strong>物理空间 × 数字同步</strong>：gamescom ONL 让全球6亿人远程参与现场，线下体验的边界已被数字化工具极大延伸。大事件不再是到场人数，而是触达人数。</p>
+            <p>② <strong>B端与C端同场设计</strong>：专业日与公众日分开但共享场地，使同一内容对 B 端意味着"商机"，对 C 端意味着"体验"。大事件的双轨服务设计值得借鉴。</p>
+            <p>③ <strong>城市级嘉年华思维</strong>：gamescom 已不满足于展馆内，整个科隆市都是舞台——城市涂装、街头装置、餐厅联名。大事件溢出展场的"城市侵占"策略，是话题密度的倍增器。</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 游戏创作者图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎮 主题策展 · 游戏是第九艺术</div>
+        <div class="knowledge-headline">造梦者们：改变游戏意义的五位创作者</div>
+        <div class="knowledge-tagline">「游戏不仅是娱乐，它是人类理解世界、体验他者人生的第九种艺术形式。」</div>
+
+        <div class="knowledge-intro">
+          gamescom 本周在科隆开幕。在全球最大的游戏展会即将亮灯之际，有必要回溯一批改变了"游戏是什么"这个问题答案的人。他们不只是做出了畅销产品，而是重新定义了这个媒介的边界——让游戏从"消遣"变成了"共情与探索的工具"。<br><br>
+          宫本茂让游戏成为全家人的语言；小岛秀夫让游戏成为电影导演式的个人表达；陈星汉（Jenova Chen）让游戏成为情绪冥想；Will Wright 让游戏成为世界模拟器；而 Hideo Kojima 的《死亡搁浅》则用快递员的步伐，在孤独与连结之间提出了一个哲学命题。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img
+              class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Shigeru_Miyamoto_-_Game_Developers_Choice_Awards_2010.jpg/440px-Shigeru_Miyamoto_-_Game_Developers_Choice_Awards_2010.jpg"
+              alt="宫本茂"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍄</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">宫本茂 Shigeru Miyamoto</div>
+              <div class="knowledge-card-sub">日本 · Nintendo · 超级马里奥之父</div>
+              <div class="knowledge-card-work">「好的游戏设计，是让人感受到探索与发现的喜悦。」创造了马里奥、塞尔达、皮卡丘，用"全家人可以一起玩"重新定义了游戏受众边界。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img
+              class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Hideo_Kojima_-_Game_Developers_Choice_Awards_2010_%28cropped%29.jpg/440px-Hideo_Kojima_-_Game_Developers_Choice_Awards_2010_%28cropped%29.jpg"
+              alt="小岛秀夫"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">小岛秀夫 Hideo Kojima</div>
+              <div class="knowledge-card-sub">日本 · Kojima Productions · 《合金装备》《死亡搁浅》</div>
+              <div class="knowledge-card-work">「我想做的，是那种一百年后仍有人讨论的游戏。」被誉为"游戏界的库布里克"，用《死亡搁浅》探索连结与孤独的哲学。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌅</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">陈星汉 Jenova Chen</div>
+              <div class="knowledge-card-sub">🇨🇳 中国/美国 · thatgamecompany · 《Journey》《花》</div>
+              <div class="knowledge-card-work">「游戏应该引发情感的共鸣，而不只是刺激与反射。」用十分钟的《Journey》让玩家哭泣，证明游戏可以是情绪的容器。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img
+              class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/WillWright-crop.jpg/440px-WillWright-crop.jpg"
+              alt="Will Wright"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏙️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Will Wright</div>
+              <div class="knowledge-card-sub">美国 · Maxis · 《模拟城市》《模拟人生》</div>
+              <div class="knowledge-card-work">「游戏是思维的玩具，让我们模拟我们无法经历的人生。」《模拟人生》销量超2亿份，是史上最畅销游戏系列之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎯</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">陈意涵 / 郑海雅 等中国独立游戏创作者</div>
+              <div class="knowledge-card-sub">🇨🇳 中国 · 独立游戏浪潮</div>
+              <div class="knowledge-card-work">《黑神话：悟空》（Game Science）打破纪录，让中国游戏创作在2024年进入全球视野。新一代中国独立游戏人正在崛起，用本土神话重新定义"中国制造"的文化含量。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img
+              class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Sid_Meier_2014.jpg/440px-Sid_Meier_2014.jpg"
+              alt="席德·梅尔"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌍</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">席德·梅尔 Sid Meier</div>
+              <div class="knowledge-card-sub">美国 · Firaxis · 《文明》系列</div>
+              <div class="knowledge-card-work">「游戏是一系列有趣的选择。」《文明》系列让玩家扮演历史缔造者，被斯坦福大学用作历史教学工具，"文明症"（Civilizationitis）成为流行文化词汇。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这些人的共同点不是做出了畅销游戏——而是改变了"游戏是什么"这个问题本身。宫本茂让它成为家庭语言；陈星汉让它成为情绪容器；小岛秀夫让它成为作者电影；Wright 让它成为人生模拟器；席德·梅尔让它成为历史教室。当 Gamescom 的大幕在科隆升起，它承载的不只是一个行业的年会，而是这个星球上最年轻的艺术形式正在寻找自己边界的集体宣言。
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 2026.08.17 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
