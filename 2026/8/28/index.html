@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/8/28</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #2d3a4a 40%, #c4653a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/8/28/index.html" class="active">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+      <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 08 · 28</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达Q2财报大超预期，单日暴涨8.74%，28财年营收指引超华尔街预期</div>
+            <div class="news-item-desc">英伟达2027财年Q2营收达约922亿美元，远超分析师预期。Blackwell与Vera Rubin架构持续释放算力红利，AI芯片需求未见放缓迹象。A股AI算力、光模块、PCB产业链今日大概率高开，全球半导体估值锚点再次被拉升。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/a/chgjj.html" target="_blank">→ 东方财富网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美国考虑对华额外加征7.5%关税，中国商务部回应：将采取一切必要措施</div>
+            <div class="news-item-desc">中美贸易摩擦再添变数。美方新一轮关税酝酿叠加此前"选边站"AI联盟信函，供应链博弈进入"技术脱钩+关税升级"双重施压阶段。国内政策端强调"内需不足"为当前核心矛盾，扩消费信号持续释放。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/finance/" target="_blank">→ 中国新闻网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">2026数博会：贵州押注"词元经济"，平台日均Token调用量从30亿增至数千亿次</div>
+            <div class="news-item-desc">数据宝董事彭海林披露，词元宝平台Token调用量在8个月内实现百倍增长。"从绿色算力到词元经济"登上微博热搜，标志着AI基础设施从"建模型"转向"卖算力"的商业化拐点。贵州试图以绿色算力底座抢占Token经济制高点。</div>
+            <a class="news-item-link" href="https://www.cnr.cn/newscenter/native/gd/20260826/t20260826_527793444.shtml" target="_blank">→ 央广网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">微博热搜：「越用Codex越觉得可怕」——开发者对AI编程工具的复杂情绪浮现</div>
+            <div class="news-item-desc">OpenAI的编程智能体Codex在程序员群体中引发"能力恐惧"讨论。开发者感叹AI代码生成质量已接近中级工程师水平，但随之而来的是对职业替代、代码安全和创造性退化的深层焦虑。AI从"辅助工具"到"竞争者"的身份转变正在加速。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%B6%8A%E7%94%A8codex%E8%B6%8A%E8%A7%89%E5%BE%97%E5%8F%AF%E6%80%95" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">瑞萨电子在北京开设"物理AI"研发基地，押注人形机器人赛道</div>
+            <div class="news-item-desc">日本半导体巨头瑞萨电子8月27日在北京设立AI自主驱动机器人的研发中心，深化与中国在人形机器人领域的合作。这是外资芯片企业首次在华设立"物理AI"专项研发机构，信号意义显著——AI正在从云端走向物理世界。</div>
+            <a class="news-item-link" href="https://china.kyodonews.net/articles/-/14820" target="_blank">→ 共同社中国</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">王俊凯正式成为蜂花品牌代言人，国民老牌的年轻化转型再提速</div>
+            <div class="news-item-desc">8月28日官宣，蜂花携手顶流王俊凯完成品牌升级关键一步。从"国货情怀"到"顶流背书"，这家老牌日化企业正系统性地重构品牌认知。王俊凯同期手握骆驼、花西子、红犀牛等多个代言，商业价值进入收割期。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%8E%8B%E4%BF%8A%E5%87%AF%E8%9C%82%E8%8A%B1%E5%93%81%E7%89%8C%E4%BB%A3%E8%A8%80%E4%BA%BA" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">蔚来"最出圈的功能是实习生做的"登上热搜，企业创新机制获年轻用户共鸣</div>
+            <div class="news-item-desc">蔚来汽车被曝某款爆款功能出自实习生之手，话题引发职场与产品双重讨论。年轻用户对"打破层级、成果导向"的创新文化表现出高度认同。对品牌传播而言，"真实的人+意外的故事"正在成为最有力的内容引擎。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%94%9A%E6%9D%A5%E6%9C%80%E5%87%BA%E5%9C%88%E7%9A%84%E5%8A%9F%E8%83%BD%E6%98%AF%E5%AE%9E%E4%B9%A0%E7%94%9F%E5%81%9A%E7%9A%84" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">赵心童登顶斯诺克世界第一，成为中国继丁俊晖后第二位球王</div>
+            <div class="news-item-desc">2026斯诺克武汉公开赛8进4，赵心童5-1横扫尼尔·罗伯逊，世界排名正式登顶。这位90后深圳小伙今年包揽大奖赛、球员锦标赛、巡回锦标赛三冠，加上卫冕世锦赛，创下历史纪录。斯诺克历史上第13位世界第一、首位90后球王。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%B5%B5%E5%BF%83%E7%AB%A5%E7%99%BB%E9%A1%B6%E4%B8%96%E7%95%8C%E7%AC%AC%E4%B8%80" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《司藤》话题以136万热度登顶微博热搜，景甜个人新闻带动剧集二创爆发</div>
+            <div class="news-item-desc">景甜因个人新闻多条相关话题同时上榜，连带《司藤》剧集内容再度成为讨论焦点。奇幻悬爱剧的经典IP价值再次验证：优质内容具有长尾传播力，角色形象一旦"立住"，就成为演员公共认知中不可磨灭的文化资产。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%8F%B8%E8%97%A4" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">尼泊尔山洪已致389人死亡，西藏吉隆口岸受波及，翼龙无人机投入救援</div>
+            <div class="news-item-desc">尼泊尔冰雪消融引发大规模山洪泥石流，7分钟内冲至西藏吉隆口岸。中国已启动跨境应急救援，翼龙无人机传回灾区高清画面。这是继气候变化议题后的又一极端天气警示，也是"一带一路"基础设施韧性的实战检验。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%BC%E6%B3%8A%E5%B0%94%E5%B1%B1%E6%B4%AA%E5%B7%B2%E8%87%B4389%E6%AD%BB" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">日本大使参观奥斯维辛后被问"何时去南京"，历史反思议题再度发酵</div>
+            <div class="news-item-desc">日本驻外大使在参观奥斯维辛集中营后，被外媒记者追问"日本何时正式反思南京大屠杀"。这一外交场景在社交媒体广泛传播，引发关于历史记忆与地缘信任的深度讨论。历史问题始终是东亚国际关系的底层张力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%97%A5%E6%9C%AC%E5%A4%A7%E4%BD%BF%E5%8F%82%E8%A7%82%E5%A5%A5%E6%96%AF%E7%BB%B4%E8%BE%9B%E8%A2%AB%E9%97%AE%E4%BD%95%E6%97%B6%E5%8E%BB%E5%8D%97%E4%BA%AC" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#司藤 热度136万，景甜个人新闻带动经典剧集二创爆发</div>
+            <div class="trend-meta">影视内容赛道 · IP长尾价值</div>
+            <div class="trend-obs">💡 趋势观察：经典剧集因演员个人新闻被重新激活，说明小红书上"角色资产"的长尾效应远超预期。《司藤》的东方美学、服化道设计、"大女主"人设，天然契合平台女性用户的审美偏好。品牌可以关注"经典IP再发现"的内容切口——与其追逐新剧，不如重新激活用户记忆中的好角色。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%8F%B8%E8%97%A4" target="_blank">→ 微博热搜·司藤</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#台风沙德尔 热度96万，防灾科普与沿海生活类内容升温</div>
+            <div class="trend-meta">民生信息赛道 · 气象经济</div>
+            <div class="trend-obs">💡 趋势观察：超强台风逼近浙闽沿海，"囤货清单""居家好物""风暴穿搭"等实用内容在小红书搜索量飙升。气象事件正在成为一类独特的"消费场景触发器"——品牌需要在48小时内完成"防灾信息+产品推荐"的内容响应窗口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%8F%B0%E9%A3%8E%E6%B2%99%E5%BE%B7%E5%B0%94" target="_blank">→ 微博热搜·台风沙德尔</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#赵心童世界第一 热度31万，斯诺克"中国球王"激励内容井喷</div>
+            <div class="trend-meta">体育励志赛道 · 个人IP价值</div>
+            <div class="trend-obs">💡 趋势观察：赵心童的"逆袭叙事"——从业余选手到世锦赛冠军再到世界第一——完美匹配小红书"励志故事"的内容基因。与一般体育明星不同，斯诺克的"绅士运动"定位与平台精致生活方式调性高度吻合。品牌可以关注"小众运动+大故事"的内容策略。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%B5%B5%E5%BF%83%E7%AB%A5%E7%99%BB%E9%A1%B6%E4%B8%96%E7%95%8C%E7%AC%AC%E4%B8%80" target="_blank">→ 微博热搜·赵心童</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#越用codex越觉得可怕 热度21万，AI工具引发职场焦虑讨论</div>
+            <div class="trend-meta">科技职场赛道 · AI替代焦虑</div>
+            <div class="trend-obs">💡 趋势观察：程序员群体对AI编程工具的"能力恐惧"正在向更广泛的白领群体扩散。小红书上的"AI焦虑"内容呈现两极化——一边是"如何用AI提升效率"的实用帖，一边是"哪些岗位会被替代"的焦虑帖。品牌介入AI话题时，"赋能感"比"恐惧感"更可持续。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%B6%8A%E7%94%A8codex%E8%B6%8A%E8%A7%89%E5%BE%97%E5%8F%AF%E6%80%95" target="_blank">→ 微博热搜·Codex</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#蔚来最出圈功能是实习生做的 热度21万，职场创新话题出圈</div>
+            <div class="trend-meta">职场/汽车赛道 · 品牌人格化</div>
+            <div class="trend-obs">💡 趋势观察：这则新闻同时触发了"职场公平""年轻人能力""新能源车企文化"三重讨论。蔚来借此完成了品牌人格化的又一次加分——"不拘一格降人才"的叙事比任何广告都有效。对大事件IP而言，"真实的人+意外的故事"永远是最强传播素材。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%94%9A%E6%9D%A5%E6%9C%80%E5%87%BA%E5%9C%88%E7%9A%84%E5%8A%9F%E8%83%BD%E6%98%AF%E5%AE%9E%E4%B9%A0%E7%94%9F%E5%81%9A%E7%9A%84" target="_blank">→ 微博热搜·蔚来实习生</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI商业化</div>
+        <div class="learning-title">当"词元"成为新货币：AI时代的品牌内容生产关系正在重构</div>
+        <div class="learning-subtitle">从数博会的"词元经济"到Codex的"能力恐惧"，品牌该如何重新定义自己与AI的关系？</div>
+        <div class="learning-body">
+          <p>2026年8月，两个看似不相关的新闻同时出现：贵州数博会上，"词元经济"被定义为AI时代的新经济形态——平台日均Token调用量从年初不足30亿次，增长到数千亿次；与此同时，微博上程序员群体开始公开表达对OpenAI Codex的"恐惧感"——AI编程能力已接近中级工程师水平。</p>
+          <p>这两个信号指向同一个底层变化：<strong>AI正在从"内容工具"变成"内容生产者"，而品牌需要重新定义自己在这个链条中的角色。</strong></p>
+          <p>传统的品牌内容生产逻辑是：品牌策略→创意brief→内容团队执行→分发。在这个链条里，AI只是一个"更快的执行工具"。但当AI能独立完成从文案初稿到代码开发的全链路工作时，品牌的角色必须从"内容委托方"转向"内容判断方"——<strong>核心能力不再是"生产"，而是"判断什么是好的"。</strong></p>
+          <p>这意味着品牌营销团队的能力模型需要根本性调整。未来的核心竞争力是三个层次：第一，<strong>审美判断力</strong>——在AI产出的海量内容中识别真正打动人心的那个；第二，<strong>价值定义力</strong>——明确品牌"要说什么"，而非"怎么说"（怎么说可以交给AI）；第三，<strong>伦理把控力</strong>——确保AI生产的内容符合品牌价值观和社会责任。</p>
+          <p>对小红书平台的大事件策划而言，这个变化更加直接：当AI能批量生成"看起来不错"的活动方案时，<strong>真正稀缺的是"只有人才能感受到的"情感密度</strong>——那些来自真实生活体验、具体的人际温度、和无法被参数化的文化洞察。</p>
+          <p>"词元经济"的本质，是让内容的边际成本趋近于零。当内容不再稀缺，<strong>稀缺的就永远是"值得被感受的东西"</strong>。这恰恰是IP大事件存在的根本理由。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.cnr.cn/newscenter/native/gd/20260826/t20260826_527793444.shtml" target="_blank">央广网《贵州：塑造词元经济时代的AI生产能力》</a> ·
+          <a href="https://blog.csdn.net/laoyge/article/details/163564674" target="_blank">CSDN《八月拐点：2026年夏末AI产品浪潮中的观察》</a> ·
+          <a href="https://www.cas.cn/cm/202608/t20260824_5118852.shtml" target="_blank">新华社《从"工具"到"搭档" AI应怎样助力科研》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 爱丁堡皇家军乐节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🏰🎺🏴󠁧󠁢󠁳󠁣󠁴󠁿</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">军事文化</span>
+          <span class="festival-tag">苏格兰·爱丁堡</span>
+          <span class="festival-tag">每年8月</span>
+          <span class="festival-tag">始于1950年</span>
+        </div>
+        <div class="festival-name">爱丁堡皇家军乐节</div>
+        <div class="festival-name-en">The Royal Edinburgh Military Tattoo · 始于1950年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从城堡前的风笛声到全球文化盛事</div>
+          <div class="festival-block-body">
+            <p>1950年，爱丁堡国际艺术节期间，几位苏格兰军官在城堡前的空地上组织了一场小型军乐表演——几支风笛乐队、几列步操方阵、几束探照灯光。观众只有几百人，坐在临时搭建的看台上。没人想到，这个朴素的起点会成为世界上最具标志性的现场演出之一。</p>
+            <p>七十余年间，军乐节从一场"苏格兰自娱自乐"成长为横跨军事、文化、旅游三大领域的全球盛事。1960年代开始邀请英联邦国家的军乐队参演；1990年代引入毛利战舞、印度仪仗队等非欧洲元素；2000年代起，灯光、投影、无人机等科技手段被大量使用，军乐节从"阅兵式"进化为"<strong>沉浸式多媒体演出</strong>"。</p>
+            <p>历届演出的核心叙事从未改变：<strong>纪律之美、传统之力、跨文化之桥</strong>。但表达形式始终在进化——这正是它能持续76年而不显老态的秘密。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】城堡前的全球客厅</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">22万+</div>
+                <div class="festival-stat-label">年度现场观众</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">76年</div>
+                <div class="festival-stat-label">连续举办历史</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">30+</div>
+                <div class="festival-stat-label">参与国家/地区</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">23场</div>
+                <div class="festival-stat-label">2026年演出场次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">8/7–8/29</div>
+                <div class="festival-stat-label">2026年演出周期</div>
+              </div>
+            </div>
+            <p>2026年军乐节（8月7日-29日）以<strong>英国皇家空军（RAF）为领衔军种</strong>，主题为"连接的力量"（The Power of Connection），聚焦文化如何把人联结在一起。每晚演出以城堡为舞台背景，数百名风笛手和鼓手组成经典Massed Pipes and Drums方阵，配合来自全球各国的军乐队、舞蹈团和特技表演。</p>
+            <p>军乐节不只是演出——它是爱丁堡8月"节日集群"（Festival Cluster）中最具视觉冲击力的组成部分，与爱丁堡国际艺术节、边缘艺术节、国际图书节等共同构成了<strong>全球密度最高的城市文化盛事矩阵</strong>。经济效应方面，军乐节每年为爱丁堡带来超过1亿英镑的旅游收入，门票常年在开售后数月内售罄。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】对小红书平台大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>启发一：场地即内容。</strong>军乐节从未建过专用场馆——它用的是爱丁堡城堡前的露天广场。城堡本身就是最震撼的舞美。这提示我们：大事件IP不需要追求"新建一个多厉害的舞台"，而是找到那个"天然自带叙事感"的空间——空间的故事性，远比搭建成本更有传播力。</p>
+            <p><strong>启发二：传统不是包袱，是品牌资产。</strong>76年来，风笛、步操、军装这些"老派元素"从未被淘汰，反而因为持续被注入新内容而成为最强辨识度。在小红书平台做文化类大事件，"有根"的IP比"有噱头"的IP生命力更长。</p>
+            <p><strong>启发三：跨文化编排是最强内容引擎。</strong>军乐节最精彩的段落永远不是东道主表演，而是"不同国家的军乐队在同一舞台上合奏"的瞬间。大事件IP的跨文化叙事不是点缀，应该是核心戏剧张力。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>核心记忆点：</strong>军乐节的终场曲目永远是《Auld Lang Syne》（友谊地久天长），全场观众起立，风笛声响起，城堡被灯光染成金蓝色——76年来，每一个观众在这个时刻都忍不住拿出手机。这是"设计一个值得被记录的瞬间"的教科书案例。大事件IP的终极KPI，不是到场人数，而是"那个瞬间有多少人同时举起了手机"。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.edintattoo.co.uk/" target="_blank">Royal Edinburgh Military Tattoo 官网</a> ·
+          <a href="https://www.edinburghcastle.scot/whats-on/military-tattoo/" target="_blank">Edinburgh Castle · Military Tattoo</a> ·
+          <a href="https://www.sundaynews.tw/article/the-royal-edinburgh-military-tattoo" target="_blank">周日新闻·爱丁堡军乐节深度介绍</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 斯诺克传奇</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎱 主题策展 · 绿色球台上的绅士们</div>
+        <div class="knowledge-headline">从"火箭"到"中国球王"：斯诺克历史上的六张面孔</div>
+        <div class="knowledge-tagline">「这项运动的迷人之处在于——你必须在全世界面前，假装自己不在乎。」</div>
+
+        <div class="knowledge-intro">
+          斯诺克（Snooker），源自19世纪英国军官在印度俱乐部的消遣游戏。一张12英尺的球台、15颗红球、6颗彩球、一根球杆——看似简单的物理系统，却构建出人类运动中最精密的心理博弈场。<br><br>
+          2026年8月28日，赵心童正式登顶世界第一。让我们借此节点，认识斯诺克历史上六位定义了这项运动的面孔——他们不仅是冠军，更是六种不同的"台球哲学"。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🚀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">罗尼·奥沙利文</div>
+              <div class="knowledge-card-sub">Ronnie O'Sullivan · 英国 · "火箭"</div>
+              <div class="knowledge-card-work">斯诺克史上毫无争议的GOAT。7次世锦赛冠军、23次三大赛冠军、1300+杆破百。他的出杆速度快到摄像机都难以捕捉。天赋型人格的极致样本——打球像写诗，从不排练。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">👑</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">斯蒂芬·亨得利</div>
+              <div class="knowledge-card-sub">Stephen Hendry · 苏格兰 · "皇帝"</div>
+              <div class="knowledge-card-work">1990年代统治斯诺克长达七年，7次世锦赛冠军（后被奥沙利文追平）。他是第一个把斯诺克变成"系统性竞技"的人——训练量、心理素质、战术纪律的全面标杆。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎯</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">贾德·特鲁姆普</div>
+              <div class="knowledge-card-sub">Judd Trump · 英国 · "准度之王"</div>
+              <div class="knowledge-card-work">当代最具观赏性的球员。把远台进攻的精准度推向新极限，重新定义了"什么球可以进攻"。他的比赛是勇气与技术的混合体——每一杆都在说"我相信我能进"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🧱</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">马克·塞尔比</div>
+              <div class="knowledge-card-sub">Mark Selby · 英国 · "莱斯特小丑"</div>
+              <div class="knowledge-card-work">4次世锦赛冠军，以"磨控"战术闻名——用极致的安全球让对手崩溃。他是斯诺克的"反美学"代表：不靠华丽进攻赢球，靠让对手赢不了赢球。心理战的教科书。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🐉</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">丁俊晖</div>
+              <div class="knowledge-card-sub">中国 · 斯诺克拓荒者</div>
+              <div class="knowledge-card-work">中国斯诺克运动的"创世者"。18岁拿下英锦赛冠军，最高排名世界第一。没有丁俊晖，就没有赵心童——他为中国斯诺克打开了整个通道。15次排名赛冠军，亚洲斯诺克的代名词。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏆</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">赵心童</div>
+              <div class="knowledge-card-sub">中国 · 新世界第一 · 90后球王</div>
+              <div class="knowledge-card-work">2026年正式登顶世界第一，斯诺克历史第13位球王。从业余选手到世锦赛冠军到世界第一，用最短时间完成三连跳。天赋型选手的新一代代表——出杆流畅、进攻果断、大心脏。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          斯诺克有一个独特的文化气质：它要求你在绝对安静中完成极致精准的物理操作，同时保持绅士风度。这与IP策划的某些核心素质高度相似——<strong>在所有人都在看你的时候，你必须只关注那颗球</strong>。赵心童的登顶不只是体育新闻，它证明了一件事：在一个被英国人统治了百年的精密运动中，中国人不仅可以参与，还可以定义标准。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
