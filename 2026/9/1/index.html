@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/1</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/1/index.html" class="active">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 01</div>
+      <div class="day-week">星期二</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">七部门联合发文：20项具体措施推动商品消费扩容升级，锁定"十五五"消费规模目标</div>
+            <div class="news-item-desc">商务部等7部门发布《关于推动商品消费扩容升级的实施意见》，覆盖汽车、智能家居、银发经济等领域。文件特别提出"加强AI技术在适老化产品中的应用"，标志着政策层面对AI+消费融合路径的正式背书。这是"十五五"扩消费规划落地的首个重磅配套政策。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/wm/2026-09-01/doc-iniqhmvz6773014.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">六大行房贷余额合计减少超5000亿，提前还贷趋势延续</div>
+            <div class="news-item-desc">六大国有银行半年报显示，个人住房贷款余额集体收缩，合计减少逾5000亿元。居民杠杆率持续下行，"去负债化"消费心态进一步确立——与"00后能省"的代际消费观形成宏观互文。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%85%AD%E5%A4%A7%E8%A1%8C%E6%88%BF%E8%B4%B7%E4%BD%99%E9%A2%9D%E5%B0%91%E4%BA%865000%E5%A4%9A%E4%BA%BF" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">库克正式卸任苹果CEO，特努斯今日接棒——苹果15年来首次换帅</div>
+            <div class="news-item-desc">2026年9月1日，蒂姆·库克正式转任苹果董事会执行董事长，硬件工程负责人约翰·特努斯成为苹果第三任CEO。库克执掌苹果15年，公司市值从3500亿美元增长至超4万亿美元。特努斯被视为"Apple Silicon时代的缔造者"，他的上任标志着苹果从软件+服务叙事全面转向硬件+AI融合。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/tech/roll/2026-08-26/doc-iniprytq2400038.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国内首部AIGC长剧《后西游记》上星首播收视第一，AI影视产业化里程碑</div>
+            <div class="news-item-desc">8月31日晚，全程由AIGC技术制作的30集电视剧《后西游记》在湖南卫视及芒果TV同步开播，首播即拿下同时段省级卫视收视第一。该剧采用"边制作边播出"模式，是中国AI影视内容产业化的标志性事件。当AI可以独立完成一部上星长剧的全部视觉制作，影视行业的生产关系将被彻底重写。</div>
+            <a class="news-item-link" href="http://news.10jqka.com.cn/20260901/c679462912.shtml" target="_blank">→ 同花顺财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Hugging Face旗下Microduck机器鸭24小时预售破260万美元，消费级AI硬件赛道升温</div>
+            <div class="news-item-desc">售价399美元的桌面机器人鸭子Microduck由Pollen Robotics推出，上线首日即出现订单积压，新订单预计等待4-6个月。这是消费级AI硬件从"概念产品"走向"爆品逻辑"的标志性事件——AI不再只存在于手机和云端，它正在长出手脚，进入你的生活桌面。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/996/199.htm" target="_blank">→ IT之家</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">多款手机正式涨价，AI对存储芯片的争夺改写手机成本结构</div>
+            <div class="news-item-desc">2026年中国手机行业迎来首次全品类普涨，下半年旗舰机起售价预计升至5000元以上。核心原因是AI产业对存储芯片的疯狂抢占，导致手机成本结构发生根本性改变。业内预计涨价潮将持续1-3年。对消费者而言，"开学季购机指南"正在变成一道预算规划题。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%9A%E6%AC%BE%E6%89%8B%E6%9C%BA%E6%AD%A3%E5%BC%8F%E6%B6%A8%E4%BB%B7" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美国炸鸡巨头Popeyes中国首店开业，国际餐饮品牌加速重返中国市场</div>
+            <div class="news-item-desc">继Shake Shack、Chick-fil-A之后，又一家美国炸鸡巨头在中国开出首店。国际餐饮品牌对中国消费市场保持乐观，"首店经济"持续成为线下商业激活流量的有效手段。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%BE%8E%E5%9B%BD%E7%82%B8%E9%B8%A1%E5%B7%A8%E5%A4%B4%E4%B8%AD%E5%9B%BD%E9%A6%96%E5%BA%97%E5%BC%80%E4%B8%9A" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">郑钦文美网正赛2-1击败柳托娃，终结对手9连胜，赛后拥抱令人动容</div>
+            <div class="news-item-desc">从资格赛突围到正赛首战告捷，郑钦文在美网展现了伤愈复出后的强大韧性。比赛结束后柳托娃落泪，郑钦文上前拥抱安慰——这个瞬间比胜负更有力量，迅速登上微博热搜。体育竞技中最打动人的从来不只是冠军，而是"人在全力以赴之后仍然保有温度"。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%83%91%E9%92%A6%E6%96%872%E6%AF%941%E6%9F%B3%E6%89%98%E5%A8%83" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">敖瑞鹏孙千领奖"像在走T台"，内娱时尚感内容热度持续</div>
+            <div class="news-item-desc">两位年轻艺人领奖环节的红毯表现引发热议，"敖瑞鹏和孙千领奖像是在走T台"登上热搜。时尚感正在成为内娱艺人竞争力的新维度——不只是演技和唱功，"视觉叙事力"也成为流量密码。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%95%96%E7%91%9E%E9%B9%8F%E5%92%8C%E5%AD%99%E5%8D%83%E9%A2%86%E5%A5%96%E5%83%8F%E6%98%AF%E5%9C%A8%E8%B5%B0T%E5%8F%B0" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">《重案六组》IP重启引热议，"还我季洁"话题冲上热搜——经典影视IP的价值回归</div>
+            <div class="news-item-desc">新版《重案六组》官宣后，"还我季洁"成为热搜关键词。观众对经典角色的执念，折射出IP运营的核心命题：经典IP的情感资产不在故事本身，而在"角色曾陪伴观众度过的那段时光"。重启IP的关键不是翻拍剧情，而是重新激活那份情感记忆。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%BF%98%E6%88%91%E5%AD%A3%E6%B4%81" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普称"伊朗已死"引全球关注，美伊冲突进入新阶段</div>
+            <div class="news-item-desc">特朗普在社交媒体发文使用强硬措辞，正值美伊冲突持续升级之际。此前美军已完成对伊朗超80个目标的打击，霍尔木兹海峡安全形势紧张。市场避险情绪升温，全球原油与黄金价格波动加剧。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%89%B9%E6%9C%97%E6%99%AE%E7%A7%B0%E4%BC%8A%E6%9C%97%E5%B7%B2%E6%AD%BB" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">尼泊尔泥石流已致939人遇难、3925人失联，尼泊尔政府拒绝外国救援队</div>
+            <div class="news-item-desc">南亚季风季极端天气持续，尼泊尔遭遇数十年来最严重地质灾害。中方已表态关注，国际社会对尼方拒绝外国救援队进入的决定存在争议。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%BC%E6%B3%8A%E5%B0%94%E6%B3%A5%E7%9F%B3%E6%B5%81%E5%B7%B2%E8%87%B4939%E9%81%87%E9%9A%BE3925%E5%A4%B1%E8%81%94" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#库克卸任苹果CEO 科技话题破圈至生活方式领域</div>
+            <div class="trend-meta">科技热点 · 跨圈层传播 · 热度35万+</div>
+            <div class="trend-obs">💡 趋势观察：库克卸任话题在微博热搜排名第7，但小红书上的讨论角度明显不同——用户更关注"苹果生态未来会不会变差""我的iPhone还能用多久""特努斯是谁"这类个人消费决策向内容。对品牌而言，科技大事件在小红书上的内容窗口不在于"报道新闻"，而在于"帮用户消化新闻对生活的影响"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%BA%93%E5%85%8B%E6%AD%A3%E5%BC%8F%E5%8D%B8%E4%BB%BB%E8%8B%B9%E6%9E%9CCEO" target="_blank">→ 微博热搜·库克卸任苹果CEO</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI小鸭机器人24小时售260万美元 AI硬件种草新物种</div>
+            <div class="trend-meta">科技消费 · 种草场景 · 热度16万+</div>
+            <div class="trend-obs">💡 趋势观察：Microduck机器鸭399美元首日爆单，说明消费级AI硬件已经跨过了"极客玩具"到"大众种草品"的门槛。小红书上"桌面好物"赛道正在迎来一个全新品类——AI机器人。对品牌种草来说，"AI+实体产品"是一个值得提前布局的内容蓝海。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=AI%E5%B0%8F%E9%B8%AD%E6%9C%BA%E5%99%A8%E4%BA%BA24%E5%B0%8F%E6%97%B6%E5%94%AE260%E4%B8%87%E7%BE%8E%E5%85%83" target="_blank">→ 微博热搜·AI小鸭机器人</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#郑钦文美网胜利+赛后拥抱 体育情感内容持续高热</div>
+            <div class="trend-meta">体育赛事 · 情感内容 · 热度47万+</div>
+            <div class="trend-obs">💡 趋势观察：郑钦文话题连续两天登热搜前列，但热度结构正在变化——从"比分结果"转向"赛后拥抱"等情感瞬间。小红书上的体育内容天然偏向"人格化叙事"而非"赛事报道"，品牌借势体育话题时，绑定"人的故事"比绑定"赛事数据"传播效率更高。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%9F%B3%E6%89%98%E5%A8%83%E8%90%BD%E6%B3%AA%E9%83%91%E9%92%A6%E6%96%87%E6%8B%A5%E6%8A%B1" target="_blank">→ 微博热搜·柳托娃落泪郑钦文拥抱</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#00后能省 #多款手机涨价 消费理性化叙事引发代际共鸣</div>
+            <div class="trend-meta">消费态度 · 代际话题 · 热度19万+</div>
+            <div class="trend-obs">💡 趋势观察："上一辈未必有现在的00后能省"登上热搜，与手机涨价潮形成有趣对冲。年轻用户的消费态度正在从"省钱"升级为"精算"——不是不花钱，而是花得更聪明。小红书上的"开学季购物攻略"正在从"推荐好物"转向"如何不花冤枉钱"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%8A%E4%B8%80%E8%BE%88%E6%9C%AA%E5%BF%85%E6%9C%89%E7%8E%B0%E5%9C%A8%E7%9A%8400%E5%90%8E%E8%83%BD%E7%9C%81" target="_blank">→ 微博热搜·00后能省</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#重案六组 #还我季洁 经典IP重启唤起集体记忆</div>
+            <div class="trend-meta">影视话题 · 情怀内容 · 热度19万+</div>
+            <div class="trend-obs">💡 趋势观察：经典影视IP重启是小红书"怀旧内容"赛道的天然素材。"还我季洁"不是简单的角色执念，而是用户对"那个年代国产剧质感"的情感回溯。品牌做怀旧营销时，核心不是复制旧视觉，而是重新唤起"那种被陪伴的感觉"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%BF%98%E6%88%91%E5%AD%A3%E6%B4%81" target="_blank">→ 微博热搜·还我季洁</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI内容生产</div>
+        <div class="learning-title">当AI拍了一部上星收视第一的电视剧，"创作者"这个词还意味着什么？</div>
+        <div class="learning-subtitle">从《后西游记》到Microduck：AI内容从工具革命到产业重写的临界点</div>
+        <div class="learning-body">
+          <p>2026年8月31日，一部完全由AI生成画面的30集电视剧《后西游记》在湖南卫视首播，拿下同时段收视第一。这件事之所以值得关注，不只是因为它"用了AI"，而是因为它证明了一件事：<strong>AI已经可以独立完成从脚本到成片的全流程，而且观众买单了。</strong></p>
+          <p>同一周，Hugging Face旗下的桌面机器人Microduck以399美元的价格上线24小时卖出260万美元。一边是AI内容生产力的爆发，一边是AI实体产品的破圈——两条线索在2026年9月的第一天交汇，指向同一个信号：<strong>AI正在从"辅助工具"全面升级为"生产主体"。</strong></p>
+          <p>对营销行业的直接冲击是：<strong>内容的"制作门槛"消失了，"判断力门槛"成为新壁垒。</strong>当任何人都可以用AI在48小时内产出一部长剧，稀缺的不再是制作能力，而是审美判断、叙事直觉和情感洞察。</p>
+          <p><strong>对品牌内容策略的启示：</strong>过去品牌做内容营销，核心竞争力是"能做出好内容"；未来的竞争力是"能判断什么值得做"。AI让执行成本趋近于零，但"方向感"的价值急剧上升——知道该讲什么故事、该打动谁、该在哪个时刻出现，这些能力不会被AI替代，反而会因为AI的普及而更加值钱。</p>
+          <p>对平台大事件策划而言：<strong>活动本身的核心叙事、情感设计和现场体验，恰恰是AI最难替代的领域</strong>。AI可以帮你快速生成主视觉方案、批量产出传播素材、甚至实时生成个性化内容——但"让一群人在同一个空间里感受到同一份触动"这件事，仍然需要人来设计。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="http://news.10jqka.com.cn/20260901/c679462912.shtml" target="_blank">同花顺《首部AIGC上星长剧〈后西游记〉，火了》</a> ·
+          <a href="https://www.ithome.com/0/996/199.htm" target="_blank">IT之家《Hugging Face机器鸭Microduck爆单》</a> ·
+          <a href="https://www.openinstall.com/article/news/aigc-drama-journey-to-the-west-omnichannel-deeplink" target="_blank">OpenInstall《国内首部AIGC长剧正式开播》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 伦敦时装周</span>
+      </div>
+
+      <div class="festival-banner-placeholder">👗✂️🇬🇧</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">时尚</span>
+          <span class="festival-tag">英国·伦敦</span>
+          <span class="festival-tag">每年9月/2月</span>
+          <span class="festival-tag">四大时装周</span>
+        </div>
+        <div class="festival-name">伦敦时装周</div>
+        <div class="festival-name-en">London Fashion Week LFW · 始于1984年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从海德公园帐篷到全球创意先锋阵地</div>
+          <div class="festival-block-body">
+            <p>1984年，英国时装协会（BFC）在伦敦海德公园搭起第一批帐篷，举办了第一届"伦敦时装周"。那时它只是纽约、米兰、巴黎三大时装周的"小妹妹"——预算少、场地简陋、买家数量有限。</p>
+            <p>但伦敦有一样东西是其他三城没有的：<strong>叛逆基因</strong>。从Alexander McQueen 1992年圣马丁毕业秀上震惊四座的"开膛手杰克"系列，到John Galliano在伦敦的早期实验，到Stella McCartney和Phoebe Philo从中央圣马丁走出——伦敦时装周从不是最商业化的，但它始终是<strong>全球新锐设计师最重要的跳板</strong>。</p>
+            <p>2009年，BFC正式启动"Newgen"扶持计划，用政府彩票基金资助年轻设计师办秀。到今天，这个计划已经走出了McQueen、Erdem、Simone Rocha、JW Anderson等名字。伦敦时装周的定位也由此明确：不做最贵的秀，做<strong>最敢冒险的秀</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】五大时装周中最"年轻"的那一个</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">42年</div>
+                <div class="festival-stat-label">连续举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">5天</div>
+                <div class="festival-stat-label">2026秋冬日程 9/17-21</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">250+</div>
+                <div class="festival-stat-label">场次秀展活动</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10万+</div>
+                <div class="festival-stat-label">全球行业参与者</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">£10亿+</div>
+                <div class="festival-stat-label">对英国时尚产业贡献</div>
+              </div>
+            </div>
+            <p>2026年9月的伦敦时装周（9月17-21日）聚焦2027春夏系列。近年来，LFW在"性别流动设计""可持续时尚""数字展示"三个方向上持续领先：它是最早接受"无性别秀"的时装周，也是最早大规模开放线上直播的。</p>
+            <p><strong>商业运作模式：</strong>LFW由BFC主办，收入来源包括品牌赞助（Burberry长期支持）、展位销售、行业会议门票。与巴黎、米兰不同的是，LFW更强调"Showroom"模式——不只为走秀，更为设计师和品牌提供直接面向买手和媒体的交易空间。</p>
+            <p>近年来的亮点包括：中国设计师品牌持续增加（Susan Fang、Ming Ma等已成常客）、可持续材料成为强制议题、数字秀场与实体秀的混合模式常态化。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2027展望与对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>趋势预期：</strong>AI辅助设计将在下一届LFW大规模出现——从面料生成到秀场布置的数字化模拟。同时，"社区驱动"模式正在替代传统的"精英买手"模式：越来越多品牌选择在LFW期间举办面向公众的Pop-up，让时尚从T台走向街头。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>💡 对小红书平台大事件的启发：</strong>伦敦时装周最值得学习的是它的<strong>"新锐孵化器"定位</strong>——它不追求最大的商业规模，而是成为全球时尚创新者的"首发地"。对小红书大事件而言，同样不需要追求"最大"，而应该追求"最新"——让每一个参与者都感到"我在这里看到了还没火但即将火的东西"。另外，LFW的Showroom模式（展示+交易+社交一体化）对线下活动设计也有直接参考价值：活动现场不只是"看的空间"，更应该是"连接的空间"。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://londonfashionweek.co.uk/" target="_blank">London Fashion Week 官网</a> ·
+          <a href="https://www.heathrowexpress.com/zh-hans/sightseeing/london-fashion-week-2026" target="_blank">Heathrow Express·伦敦时装周指南</a> ·
+          <a href="https://en.wikipedia.org/wiki/London_Fashion_Week" target="_blank">Wikipedia·London Fashion Week</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 时尚设计</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">👗 主题策展 · 时尚界的六张反叛面孔</div>
+        <div class="knowledge-headline">从香奈儿到川久保玲：那些用衣服改变世界的人</div>
+        <div class="knowledge-tagline">「时尚不是关于裙子有多长，而是关于你敢于走多远。」</div>
+
+        <div class="knowledge-intro">
+          时装设计的本质不是做衣服——它是用布料和剪裁来回答一个问题：<strong>人应该以什么姿态面对世界？</strong>每一代反叛者都在用针线重新定义这个问题。香奈儿让女人穿裤子，圣罗兰让女人穿西装，川久保玲让衣服不再是衣服，McQueen让时装变成尖叫，Virgil Abloh让街头登上殿堂。<br><br>
+          理解这些设计师，就是理解20世纪至今的审美革命史。对品牌人来说，这也是一套"如何用视觉语言颠覆认知"的方法论图谱。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Coco_Chanel_by_Wilhelm_Willinger.jpg/440px-Coco_Chanel_by_Wilhelm_Willinger.jpg"
+              alt="Coco Chanel"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">👒</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Coco Chanel</div>
+              <div class="knowledge-card-sub">法国 · 1883-1971 · 现代时装之母</div>
+              <div class="knowledge-card-work">让女人穿裤子、穿短发、戴假珠宝。她说"时尚不只是 dresses 的事，时尚在天上、在街上，它和我们的想法和生活有关。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Yves_Saint_Laurent_%281970%29_by_Erling_Mandelmann.jpg/440px-Yves_Saint_Laurent_%281970%29_by_Erling_Mandelmann.jpg"
+              alt="Yves Saint Laurent"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🤵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Yves Saint Laurent</div>
+              <div class="knowledge-card-sub">法国 · 1936-2008 · 权力套装革命</div>
+              <div class="knowledge-card-work">1966年推出"吸烟装"Le Smoking——让女性第一次穿上了西装。他说"香奈儿解放了女人，我赋予了她们权力。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🇯🇵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">川久保玲</div>
+              <div class="knowledge-card-sub">Rei Kawakubo · 日本 · Comme des Garçons</div>
+              <div class="knowledge-card-work">1981年巴黎首秀震惊西方——"乞丐装"、不对称剪裁、全黑色。时尚评论员称之为"广岛时髦"。她用衣服质问：美必须是对称的吗？</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Alexander_McQueen_%28Fashion_designer%29.jpg/440px-Alexander_McQueen_%28Fashion_designer%29.jpg"
+              alt="Alexander McQueen"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">💀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Alexander McQueen</div>
+              <div class="knowledge-card-sub">英国 · 1969-2010 · 时装界的暗黑诗人</div>
+              <div class="knowledge-card-work">毕业作品"开膛手杰克"系列用马毛做面料。他的秀不是走秀，是行为艺术——模特在旋转喷漆盘上被机器人喷色。天才与痛苦的同义词。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Virgil_Abloh_%22Pyrex_Vision%22_Popup_Shop_%2848115616472%29_%28cropped%29.jpg/440px-Virgil_Abloh_%22Pyrex_Vision%22_Popup_Shop_%2848115616472%29_%28cropped%29.jpg"
+              alt="Virgil Abloh"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🔶</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Virgil Abloh</div>
+              <div class="knowledge-card-sub">美国 · 1980-2021 · 街头×高定的桥梁</div>
+              <div class="knowledge-card-work">Off-White创始人，LV男装艺术总监——第一位执掌法国顶级时装屋的非裔美国人。他把街头文化带入高级时装，重新定义了"奢侈"的边界。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🧵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">郭培</div>
+              <div class="knowledge-card-sub">中国 · 高级定制设计师</div>
+              <div class="knowledge-card-work">2016年成为首位受邀参加巴黎高定周的中国设计师。Rihanna那件刷屏的"黄袍"Met Gala礼服出自她手。她用中国刺绣工艺征服了西方高定体系。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六个人有一个共同点：<strong>他们都先被质疑，再被追随。</strong>Chanel被说"不像女人"，YSL被骂"毁掉女性气质"，川久保玲被称为"反时尚"，McQueen被认为"太暴力"，Virgil被认为"不够格"。但历史证明——时尚从来不是关于"被所有人接受"，而是关于"敢于让一些人不安"。做品牌内容也是一样：如果你做的东西没有让至少一些人感到意外，那它大概率也不会让任何人记住。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
