@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/2</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 40%, #c4653a 80%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/2/index.html" class="active">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 02</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美国遭遇"股债汇三杀"，"抛售美国"交易卷土重来</div>
+            <div class="news-item-desc">美股、美债、美元同步下跌，标普500回调、10年期美债收益率突破4%关口。分析人士指出，地缘紧张局势、关税忧虑及发达经济体财政可持续性隐忧共同构成了本轮跨市场抛售的核心逻辑。全球资本对美国资产的信心正经历结构性重估。</div>
+            <a class="news-item-link" href="https://wap.eastmoney.com/a/202601223626469543.html" target="_blank">→ 东方财富</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">9月1日起华为、小米、荣耀等手机品牌集体涨价，涨幅200-1000元</div>
+            <div class="news-item-desc">存储芯片成本飙升叠加高通9月1日起全系列芯片两位数涨幅涨价，国内主流手机品牌同步调价。三星确认Q1 DRAM供应价格涨幅超100%，AI服务器对存储产能的挤占效应持续传导至消费终端。智能手机均价一年暴涨近100美元，行业价格逻辑正在被改写。</div>
+            <a class="news-item-link" href="https://www.sina.cn/news/detail/5338425932909576.html" target="_blank">→ 新浪科技</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果新CEO约翰·特努斯正式就任，入驻微博首条"你好hello"，秋季发布会定档9月9日</div>
+            <div class="news-item-desc">在苹果工作25年的硬件工程老兵特努斯（John Ternus）接替库克，成为苹果第四任CEO。就任当晚即入驻微博和X平台，首条博文用中英文问好，粉丝迅速破2万。北京时间9月10日凌晨1点，苹果将在Apple Park发布iPhone 18 Pro系列及首款折叠屏iPhone。一个新时代开始了。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/997/187.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">iPhone 18 Pro系列搭载台积电2nm A20 Pro芯片，折叠屏iPhone首次亮相</div>
+            <div class="news-item-desc">A20 Pro首次采用WMCM晶圆级多芯片模块封装，灵动岛开孔缩小约35%，主摄升级显著。苹果预计仅发布两款Pro机型，折叠屏iPhone作为全新品类首次登场。2nm制程的消费级落地，标志着移动端AI算力进入新纪元。</div>
+            <a class="news-item-link" href="https://www.eet-china.com/mp/a520616.html" target="_blank">→ 电子工程专辑</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">高通自9月1日起全系列芯片涨价，AI服务器需求挤压消费电子产能</div>
+            <div class="news-item-desc">高通向客户发送涨价通知，全系列芯片两位数百分比涨幅。根源在于AI大模型训练和推理对先进制程的巨量需求——AI服务器吃掉了大量3nm/2nm产能，消费电子不得不为"算力军备竞赛"买单。芯片涨价正在从产业上游向终端消费者传导。</div>
+            <a class="news-item-link" href="https://www.esmchina.com/news/14411.html" target="_blank">→ 国际电子商情</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">深圳校服再火出圈：全市统一款式+企业自由竞争，夏季校服25-45元</div>
+            <div class="news-item-desc">开学季"深圳校服"话题冲上热搜第一。作为全国唯一实行"校服全市统一款式、商超自行购买"的城市，深圳模式24年基本款未变，却通过企业自由竞争把价格压到极致。街边店铺、外卖平台随时可买——"把选择权还给家长"的治理逻辑引发全国讨论。</div>
+            <a class="news-item-link" href="http://finance.sina.cn/2026-09-01/detail-iniqitrq4780315.d.html" target="_blank">→ 深视新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">奢侈品行业进入"证明价值"时代，59%消费者持怀疑态度</div>
+            <div class="news-item-desc">贝恩报告显示2026年奢侈品消费者群体已缩减至约3.4亿人，涨价策略正在疏远客户。行业从"讲述价值"转向"证明价值"——品牌需要拿出明确证据而非空洞叙事。中国奢侈品消费预计2026年下降4%，全球增长引擎熄火后，精细化运营高净值客户成为核心策略。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/tech/roll/2026-05-13/doc-inhxsttw9565069.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">《花少2》未播细节大量曝光引热议，宁静回应，"花学"话题霸屏</div>
+            <div class="news-item-desc">《花儿与少年2》被爆料大量未播细节，"曝花少2没有母带了""宁静回应花少2分析""井柏然对花少2每个人的点评"等多个话题同时冲上热搜。"花学"作为一门互联网显学再度爆发——这档十年前的综艺，正在被新一代观众用全新的社交语言重新解读。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%8A%B1%E5%B0%912%E8%A2%AB%E7%88%86%E6%96%99%E5%A4%A7%E9%87%8F%E6%9C%AA%E6%92%AD%E7%BB%86%E8%8A%82" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《黑神话：悟空》2026全球音乐会巡演启动，12城21场，9月登陆台北</div>
+            <div class="news-item-desc">"随乐西行，且听天命"——游戏音乐全球巡演覆盖洛杉矶、台北等12座城市。洛杉矶孔雀剧院首站已满座，台北场9月19-20日连续两天在LEGACY MAX呈现。从3A游戏到全球音乐会，《黑神话》正在完成中国游戏IP向文化品牌的跨越。</div>
+            <a class="news-item-link" href="https://www.ign.com.cn/blackmythwukong/61224/hei-shen-hua-wu-kong-2026-quan-qiu-yin-le-hui-ji-shi-quan-qiu-tian-ming-ren-zai-luo-shan-ji-kong-que" target="_blank">→ IGN中国</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">2026品牌营销趋势：从"流量收割"到"心智占领"，情绪驱动与理性审视并存</div>
+            <div class="news-item-desc">广告门、虎嗅、TBWA等多份年度趋势报告指向同一方向：消费者"被触动情绪的速度"与"审视价值的理性"同步加速。品牌需要从曝光逻辑转向心智沉淀——评论、收藏、停留时长比单纯曝光量更值钱。2026年的品牌战争，是"心价比"之战。</div>
+            <a class="news-item-link" href="https://www.adquan.com/article/359105" target="_blank">→ 广告门</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">西藏吉隆口岸上游堰塞湖完全泄洪，泥石流灾害悼念活动举行</div>
+            <div class="news-item-desc">受尼泊尔一侧泥石流影响，西藏吉隆口岸上游普热普强藏布形成堰塞湖，库容约220万立方米。经全力抢险，9月1日堰塞湖已完全泄洪，风险可控。西藏自治区在日喀则举行遇难者哀悼活动，通往吉隆口岸的道路抢通至剩余约800米。</div>
+            <a class="news-item-link" href="http://society.people.com.cn/n1/2026/0901/c1008-40790425.html" target="_blank">→ 人民网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#美国银行副总裁时代广场被刺身亡 热度181万</div>
+            <div class="trend-meta">国际安全话题 · 社会情绪向</div>
+            <div class="trend-obs">💡 趋势观察：纽约时代广场持刀袭击引发全网关注。小红书上的讨论角度从"海外安全"延伸到"中产焦虑"——对关注海外生活、留学、旅行的用户群体来说，这类事件会触发平台上的"安全感"内容需求。品牌在做海外相关内容时需注意情绪温度。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%BE%8E%E5%9B%BD%E9%93%B6%E8%A1%8C%E5%89%AF%E6%80%BB%E8%A3%81%E6%97%B6%E4%BB%A3%E5%B9%BF%E5%9C%BA%E8%A2%AB%E5%88%BA%E8%BA%AB%E4%BA%A1" target="_blank">→ 微博热搜·时代广场刺杀</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#老款手机集体涨价 热度91万+</div>
+            <div class="trend-meta">消费电子 · 民生话题</div>
+            <div class="trend-obs">💡 趋势观察：手机涨价话题连续占据热搜，"等发新机老款降价结果更贵"引发强烈共鸣。小红书上的数码博主和"省钱攻略"类内容将迎来一波流量高峰。对品牌种草来说，"如何在这一轮涨价中找到性价比最优解"是当下最有共鸣的内容切入口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%80%81%E6%AC%BE%E6%89%8B%E6%9C%BA%E9%9B%86%E4%BD%93%E6%B6%A8%E4%BB%B7" target="_blank">→ 微博热搜·老款手机涨价</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#吉隆口岸上游堰塞湖已完全泄洪 热度71万</div>
+            <div class="trend-meta">国内民生 · 灾害救援</div>
+            <div class="trend-obs">💡 趋势观察：西藏泥石流及堰塞湖话题持续发酵，公众关注从"灾情"转向"救援进展"和"中尼边境安全"。小红书上的地理科普博主和旅行博主对西藏线路的关注度上升。品牌在涉及西藏/西部旅行内容时可适度关联"安全出行"信息。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%90%89%E9%9A%86%E5%8F%A3%E5%B2%B8%E4%B8%8A%E6%B8%B8%E5%A0%B0%E5%A1%9E%E6%B9%96%E5%B7%B2%E5%AE%8C%E5%85%A8%E6%B3%84%E6%B4%AA" target="_blank">→ 微博热搜·吉隆堰塞湖</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#花少2被爆料大量未播细节 热度59万</div>
+            <div class="trend-meta">综艺话题 · 社交考古</div>
+            <div class="trend-obs">💡 趋势观察：一档十年前的综艺为何能霸屏？"花学"在小红书的解读方式已经从"人际八卦"进化为"社交关系学教材"。用户用当下的视角重新审视过去的综艺关系——这是"内容考古"趋势的典型表现。品牌可关注"经典IP重新解读"的营销机会。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%8A%B1%E5%B0%912%E8%A2%AB%E7%88%86%E6%96%99%E5%A4%A7%E9%87%8F%E6%9C%AA%E6%92%AD%E7%BB%86%E8%8A%82" target="_blank">→ 微博热搜·花少2</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#曼城1.46亿欧元签下恩佐 热度41万</div>
+            <div class="trend-meta">体育转会 · 夏窗压哨</div>
+            <div class="trend-obs">💡 趋势观察：夏窗最后一天的重磅转会，恩佐3年半内两次转会均破亿，总价2.66亿欧元历史第4。小红书体育内容的讨论热度集中在"值不值"和"战术适配"。体育类内容与平台"种草效果化"的结合点在于——赛事情绪高峰期的品牌即时内容投放。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%9B%BC%E5%9F%8E1.46%E4%BA%BF%E6%AC%A7%E5%85%83%E7%AD%BE%E4%B8%8B%E6%81%A9%E4%BD%90" target="_blank">→ 微博热搜·曼城签恩佐</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 涨价周期中的品牌沟通</div>
+        <div class="learning-title">当所有人都涨价，品牌怎样让用户不觉得"被宰了"？</div>
+        <div class="learning-subtitle">手机集体涨价背后：一场关于"心价比"的品牌沟通大考</div>
+        <div class="learning-body">
+          <p>9月1日，华为、小米、荣耀、OPPO、vivo……几乎所有主流品牌同时调价。这不是某一家企业的独立决策，而是一次行业级的成本传导——存储芯片翻倍、高通芯片两位数涨幅、AI服务器挤占产能。整个消费电子供应链正在为AI时代的算力军备竞赛"缴税"。</p>
+          <p>但同样的涨价，不同品牌的用户反应天差地别。苹果宣布涨价时，用户说"反正我买"；某些品牌涨价时，用户说"再也不买XX了"。<strong>差距不在价格本身，而在品牌是否给了用户一个"理解并接受的叙事"。</strong></p>
+          <p>成功的涨价沟通有三个共性特征：<strong>一是"归因于外部"——让用户理解涨价原因是成本驱动而非贪利；二是"价值前置"——在宣布涨价前先强化产品价值感知；三是"选择权保留"——给用户"买或不买"的自主感，而非"只能接受"的被动感。</strong></p>
+          <p>深圳校服的"出圈"恰好提供了一个正面对照：同样的校服，当治理逻辑从"统一采购涨价"转向"自由竞争降价"，用户感受完全相反。<strong>核心不是价格数字本身，而是用户是否感到"被尊重"。</strong></p>
+          <p>对平台大事件策划的启示同样清晰：当赞助费、场地费、制作费都在涨，品牌方的"涨价容忍度"取决于——你是否让他觉得"这笔钱花得值"，而不是"不投不行了"。从"流量曝光"到"心智占领"的叙事迁移，本质上就是在为涨价建立合理性。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.eet-china.com/mp/a518214.html" target="_blank">电子工程专辑《手机均价一年暴涨近100美元》</a> ·
+          <a href="https://www.adquan.com/article/359105" target="_blank">广告门《2026年品牌广告制作指南》</a> ·
+          <a href="https://www.huxiu.com/article/4832885.html" target="_blank">虎嗅《2026影响品牌的11个营销趋势》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · IFA柏林国际电子消费品展</span>
+      </div>
+
+      <div class="festival-banner-placeholder">📱🔌🤖✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">消费电子</span>
+          <span class="festival-tag">德国·柏林</span>
+          <span class="festival-tag">9月4–8日</span>
+          <span class="festival-tag">全球最大消费科技展</span>
+        </div>
+        <div class="festival-name">IFA柏林国际电子消费品展</div>
+        <div class="festival-name-en">IFA Berlin — Internationale Funkausstellung · 始于1924年 · Innovation For All</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从无线电博览会到全球消费科技风向标</div>
+          <div class="festival-block-body">
+            <p>1924年，柏林。第一届"德国无线电博览会"（Internationale Funkausstellung）在亚历山大广场旁的展览馆开幕——彼时，收音机是最新的"未来设备"，参观者排队数小时只为听清一个电台频道。没人想到，这个围绕"无线电"的小型展览会长成百年后的全球消费科技顶级舞台。</p>
+            <p>百年间，IFA的展品折射了整个消费电子产业的进化史：1930年代电视机首次亮相，1950年代洗衣机和冰箱走进大众视野，1980年代个人电脑和录像机引爆关注，2000年代智能手机和平板成为主角。<strong>每一届IFA的展台，都是一个时代的"未来生活样板间"。</strong></p>
+            <p>2005年，展会从每两年一届改为每年一届；2011年更名为"IFA Berlin"，宣告从区域性博览会升级为全球化科技盛会。它不再只是德国人的展会——全球消费电子品牌都将IFA视为进入欧洲市场的第一站。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】欧洲最大、全球最具影响力的消费科技展</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">163,000㎡</div>
+                <div class="festival-stat-label">2026展览面积</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2,005+</div>
+                <div class="festival-stat-label">参展企业</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">9/4–8</div>
+                <div class="festival-stat-label">2026展期（5天）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">100年</div>
+                <div class="festival-stat-label">创办于1924年</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">Innovation For All</div>
+                <div class="festival-stat-label">2026年度主题</div>
+              </div>
+            </div>
+            <p>2026年IFA围绕三大核心领域展开：<strong>消费电子</strong>（手机、PC、可穿戴）、<strong>智慧家电</strong>（AI厨电、扫地机器人、智能冰洗）、<strong>未来科技</strong>（AR/VR、AI助手、健康科技、可持续能源）。IFA Next区域专门聚焦初创企业和前沿概念，是观察"明年消费趋势"的最佳窗口。</p>
+            <p>中国品牌在IFA的存在感逐年增强：海尔、海信、TCL、大疆、石头科技、追觅等品牌已成展会常驻力量。2026年，AI端侧落地（On-device AI）成为最大看点——当云端大模型的热潮消退，消费电子如何将AI能力压缩进一颗芯片、一块屏幕、一个家电，成为IFA的核心议题。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】IFA的下一步与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026及未来趋势：</strong>IFA正在从"产品展示型展会"向"体验驱动型科技节"转型。越来越多的品牌将IFA视为"新品全球首发地"——不仅是给媒体和买手看，更是通过展会现场创造社交传播内容。展会与社交媒体的边界正在消融：展台设计的第一优先级不再是"让现场观众看懂"，而是"让镜头前的百万用户记住"。</p>
+            <p>可持续性是另一条暗线。欧盟新电池法规、碳足迹标签要求、循环经济设计标准——IFA正在成为"绿色消费电子"的定义者和推广者。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>IFA的转型路径——从"展示产品"到"创造体验场景"——与小红书大事件的核心逻辑高度一致。最好的展台不是一个放满产品的货架，而是一个"让人想走进去、待一会、拍下来"的沉浸式空间。另外，IFA的时间节点（9月初）恰好是Q4大促前的产品集中亮相期，也是品牌种草内容的密集投放窗口。小红书可以借IFA趋势做"全球科技好物"主题策划，将海外展会内容转化为平台内的种草资产。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.ifa-berlin.com/" target="_blank">IFA Berlin 官网</a> ·
+          <a href="https://messe-berlin.cn/Events/Detail?Id=25" target="_blank">柏林展览（中国）·展会信息</a> ·
+          <a href="https://www.jufair.com/exhibition/ifa/" target="_blank">聚展网·IFA 2026详情</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 游戏音乐</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎵 主题策展 · 游戏音乐的造梦者</div>
+        <div class="knowledge-headline">当像素会唱歌：六位用旋律构建世界的游戏音乐大师</div>
+        <div class="knowledge-tagline">「好的游戏音乐，你闭上眼就能看见一个世界。」</div>
+
+        <div class="knowledge-intro">
+          游戏音乐（Game Music / Video Game Soundtrack）是21世纪最具生命力的新古典音乐形式之一。它不像电影配乐那样"配合画面"，而是与玩家的操作实时互动——你往前走，音乐渐强；你倒下，旋律低回。它是"活的"音乐。<br><br>
+          今天，《黑神话：悟空》全球巡回音乐会正在12座城市上演。当8082Audio的中国传统器乐与交响乐在天命人的征途上响起，我们不妨回溯这条脉络——是谁，定义了"游戏音乐"这门艺术？
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Nobuo_Uematsu_E3_2006.jpg/440px-Nobuo_Uematsu_E3_2006.jpg"
+              alt="植松伸夫"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">植松伸夫</div>
+              <div class="knowledge-card-sub">Nobuo Uematsu · 日本 · 最终幻想之父</div>
+              <div class="knowledge-card-work">为《最终幻想》系列创作了超过300首曲目。《Aerith's Theme》《Zanarkand》用极简旋律承载了整整一代人的RPG记忆。他证明了：游戏音乐可以像古典乐一样被演奏、被流泪。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Koji_Kondo_20150619.jpg/440px-Koji_Kondo_20150619.jpg"
+              alt="近藤浩治"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍄</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">近藤浩治</div>
+              <div class="knowledge-card-sub">Koji Kondo · 日本 · 任天堂传奇作曲家</div>
+              <div class="knowledge-card-work">《超级马力欧兄弟》主题曲大概是地球上最知名的8-bit旋律。他用5个音符就定义了一个角色。《塞尔达传说》的配乐则开创了"用音乐叙事"的游戏设计范式。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Yasunori_Mitsuda_2012.jpg/440px-Yasunori_Mitsuda_2012.jpg"
+              alt="光田康典"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⏰</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">光田康典</div>
+              <div class="knowledge-card-sub">Yasunori Mitsuda · 日本 · 时间旅行者</div>
+              <div class="knowledge-card-work">《时空之轮》的配乐被誉为"游戏音乐的圣经"。他在创作中睡着，梦里听见旋律，醒来后记录下来——《Wind Scene》就是这样诞生的。凯尔特风与电子乐的融合，至今无人超越。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Jeremy_Soule_2007.jpg/440px-Jeremy_Soule_2007.jpg"
+              alt="Jeremy Soule"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐉</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">杰里米·索尔</div>
+              <div class="knowledge-card-sub">Jeremy Soule · 美国 · 史诗之声</div>
+              <div class="knowledge-card-work">《上古卷轴》三部曲的配乐者。他用管弦乐构建了一个"可以走进去"的奇幻世界——《Dragonborn》的合唱让百万玩家在创建角色时起了鸡皮疙瘩。游戏音乐史上最成功的交响化实践之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Austin_Wintory_2015.jpg/440px-Austin_Wintory_2015.jpg"
+              alt="Austin Wintory"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏜️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">奥斯汀·温托里</div>
+              <div class="knowledge-card-sub">Austin Wintory · 美国 · 沉默的诗人</div>
+              <div class="knowledge-card-work">《风之旅人》（Journey）的配乐获得格莱美提名——游戏音乐首次进入这一殿堂。一把大提琴，一段无词的旅程，证明"最少的乐器也能承载最深的情感"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🐵🎶</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">8082Audio / 李佳骐</div>
+              <div class="knowledge-card-sub">中国 · 《黑神话：悟空》音乐团队</div>
+              <div class="knowledge-card-work">用陕北说书、古琴、唢呐与管弦乐的混搭，为一个中国神话世界创造了"听得见的东方史诗"。当全球音乐会的掌声在洛杉矶响起，游戏音乐的中国叙事正在写下新的一页。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          游戏音乐和所有伟大的艺术形式共享同一个秘密：<strong>它不是在描述一个世界，而是在邀请你进入一个世界。</strong>植松伸夫的大地主题让你闻到泥土，近藤浩治的地下关卡让你感到紧张，8082Audio的唢呐让你看到黄风岭的尘土。当《黑神话》的音乐会在全球巡演时，它传递的不只是旋律——是"中国故事可以被全世界听见"这件事本身。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
