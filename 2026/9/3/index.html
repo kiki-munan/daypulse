@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/3</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/3/index.html" class="active">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 03</div>
+      <div class="day-week">星期四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">8月中国PMI数据发布，制造业景气度分化延续；Q1 GDP增速5%为五季最高，但消费冷感挥之不去</div>
+            <div class="news-item-desc">国家统计局8月31日发布PMI月度数据，制造业景气度在不同行业间持续分化。回顾2026年整体走势，Q1 GDP增长5%为五个季度最高，但消费端复苏力度始终弱于生产端，"温差"现象引发关注。"开局之年看山西"等调研信号显示，区域经济结构转型仍在加速推进。</div>
+            <a class="news-item-link" href="https://www.stats.gov.cn/sj/zxfb/" target="_blank">→ 国家统计局</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">42家A股上市银行交出中期答卷：量缓增、价企稳、风险抵补能力充足</div>
+            <div class="news-item-desc">半年报显示银行业整体"以量补价"策略趋缓，净息差企稳迹象初现。不良率维持低位，拨备覆盖率充足，为下半年信贷投放和实体经济支持留出空间。金融板块的稳定性是宏观经济预期管理的重要锚点。</div>
+            <a class="news-item-link" href="https://www.cnfin.com/macro/" target="_blank">→ 中国金融信息网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果换帅：Bloomberg报道苹果迎来新任CEO，AI战略成核心考验</div>
+            <div class="news-item-desc">据Bloomberg 9月1日报道，苹果正式迎来新CEO交接。在AI军备竞赛白热化的当下，苹果如何将AI能力融入iOS生态和硬件体验，将决定未来十年的竞争格局。这是继库克时代之后最重要的战略转折点。</div>
+            <a class="news-item-link" href="https://www.youtube.com/watch?v=KwTxOxq6uu4" target="_blank">→ Bloomberg Tech</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国网信办发布《人工智能拟人化互动服务管理暂行办法》，AI陪伴进入监管时代</div>
+            <div class="news-item-desc">4月发布的暂行办法首次明确规范"模拟自然人人格特征、思维模式和沟通风格的持续性情感互动服务"。这标志着中国在全球率先为AI情感陪伴产品划定监管边界——对Character.AI类产品、AI虚拟伴侣等赛道影响深远。</div>
+            <a class="news-item-link" href="https://www.cac.gov.cn/2026-04/10/c_1777558395078289.htm" target="_blank">→ 中国网信网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美股AI应用软件股集体下挫，市场重新审视AI商业化变现路径</div>
+            <div class="news-item-desc">当地时间9月2日，美股三大指数集体收涨，但AI应用软件板块逆势回调。市场对"AI赋能"叙事的耐心正在降低——投资人开始追问：谁真正在赚钱？这提醒所有AI赛道从业者，技术泡沫消退后，商业化能力才是真正的分水岭。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/a/cgjjj.html" target="_blank">→ 东方财富网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">戴森推出499美元电动牙刷，号称"效果堪比牙线"——高端个护再探价格天花板</div>
+            <div class="news-item-desc">华尔街日报9月3日报道，戴森最新电动牙刷定价499美元，以声波技术+流体力学设计为卖点。在消费电子整体遇冷的背景下，戴森持续用"工程溢价"策略试探消费者支付意愿上限。这既是品牌力的体现，也折射出高端消费"分级而非降级"的结构性趋势。</div>
+            <a class="news-item-link" href="https://cn.wsj.com/zh-hans/news/archive" target="_blank">→ 华尔街日报中文版</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">星宇股份用工风波持续发酵：大众启动调查，胡锡进称道歉不够，建议优先召回被辞应届生</div>
+            <div class="news-item-desc">大众汽车零部件供应商星宇股份因大规模裁员引发舆论关注，胡锡进公开表态认为企业道歉"不够"，建议优先召回被辞退的应届生。事件登上微博热搜，话题从劳资关系延伸至企业社会责任底线。品牌雇主形象管理的脆弱性再次被验证。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%A7%E4%BC%97%E9%92%88%E5%AF%B9%E6%98%9F%E5%AE%87%E8%82%A1%E4%BB%BD%E7%94%A8%E5%B7%A5%E9%A3%8E%E6%B3%A2%E5%90%AF%E5%8A%A8%E8%B0%83%E6%9F%A5" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">priest入围2027纽曼华语文学奖——网文作者首次进入国际华语文学最高奖项视野</div>
+            <div class="news-item-desc">纽曼华语文学奖（Newman Prize for Chinese Literature）是美国首个专为华语文学设立的奖项，每两年一届。priest作为唯一入围的网文作者，与莫言、苏童、吴明益等纯文学作家同台。这标志着网络文学的"文学合法性"获得国际学术界的正式认可，是2026年中国文学界最具标志性的事件之一。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=priest%E5%85%A5%E5%9B%B42027%E7%BA%BD%E6%9B%BC%E5%8D%8E%E8%AF%AD%E6%96%87%E5%AD%A6%E5%A5%96" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">9·3抗战胜利纪念日：微博多条相关话题登顶，"每个中国人都该记住0903"</div>
+            <div class="news-item-desc">今日是中国人民抗日战争胜利81周年纪念日。"每个中国人都该记住0903""中国抗日战争拯救人类文明""今天胜利胜利胜利"等多条话题冲上微博热搜。公众情绪庄重而深沉，平台内容消费偏向历史纪录、人物故事和爱国主义叙事。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%AF%8F%E4%B8%AA%E4%B8%AD%E5%9B%BD%E4%BA%BA%E9%83%BD%E8%AF%A5%E8%AE%B0%E4%BD%8F0903" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普称习近平来访时将进行"富有成效"的会谈，中美关系进入新一轮互动窗口</div>
+            <div class="news-item-desc">VOA 9月3日报道，美国总统特朗普公开表示期待即将到来的中美元首会面，称预期将有"富有成效"的会谈。在中美贸易摩擦持续、科技脱钩风险并存的背景下，高层对话的恢复被市场解读为积极信号。</div>
+            <a class="news-item-link" href="https://www.voachinese.com/z/1739" target="_blank">→ VOA中文</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">乌克兰两部门在基辅交火， internal tensions escalate amid ongoing conflict</div>
+            <div class="news-item-desc">据微博热搜，乌克兰境内两个权力部门在首都基辅发生武装冲突。在对外战争持续的背景下，内部权力裂痕公开化，为乌克兰政局增添新的不确定性。国际观察者密切关注事态发展及其对前线资源调配的影响。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B9%8C%E5%85%8B%E5%85%B0%E4%B8%A4%E9%83%A8%E9%97%A8%E5%9C%A8%E5%9F%BA%E8%BE%85%E4%BA%A4%E7%81%AB" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#每个中国人都该记住0903 抗战胜利纪念日多话题登顶</div>
+            <div class="trend-meta">历史记忆 · 爱国情感 · 纪录内容</div>
+            <div class="trend-obs">💡 趋势观察：9·3纪念日相关话题霸屏微博热搜，小红书上历史纪录片片段、抗战老兵故事、纪念碑打卡内容热度飙升。这类内容具有天然的情感共鸣力，但品牌需谨慎把握调性——庄重感优先于营销性，"致敬"比"借势"更合适。平台大事件如能在此类纪念日提供"集体记忆容器"功能（如用户UGC故事征集），将建立深层情感连接。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%AF%8F%E4%B8%AA%E4%B8%AD%E5%9B%BD%E4%BA%BA%E9%83%BD%E8%AF%A5%E8%AE%B0%E4%BD%8F0903" target="_blank">→ 微博热搜·0903</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#priest入围2027纽曼华语文学奖 网文与纯文学首次同台</div>
+            <div class="trend-meta">文学破圈 · 阅读内容 · 粉丝文化</div>
+            <div class="trend-obs">💡 趋势观察：priest入围国际华语文学最高奖项，在小红书引发"网文算不算文学"的讨论热潮。这是平台读书类博主的黄金内容窗口——从《默读》到《残次品》，priest的作品覆盖了悬疑、科幻、古风等多类型。对平台阅读业务而言，这证明"类型文学"正在获得学术 legitimacy，读书赛道需要重新审视"严肃/通俗"的二分法。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=priest%E5%85%A5%E5%9B%B42027%E7%BA%BD%E6%9B%BC%E5%8D%8E%E8%AF%AD%E6%96%87%E5%AD%A6%E5%A5%96" target="_blank">→ 微博热搜·priest</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#微信新功能专治各种看不见 热度22万+</div>
+            <div class="trend-meta">产品体验 · 工具类内容 · 效率提升</div>
+            <div class="trend-obs">💡 趋势观察：微信功能更新类内容天然具备"教程属性"，在小红书形成稳定的搜索-收藏链路。这类"工具测评/隐藏功能"内容是平台搜索流量的重要来源——用户不只是看，还会收藏和分享。对品牌而言，产品功能类内容是低成本高回报的种草载体，关键在于"发现感"而非"说明书感"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%BE%AE%E4%BF%A1%E6%96%B0%E5%8A%9F%E8%83%BD%E4%B8%93%E6%B2%BB%E5%90%84%E7%A7%8D%E7%9C%8B%E4%B8%8D%E8%A7%81" target="_blank">→ 微博热搜·微信新功能</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#吉隆泥石流遇难21人失联541人 自然灾害牵动全网</div>
+            <div class="trend-meta">社会关注 · 救援信息 · 公益内容</div>
+            <div class="trend-obs">💡 趋势观察：尼泊尔/吉隆地区泥石流灾害登上热搜，小红书上救援进展、避险知识、志愿者招募类内容快速聚集。灾害事件中的信息差是平台内容价值的核心——用户在恐慌时刻更需要"可靠信息源"而非情绪煽动。公益类内容在此时段的传播效率远高于日常，但品牌介入需极度克制。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%90%89%E9%9A%86%E6%B3%A5%E7%9F%B3%E6%B5%81%E9%81%87%E9%9A%BE21%E4%BA%BA%E5%A4%B1%E8%81%94541%E4%BA%BA" target="_blank">→ 微博热搜·泥石流</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#星宇股份用工风波 大众启动调查 企业社会责任成焦点</div>
+            <div class="trend-meta">职场 · 企业责任 · 品牌声誉</div>
+            <div class="trend-obs">💡 趋势观察：星宇股份裁员事件从劳资纠纷升级为公共舆论事件，胡锡进等KOL的介入放大了传播势能。在小红书上，"公司避雷""裁员维权"类内容热度同步上升。这给品牌的启示是：雇主品牌建设不是HR的事，而是品牌声誉管理的一部分。一旦"对员工不好"的标签被贴上，消费者端的品牌好感度也会连带受损。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A4%A7%E4%BC%97%E9%92%88%E5%AF%B9%E6%98%9F%E5%AE%87%E8%82%A1%E4%BB%BD%E7%94%A8%E5%B7%A5%E9%A3%8E%E6%B3%A2%E5%90%AF%E5%8A%A8%E8%B0%83%E6%9F%A5" target="_blank">→ 微博热搜·星宇用工</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 品牌公共性</div>
+        <div class="learning-title">品牌的「公共时刻」：当商业力量遭遇社会议题，沉默是金还是沉默是罪？</div>
+        <div class="learning-subtitle">从星宇股份用工风波到9·3纪念日，品牌在公共议题面前的三种姿态</div>
+        <div class="learning-body">
+          <p>2026年的品牌传播有一个越来越清晰的趋势：<strong>品牌不再被允许只谈产品——公众期待品牌在关键时刻"表态"</strong>。今天恰好有两个参照系：一个是星宇股份用工风波中的企业危机公关，一个是9·3抗战胜利纪念日里品牌的集体沉默。</p>
+          <p>先说星宇。裁员事件从劳资纠纷升级为公共舆论，关键转折点是<strong>胡锡进的介入</strong>。他的表态让事件从"企业管理决策"变成了"社会公平议题"——"道歉不够""应该优先召回被辞应届生"，这些话语把品牌推入了一个必须回应的道德审判场。而大众作为客户方启动调查，更说明供应链上游的声誉风险已经传导到终端品牌。</p>
+          <p>再看9·3。抗战胜利纪念日是一个特殊的公共时刻——<strong>品牌的"正确姿态"是什么？</strong>绝大多数品牌选择沉默，少数发布"致敬"海报。但真正被用户记住的，往往是那些把"记忆"做成了内容的：一段老兵口述史、一个城市纪念地标的探访vlog、一份"你可能不知道的抗战细节"的知识帖。<strong>不是"致敬"这个动作本身有价值，而是"致敬的方式"决定了品牌能否进入用户的集体记忆。</strong></p>
+          <p>对平台大事件策划而言，这里有一个核心命题：<strong>品牌的公共性不是危机时刻的应激反应，而是日常积累的信任资产</strong>。那些在非公共时刻也在做"正确的事"的品牌，在公共时刻到来时才有资格发声。小红书"回归具体的人"的品牌叙事方向，本质上是在为品牌积累这种公共性资产——当每一个"具体的人"都被看见、被尊重，品牌在关键时刻的发言才不会被视为"蹭热度"。</p>
+          <p><strong>品牌的公共时刻，不是选择题，是积累题。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://s.weibo.com/weibo?q=%E8%83%A1%E9%94%A1%E8%BF%9B%E7%A7%B0%E6%98%9F%E5%AE%87%E9%81%93%E6%AD%89%E4%B8%8D%E5%A4%9F" target="_blank">微博·胡锡进评星宇道歉</a> ·
+          <a href="https://s.weibo.com/weibo?q=%E6%AF%8F%E4%B8%AA%E4%B8%AD%E5%9B%BA%E4%BA%BA%E9%83%BD%E8%AF%A5%E8%AE%B0%E4%BD%8F0903" target="_blank">微博·0903纪念日</a> ·
+          <a href="https://www.digitaling.com/articles/1446969.html" target="_blank">数英网《2026年的10个营销趋势》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 伦敦国际设计节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🏛️✨🎨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">设计盛事</span>
+          <span class="festival-tag">英国·伦敦</span>
+          <span class="festival-tag">9月12–20日</span>
+          <span class="festival-tag">第24届</span>
+        </div>
+        <div class="festival-name">伦敦国际设计节</div>
+        <div class="festival-name-en">London Design Festival · LDF · 始于2003年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从一场发布会到全球设计日历的固定坐标</div>
+          <div class="festival-block-body">
+            <p>2003年3月25日，伦敦。两位英国设计界的关键人物——<strong>John Sorrell爵士</strong>和<strong>Ben Evans</strong>——在Bloomberg总部举办了第一届伦敦设计节的发布会。那时的他们或许没想到，23年后，这个节日会成为全球设计界最重要的年度聚会之一。</p>
+            <p>LDF的诞生逻辑很朴素：伦敦本身就有大量的设计活动——画廊、博物馆、设计学院、家具店、建筑事务所——但它们是散落的。LDF做的事，是<strong>把散落的设计能量编织成一张网</strong>，用一个统一的品牌和节期，让整座城市在9月变成一座巨大的设计展厅。</p>
+            <p>这个"城市即展厅"的理念，在全球设计周浪潮中被广泛复制——从北京设计周到首尔设计节，从米兰设计周到迪拜设计日——但LDF始终是"去中心化设计节"模式的原始范本。它不设主会场，不建展馆，而是把整个城市的11个设计区（Design Districts）串联起来。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】2026年第24届：Worlds in Motion</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">600,000+</div>
+                <div class="festival-stat-label">2019年峰值访客</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">75+</div>
+                <div class="festival-stat-label">参与国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">11</div>
+                <div class="festival-stat-label">伦敦设计区</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">9天</div>
+                <div class="festival-stat-label">2026/9/12–20</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">24th</div>
+                <div class="festival-stat-label">第24届</div>
+              </div>
+            </div>
+            <p>2026年LDF的主题是<strong>"Worlds in Motion"</strong>——流动的世界。全球设计论坛（GDF）作为思想领导力项目，聚焦四组对话：<strong>东方与西方、过去与未来、人类与非人类、物理与数字</strong>。这组对话框架折射了设计界对当下世界最紧迫议题的回应：移民、生态、文化交融、AI介入创作。</p>
+            <p>确认参展的项目中，大量围绕"迁移"（migration）、"生态"（ecology）和"文化交换"（cultural exchange）展开。值得注意的是，<strong>L-Acoustics（音响技术公司）作为主赞助商之一</strong>，标志着设计节正在打破"视觉设计"的边界——声音设计、感官体验正在成为新的前沿。</p>
+            <p>市长Sadiq Khan的官方背书、Ben Evans的策展理念、以及来自全球的设计合作伙伴网络，让LDF超越了一个"展览"的范畴——它更像是一个<strong>为期9天的城市级设计操作系统</strong>，让所有设计实践者都能在这个平台上运行自己的"程序"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】对小红书平台大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>模式启发一：去中心化策展。</strong>LDF没有主会场，整个城市就是展场。这对小红书线下大事件的启示是：不必追求一个集中的"超级场地"，而是可以把城市的多个文化空间、商业空间编织成一条"内容动线"——每个节点都是一个独立的内容生产单元，但整体上构成一个完整的叙事体验。</p>
+            <p><strong>模式启发二：让参与者成为内容生产者。</strong>LDF的每一个展览、装置、工作坊，天然就是"可拍照、可分享"的内容场景。这与小红书"线下体验→线上种草"的闭环逻辑高度契合。大事件设计的核心KPI不应只是"到场人数"，而应是"UGC产出量"。</p>
+            <p><strong>模式启发三：主题框架的开放性。</strong>"Worlds in Motion"是一个足够大的框架，能容纳从家具设计到声音装置的所有内容。小红书大事件的主题设计也应如此——<strong>主题要足够"空"，才能让用户自己填充内容</strong>。"慢"不是答案，是一个邀请。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>距离下一届LDF还有9天（9月12日开幕）。</strong>对于正在筹备Q4线下大事件的团队来说，LDF是一个极佳的模式参考：城市级、去中心化、内容驱动、多方共创。它的成功不在于"花了多少钱"，而在于"激活了多少个内容节点"。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://londondesignfestival.com/about/" target="_blank">LDF官网·About</a> ·
+          <a href="https://londondesignfestival.com/gdf/" target="_blank">LDF·Global Design Forum</a> ·
+          <a href="https://www.wallpaper.com/design-interiors/design-events/london-design-festival-2026-preview" target="_blank">Wallpaper*·LDF 2026 Preview</a> ·
+          <a href="https://www.azuremagazine.com/events/london-design-festival-2026/" target="_blank">Azure Magazine·LDF 2026</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 当代华语文学</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">📖 主题策展 · 叙事炼金术</div>
+        <div class="knowledge-headline">改变文学想象力的六位创作者：从魔幻现实到赛博江湖</div>
+        <div class="knowledge-tagline">「所有伟大的故事，都在教我们如何用不同的方式看世界。」</div>
+
+        <div class="knowledge-intro">
+          2026年，网文作者priest入围纽曼华语文学奖，与莫言、苏童等纯文学巨匠同台。这不只是一个人的胜利——它标志着"文学"这个概念的边界，正在被重新定义。<br><br>
+          回溯过去一百年，有六位创作者，各自用不同的方式，改写了"故事可以是什么"的定义。他们来自不同大陆、不同时代，但有一个共同点：<strong>他们都让你在读完一本书之后，看世界的方式发生了微小的、不可逆的改变。</strong>
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Gabriel_Garcia_Marquez.jpg/440px-Gabriel_Garcia_Marquez.jpg"
+              alt="加西亚·马尔克斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🦋</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">加西亚·马尔克斯</div>
+              <div class="knowledge-card-sub">Gabo · 哥伦比亚 · 1927–2014</div>
+              <div class="knowledge-card-work">魔幻现实主义的巅峰。《百年孤独》让马孔多成为所有"被遗忘之地"的隐喻。他证明了：一个村庄可以装下整个世界的孤独。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Italo_Calvino.jpg/440px-Italo_Calvino.jpg"
+              alt="伊塔洛·卡尔维诺"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏙️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">伊塔洛·卡尔维诺</div>
+              <div class="knowledge-card-sub">Italo Calvino · 意大利 · 1923–1985</div>
+              <div class="knowledge-card-work">《看不见的城市》用55座虚构城市讲了一个关于"所有城市"的寓言。《如果在冬夜，一个旅人》让读者成为主角。他是最懂"结构即意义"的作家。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Jorge_Luis_Borges_1976.jpg/440px-Jorge_Luis_Borges_1976.jpg"
+              alt="博尔赫斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🪞</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">豪尔赫·路易斯·博尔赫斯</div>
+              <div class="knowledge-card-sub">Borges · 阿根廷 · 1899–1986</div>
+              <div class="knowledge-card-work">用迷宫、镜子、无限图书馆构建了文学史上最精密的智力宇宙。《小径分岔的花园》提前50年预言了"多世界"叙事。他是作家的作家。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">莫言</div>
+              <div class="knowledge-card-sub">中国 · 1955– · 诺贝尔文学奖</div>
+              <div class="knowledge-card-work">2012年诺奖得主。用"幻觉现实主义"把高密东北乡变成了中国文学的原乡。《红高粱家族》《生死疲劳》——他的叙事里，动物、鬼魂、历史都是活的。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">✍️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">priest</div>
+              <div class="knowledge-card-sub">中国 · 网络文学 · 入围2027纽曼奖</div>
+              <div class="knowledge-card-work">晋江文学城最活跃的创作者之一，30+部作品横跨悬疑（《默读》）、科幻（《残次品》）、古风（《有匪》）。入围纽曼奖标志着网文获得国际学术界的正式认可。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌌</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘慈欣</div>
+              <div class="knowledge-card-sub">中国 · 1963– · 雨果奖得主</div>
+              <div class="knowledge-card-work">《三体》系列让中国科幻进入世界主流。"黑暗森林法则""降维打击"成为商业世界的通用隐喻。他证明了：用物理学的冷峻，可以写出最炽热的文明存亡叙事。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六位创作者构成了一个关于"叙事可能性"的完整图谱：马尔克斯证明了"现实可以被扭曲但仍真实"，卡尔维诺证明了"结构本身可以讲故事"，博尔赫斯证明了"一个短篇可以装下宇宙"，莫言证明了"乡土可以通向世界"，priest证明了"类型文学也有文学性"，刘慈欣证明了"科幻可以是文明的自我审视"。<br><br>
+          对内容创作者和品牌策划人来说，这个图谱的意义不在于"读什么书"，而在于：<strong>每一个好故事，都在教我们用不同的方式看世界。而好的营销，本质上也是在帮用户"换一种方式看自己"。</strong>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
