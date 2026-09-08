@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/8</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 40%, #c4653a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/8/index.html" class="active">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 08</div>
+      <div class="day-week">星期二</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">联合国大会高票通过决议：废除使用450年的墨卡托投影，采用等积投影新版世界地图</div>
+            <div class="news-item-desc">9月4日，联合国大会以164票赞成、6票弃权、仅美国1票反对的压倒性结果通过决议，要求逐步停止使用1569年诞生的墨卡托投影地图，转向更准确反映各大陆实际面积比例的等积投影。该决议由多哥发起、非盟全力支持。非洲大陆在新地图上将显示为实际面积的两倍大，全球地缘认知版图面临重塑。</div>
+            <a class="news-item-link" href="https://news.cctv.com/2026/09/05/ARTISyRx7GPEC6PMJLzM9jcY260905.shtml" target="_blank">→ 央视网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美国"爱国者"导弹库存因中东战事消耗不足1700枚，补充需两年以上</div>
+            <div class="news-item-desc">美军在与伊朗相关军事行动中消耗超1500枚"爱国者"导弹，库存已降至1700枚以下。尽管特朗普政府已与军工企业加速扩产，但完全补齐仍需两年多。副总统万斯8日就美伊局势发表新表态，地缘紧张局势持续牵动全球资本市场神经。</div>
+            <a class="news-item-link" href="https://m.sohu.com/a/1060561707_122014422" target="_blank">→ 搜狐财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">华为鸿蒙7正式发布 + 全新三折叠Mate XT 2亮相，余承东喊话苹果用户</div>
+            <div class="news-item-desc">9月7日华为发布会连发重磅产品：HarmonyOS 7正式亮相，首款"阔直板"手机Pura X View和全新三折叠Mate XT 2同步发布。余承东公开建议苹果用户购买华为作为备用机，引发行业热议。鸿蒙OS 7花粉Beta版已开启招募，首批支持12个系列机型。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/993/809.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">小米18 Fold首发评测上线，9月手机圈"巅峰对决"正式打响</div>
+            <div class="news-item-desc">小米18 Fold作为小米年度折叠旗舰正式开售，首发评测登上微博热搜。与此同时，小米澎程N70/N90系列锁单火爆，手机市场进入"金九"争夺战。华为、小米、苹果三家9月密集发布，折叠屏赛道竞争白热化。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%8F%E7%B1%B318Fold%E9%A6%96%E5%8F%91%E8%AF%84%E6%B5%8B" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">谷歌DeepMind推出Gemini 3.8 Flash，AI自训练AI趋势加速</div>
+            <div class="news-item-desc">谷歌DeepMind正式推出面向Agent工作流的Gemini 3.8 Flash及专精漏洞挖掘的3.8 Flash Cyber模型。同时，"用AI训练AI"话题登上微博热搜第30位，标志着AI自我进化能力正从实验室走向大众认知。Anthropic也于9月发布Agent模型，在编程和长周期问题解决任务上达到新性能前沿。</div>
+            <a class="news-item-link" href="https://segmentfault.com/a/1190000048267859" target="_blank">→ SegmentFault</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">赵一鸣零食、零食很忙致歉：称错商品差价十倍赔付，成立专项基金先行赔付</div>
+            <div class="news-item-desc">零食量贩巨头"鸣鸣很忙"集团旗下赵一鸣零食和零食很忙就门店称重问题公开致歉，宣布自9月7日起将赔付标准从行业惯例的三倍提升至十倍差价，并成立专项基金。门店员工每月接受收银称重复核培训。这是零食量贩赛道高速扩张后首次大规模品 cred危机，对新兴消费业态的品控能力提出拷问。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/wm/2026-09-07/doc-iniqyzxs9536813.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">宝格丽威尼斯高珠晚宴：刘亦菲C位、蔡依林佩戴1.8亿珠宝，奢侈品牌借势电影节经济</div>
+            <div class="news-item-desc">宝格丽在威尼斯电影节期间举办高级珠宝晚宴，全球品牌代言人刘亦菲压轴登场坐C位，吴磊佩戴估值近5000万的68.88克拉哥伦比亚祖母绿项链，蔡依林佩戴价值约1.8亿元高珠亮相。奢侈品牌密集借势威尼斯电影节窗口期进行品牌叙事，珠宝品类从"产品消费"走向"场景体验消费"的趋势愈发清晰。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7879849970_1d5acf7f206801egyy.html" target="_blank">→ 新浪新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">郑钦文美网0-5落后连追7局逆转斯瓦泰克，三进八强创纪录</div>
+            <div class="news-item-desc">北京时间9月8日凌晨，2026美网女单第四轮，郑钦文在首盘0-5落后的绝境下，连胜7局以7-5逆转拿下首盘，最终7-5/6-3直落两盘淘汰前赛会冠军、8号种子斯瓦泰克，职业生涯第三次闯进美网八强、第五次晋级大满贯八强。"让5追7"的奇迹被美网官方称为"千万分之一概率事件"。下轮将战莱巴金娜。</div>
+            <a class="news-item-link" href="https://news.sina.com.cn/zx/2026-09-08/doc-iniqzsvk9468933.shtml" target="_blank">→ 新浪体育</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国女篮世界杯小组赛第2出线，20分大胜意大利；《花少5》播放量讨论升温</div>
+            <div class="news-item-desc">中国女篮在世界杯小组赛中20分大胜意大利，以小组第二身份晋级。体育热潮持续。综艺方面，《花儿与少年5》最新季播放量话题登上热搜，户外真人秀依然是观众情绪出口。电视剧《早春晴朗》也进入热议期。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B8%AD%E5%9B%BD%E5%A5%B3%E7%AF%AE20%E5%88%86%E5%A4%A7%E8%83%9C%E6%84%8F%E5%A4%A7%E5%88%A9%E5%A5%B3%E7%AF%AE" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">"缩小非洲"的地图正在终结：联合国地图投影决议背后的全球叙事重构</div>
+            <div class="news-item-desc">墨卡托投影诞生于1569年大航海时代，最初为远洋导航设计，却在450年间潜移默化地塑造了全球认知版图——欧洲和北美被放大，非洲和南美被"缩小"。此次联合国决议不仅是一次制图学更新，更是一次全球话语权再分配的隐喻。对品牌全球化传播而言，地图的选择从来不是中性的：视觉框架决定认知框架。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/tech/2026-09-05/detail-iniqtwvy0525943.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#郑钦文逆转震惊美网 热度260万+</div>
+            <div class="trend-meta">体育赛事话题 · 女性力量叙事</div>
+            <div class="trend-obs">💡 趋势观察：郑钦文"让5追7"的逆转占据微博热搜前两位，相关话题矩阵（逆转/千万分之一/下轮战莱巴金娜）合计热度超600万。体育赛事的女性叙事在小红书上具有天然传播优势——从"逆转精神"到运动穿搭到赛场妆容，品牌借势窗口可覆盖"赛事热点→精神共鸣→消费场景"三层内容链路。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%83%91%E9%92%A6%E6%96%87%E9%80%86%E8%BD%AC%E9%9C%87%E6%83%8A%E7%BE%8E%E7%BD%91" target="_blank">→ 微博热搜·郑钦文逆转震惊美网</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#小米18Fold首发评测 #余承东建议苹果用户买华为备用机</div>
+            <div class="trend-meta">科技消费赛道 · 折叠屏大战</div>
+            <div class="trend-obs">💡 趋势观察：小米18 Fold与华为三折叠同周发布，余承东公开喊话苹果用户形成话题引爆点。折叠屏不再是小众产品，而是进入大众消费决策视野。小红书上的"折叠屏怎么选"类内容将迎来流量高峰，3C数码种草内容的黄金窗口期已至。品牌可关注"科技美学+生活场景"的内容交叉点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%B0%8F%E7%B1%B318Fold%E9%A6%96%E5%8F%91%E8%AF%84%E6%B5%8B" target="_blank">→ 微博热搜·小米18Fold</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#宝格丽高珠晚宴 刘亦菲C位 蔡依林1.8亿珠宝</div>
+            <div class="trend-meta">奢侈品内容赛道 · 时尚红毯</div>
+            <div class="trend-obs">💡 趋势观察：宝格丽借威尼斯电影节窗口期打造高珠晚宴，刘亦菲C位、蔡依林亿级珠宝成为小红书时尚博主的素材富矿。"明星+珠宝+电影节"的组合公式再次验证：奢侈品牌的内容策略已从"TVC投放"转向"场景化沉浸式内容生产"——每一场晚宴都是一场内容发布会。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%AE%9D%E6%A0%BC%E4%B8%BD%E9%AB%98%E7%8F%A0%E6%99%9A%E5%AE%B4" target="_blank">→ 微博热搜·宝格丽高珠晚宴</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#赵一鸣致歉 称错赔十倍 零食量贩品控危机</div>
+            <div class="trend-meta">消费权益话题 · 新零售信任建设</div>
+            <div class="trend-obs">💡 趋势观察：零食量贩赛道近两年野蛮扩张后首遇大规模品控舆论。"十倍赔付"虽然态度积极，但消费者信任的重建需要长期动作。对小红书内容生态而言，"消费避坑""维权攻略"类内容往往能获得高互动率——品牌方需要在"危机公关"和"日常内容建设"之间找到平衡。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%B5%B5%E4%B8%80%E9%B8%A3%E8%87%B4%E6%AD%89" target="_blank">→ 微博热搜·赵一鸣致歉</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#用AI训练AI 话题热度攀升</div>
+            <div class="trend-meta">AI技术话题 · 泛科技传播</div>
+            <div class="trend-obs">💡 趋势观察："AI自训练"从专业话题进入大众视野，登上微博热搜。这意味着AI认知正在从"工具使用"向"系统演化"升级。对小红书而言，AI相关内容已从科技垂类向生活方式类渗透——"AI帮我做饭""AI帮我写文案"到"AI自己在学习变强"，内容叙事的进化速度远超技术迭代本身。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%94%A8AI%E8%AE%AD%E7%BB%83AI" target="_blank">→ 微博热搜·用AI训练AI</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 体育营销</div>
+        <div class="learning-title">运动员即媒介：当郑钦文的逆转比任何TVC都更有传播力</div>
+        <div class="learning-subtitle">2026年，品牌如何理解"体育IP"的新语法</div>
+        <div class="learning-body">
+          <p>凌晨3点，郑钦文0-5落后。凌晨3:30，她连追7局逆转首盘。凌晨4点，"郑钦文逆转"冲上微博热搜第一。整个过程没有彩排、没有脚本，但传播效率超过任何一支千万级TVC。</p>
+          <p>这就是2026年体育营销的底层逻辑变化：<strong>运动员本身正在成为最高效的内容生产者</strong>——她的比赛是内容，她的逆转是内容，她赛后发布会说的每一句话都是内容。品牌过去签运动员是买"形象授权"，现在需要理解的是：你签的是一个"有自主叙事能力的内容IP"。</p>
+          <p><strong>传统体育赞助的逻辑是：运动员的脸 → 品牌曝光。</strong>现在的逻辑是：运动员的故事 → 品牌参与叙事 → 用户产生情感共鸣 → 自发传播。</p>
+          <p>以郑钦文为例：她的赞助商包括耐克、_ant_、劳力士等。但她真正为品牌带来的价值，不是"穿着品牌衣服打球"，而是"每一次逆转都在为品牌创造一个高情感浓度的内容时刻"。耐克在她奥运夺冠后的24小时内就完成了"Queendom"主题的内容传播——从赛事结果到品牌叙事，转化周期不到一天。</p>
+          <p>对平台大事件策划而言，核心启示是：<strong>不要只"请运动员来站台"，而要"让运动员的故事成为活动叙事的一部分"</strong>。一个真实的运动故事，比十个精心策划的环节更能打动人。2026年的用户不缺内容，缺的是"真实的、有情感密度的、发生在当下的"内容。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://news.sina.com.cn/zx/2026-09-08/doc-iniqzsvk9468933.shtml" target="_blank">新浪体育《再度大逆转！郑钦文战胜斯瓦泰克》</a> ·
+          <a href="https://www.sohu.com/a/1073061771_362042" target="_blank">搜狐体育《让5追7奇迹再现》</a> ·
+          <a href="https://www.digitaling.com/articles/1474535.html" target="_blank">数英网《2026网红营销八大趋势》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 釜山国际电影节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎬🇰🇷✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">电影节</span>
+          <span class="festival-tag">韩国·釜山</span>
+          <span class="festival-tag">10月6-15日</span>
+          <span class="festival-tag">亚洲最大</span>
+          <span class="festival-tag">市场+展映</span>
+        </div>
+        <div class="festival-name">釜山国际电影节</div>
+        <div class="festival-name-en">Busan International Film Festival · BIFF · 始于1996年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从韩国港口城市到亚洲电影的心脏</div>
+          <div class="festival-block-body">
+            <p>1996年，韩国第二大城市釜山。一群电影人做了一个在当时看来近乎疯狂的决定：在这个没有电影节传统的港口城市，创办一个面向亚洲的电影节。第一届只有153部影片、不到3万观众，但评审团里有一位叫许秦豪的年轻导演——他后来成了韩国新浪潮的代表人物。</p>
+            <p>BIFF从一开始就选了一条与戛纳、威尼斯截然不同的路：<strong>不做"全球精英的电影展"，而做"亚洲新电影的发现者"</strong>。它的核心竞赛单元"新浪潮奖"（New Currents Award）专门颁给亚洲新锐导演的处女作或第二部作品——这意味着，你在这里看到的，不是已经成名的大师，而是即将改变亚洲电影格局的明日之星。</p>
+            <p>历年高光：<strong>2000年</strong>，姜文《鬼子来了》在BIFF引发巨大讨论；<strong>2009年</strong>，BIFF成为亚洲第一个设立"开放式电影院"单元的电影节，将放映带入社区；<strong>2014年</strong>，BIFF遭遇釜山市政府审查风波，影展总监李庸观被迫辞职，全球电影人联名声援——这场风波反而让BIFF的国际声望达到新高。<strong>2026年</strong>，BIFF迎来第31届，韩国女演员金敏荷将担任开幕式主持人。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】亚洲电影市场的真正引擎</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">31届</div>
+                <div class="festival-stat-label">连续举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">316部</div>
+                <div class="festival-stat-label">2026年展映影片数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">59国</div>
+                <div class="festival-stat-label">参与国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">95部</div>
+                <div class="festival-stat-label">世界首映影片</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10天</div>
+                <div class="festival-stat-label">10月6日-15日</div>
+              </div>
+            </div>
+            <p>BIFF的与众不同在于它同时拥有<strong>两个引擎</strong>：面向观众的电影展映（Community BIFF）和面向产业的亚洲电影市场（Asian Film Market, AFM）。AFM是亚洲最大的电影交易集市之一，每年吸引来自全球的制片方、发行方、流媒体平台在此完成版权交易和项目孵化。</p>
+            <p><strong>运作模式：</strong>BIFF由釜山广域市和釜山电影节组委会共同运营。核心收入来自政府拨款（约40%）、票房（约25%）、企业赞助（约20%）和国际基金（约15%）。它的预算规模约150亿韩元（约合8000万人民币），不到戛纳的1/5，但在亚洲电影人才发掘方面的贡献远超其预算量级。</p>
+            <p>对流行文化的影响：BIFF的红毯是亚洲时尚的重要风向标——韩国演员的红毯造型每年在Instagram和小红书上引发大量讨论。海云台海滩的户外放映、BIFF Village的音乐派对、影迷与导演的街头对话——BIFF创造了一种<strong>电影不是殿堂艺术，而是日常生活方式</strong>的氛围。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026届亮点与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026届亮点：</strong>本届共有来自59个国家的316部影片参展，其中95部为世界首映、10部为国际首映。金敏荷担任开幕式主持人标志着BIFF持续推动女性电影人话语权的方向。Netflix、Disney+等流媒体平台的参与力度预计再创新高，亚洲电影的全球分发渠道正在被重写。</p>
+            <p>同时，BIFF持续强化与本地社区的连接——Community BIFF单元将69部影片带入釜山本地社区放映，让电影节不只是"精英聚会"，而是整座城市的文化节日。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>BIFF最值得学习的不是规模，而是它的<strong>"发现者"定位</strong>——它不追逐已成名的大师，而是成为"下一个大师被发现的第一个地方"。对平台IP策划来说，这提供了一个极具价值的思路：<strong>与其邀请已经顶流的艺人/创作者，不如成为"新锐创作者被看见的第一站"</strong>。如果小红书的大事件能够建立"发现"的品牌心智——让用户觉得"在这里能看到还没火但即将火的人/作品"——那才是真正的差异化壁垒。另外，BIFF的"社区放映"模式也值得借鉴：好的活动不只是在一个中心场地发生，而是让整座城市/整个平台都成为内容场域。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.biff.kr/eng/" target="_blank">BIFF 官方网站</a> ·
+          <a href="https://en.wikipedia.org/wiki/31st_Busan_International_Film_Festival" target="_blank">Wikipedia · 31st BIFF</a> ·
+          <a href="https://www.haniseoul.com/travels/korea/busan-international-film-festival/" target="_blank">HaniSeoul · 2026 BIFF Guide</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 电影导演</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 电影的五种目光</div>
+        <div class="knowledge-headline">从王家卫到韦斯·安德森：五个导演，五种看世界的方式</div>
+        <div class="knowledge-tagline">「电影不是拍出来的，是看出来的——导演首先是看世界的方式不同。」</div>
+
+        <div class="knowledge-intro">
+          每一位伟大的导演，都提供了一种独特的"看世界的方式"。不是技术、不是预算、不是明星——而是那个隐藏在镜头背后的"目光"。王家卫看到的是时间流逝中人的孤独，侯孝贤看到的是日常里藏着的山河岁月，塔伦蒂诺看到的是暴力背后的荒诞幽默，韦斯·安德森看到的是对称中隐藏的脆弱，宫崎骏看到的是人与自然的永恒和解。<br><br>
+          对品牌内容创作者来说，理解这五种"目光"，等于掌握了五种叙事语法——<strong>每一种都可以直接转化为一条种草视频、一场线下活动、一个品牌故事的情感底色。</strong>
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🕰️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王家卫</div>
+              <div class="knowledge-card-sub">Wong Kar-wai · 中国香港 · 时间的诗人</div>
+              <div class="knowledge-card-work">《花样年华》《重庆森林》——用慢动作和独白捕捉都市人的孤独。他的电影里没有"剧情"，只有"情绪的切片"。2000年戛纳最佳导演。2026年，他监制的首部剧集《繁花》成为现象级文化事件。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Quentin_Tarantino_at_the_2019_Cannes_Film_Festival.jpg/440px-Quentin_Tarantino_at_the_2019_Cannes_Film_Festival.jpg"
+              alt="Quentin Tarantino"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🔫</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">昆汀·塔伦蒂诺</div>
+              <div class="knowledge-card-sub">Quentin Tarantino · 美国 · 暴力美学大师</div>
+              <div class="knowledge-card-work">《低俗小说》《杀死比尔》——非线性叙事+流行文化拼贴+极端暴力美学。他让"不尊重经典"本身成为最高级别的致敬。2024年宣布息影，但他改变了好莱坞讲故事的方式。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Wes_Anderson_2024.jpg/440px-Wes_Anderson_2024.jpg"
+              alt="Wes Anderson"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏨</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">韦斯·安德森</div>
+              <div class="knowledge-card-sub">Wes Anderson · 美国 · 对称偏执狂</div>
+              <div class="knowledge-card-work">《布达佩斯大饭店》《犬之岛》——每一帧都像一幅画。粉色、黄色、对称构图、平移镜头——他创造了一个"完美但脆弱"的世界。他的视觉语言被社交媒体时代无限放大：每一帧截图都是壁纸。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏔️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">侯孝贤</div>
+              <div class="knowledge-card-sub">中国台湾 · 日常的诗人</div>
+              <div class="knowledge-card-work">《悲情城市》《刺客聂隐娘》——用长镜头和自然光拍摄"时间的重量"。他的电影里，沉默比对话更有力量。2024年金马奖终身成就奖。李安说："侯导教会我用沉默拍电影。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Hayao_Miyazaki_2016_%28cropped%29.jpg/440px-Hayao_Miyazaki_2016_%28cropped%29.jpg"
+              alt="Hayao Miyazaki"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌿</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">宫崎骏</div>
+              <div class="knowledge-card-sub">Hayao Miyazaki · 日本 · 动画之神</div>
+              <div class="knowledge-card-work">《千与千寻》《龙猫》——用动画追问人与自然的关系。2003年奥斯卡最佳动画长片。2023年《你想活出怎样的人生》再次获得奥斯卡——82岁的他说"这是最后一部"，然后又开始画下一部。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎞️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">滨口龙介</div>
+              <div class="knowledge-card-sub">Ryusuke Hamaguchi · 日本 · 对话的考古学家</div>
+              <div class="knowledge-card-work">《驾驶我的车》《偶然与想象》——用冗长的对话场景逼近人际关系的真相。2022年凭《驾驶我的车》获奥斯卡最佳国际影片，是继黑泽明、今村棕榈后第三位获此殊荣的日本导演。他的电影证明：慢，也可以是一种悬念。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          为什么一个做品牌营销的人需要理解导演？因为<strong>好的内容和好的电影共享同一个秘密：它们不解释，它们让你感受。</strong>韦斯·安德森的对称构图之所以在社交媒体上爆火，不是因为"好看"，而是因为那种"完美中微微的脆弱感"击中了一种难以言说的时代情绪。你的品牌内容、你的活动现场、你的IP视觉——也应该追求这种"无法用语言解释但能让人停下脚步"的东西。这就是"导演思维"对营销的真正价值。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
