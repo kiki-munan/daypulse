@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/11</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #2c1810 0%, #8b3a1a 50%, #c4653a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/11/index.html" class="active">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 11</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">2026服贸会北京首钢园开幕，90国参展、1830家机构汇聚，服务贸易成焦点</div>
+            <div class="news-item-desc">9月9-13日，中国国际服务贸易交易会（CIFTIS）在北京石景山首钢园举办。本届展览面积20万平方米，汇聚90个国家、地区和国际组织，1830家参展机构，预计吸引超35万观众。服务贸易从"商品交易"向"能力输出"转型，数字服务、绿色服务成新增长极。</div>
+            <a class="news-item-link" href="https://www.ciftis.org/" target="_blank">→ 服贸会官网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">欧洲央行宣布加息25个基点，全球货币政策分化加剧</div>
+            <div class="news-item-desc">欧洲央行9月会议决定加息25个基点，这是年内第二次加息。通胀压力与经济增长的平衡难题持续考验政策制定者。对全球资产配置而言，欧美货币政策分化正在重塑跨境资本流动格局。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=欧洲央行加息25个基点" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">iPhone 18 Pro正式发布：A20 Pro芯片、可折叠iPhone Ultra同步亮相，苹果分批次发布策略首秀</div>
+            <div class="news-item-desc">9月10日苹果秋季发布会，iPhone 18 Pro/Pro Max正式登场，搭载A20 Pro芯片，影像系统再次升级。更重磅的是，苹果首款可折叠手机iPhone Ultra同步发布，打破"全系同发"惯例，采取分批上市策略。全球售价对比冲上微博热搜第2位，消费者对折叠屏形态的讨论热度空前。</div>
+            <a class="news-item-link" href="https://www.apple.com/newsroom/2026/09/apple-debuts-iphone-18-pro-and-iphone-18-pro-max/" target="_blank">→ Apple Newsroom</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI 9月推出Agent模型，1M token上下文窗口，多领域达SOTA水平</div>
+            <div class="news-item-desc">OpenAI于2026年9月发布Agent模型，上下文窗口约100万token，最大输出12.8万tokens。该模型在计算机使用、网络浏览、软件工程、网络安全、科学研究及专业工作等领域均达到SOTA水平。AI Agent从概念走向规模化应用，企业级智能体工作流竞争进入白热化阶段。</div>
+            <a class="news-item-link" href="https://zhuanlan.zhihu.com/p/670574382" target="_blank">→ 知乎·大模型盘点</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Google Gemini 3.8 Flash与Cyber模型发布，Meta Muse Spark 1.3同日出击，AI模型发布"对决日"</div>
+            <div class="news-item-desc">9月3日成为AI行业"对决日"：Google发布Gemini 3.8 Flash（软件工程、智能体工作流显著提升）及专精漏洞挖掘的3.8 Flash Cyber；Meta数小时后推出Muse Spark 1.3回应，Artificial Analysis评测得分62分超越Gemini 3.8。模型迭代速度从"月"缩短到"周"，竞争烈度前所未有。</div>
+            <a class="news-item-link" href="https://iaipie.com/2026年9月3日ai行业资讯速览/" target="_blank">→ 无矩AI</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">十五五开局，消费市场告别粗放增长，进入结构重构关键阶段</div>
+            <div class="news-item-desc">2026观点商业年会·零售消费峰会指出：流量红利消退，消费客群分层加剧，理性消费、情绪体验、品质诉求交织共振。购物中心、零售品牌面临核心难题：如何跳出短期流量内卷，把打卡流量转化为真实留存。存量时代的消费增长逻辑正在被重新书写。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/estate/integration/2026-09-05/doc-iniquyin4925075.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">罗永浩评价vivo折叠屏"最有诚意创新"，折叠屏混战成为消费电子主线</div>
+            <div class="news-item-desc">9月科技热点显示：折叠屏和端侧AI成为消费电子两大主线。vivo新款折叠屏获罗永浩公开点赞，称其"最有诚意创新"。苹果iPhone Ultra的加入让折叠屏赛道从"安卓内卷"升级为"全平台混战"，2026下半年折叠屏市场竞争将空前激烈。</div>
+            <a class="news-item-link" href="https://post.smzdm.com/p/am98g9qk/" target="_blank">→ 什么值得买</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">《花儿与少年8》今日首播，殷桃统筹全局、花少团"全员有嘴"，南美之旅开启</div>
+            <div class="news-item-desc">9月11日起每周五12:00芒果TV更新正片。本季七位嘉宾从北京出发，前往墨西哥、秘鲁、阿根廷进行27天自助游学。首播即登多条微博热搜：殷桃统筹全局、一分钟解决选房、全员有嘴……与花少2"母带考古"热潮形成跨季呼应，综艺审美从"看撕逼"走向"看成长"。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=花少8全员有嘴" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">2026美网女单半决赛：郑钦文今年3次被莱巴金娜逆转，体育精神与竞技残酷并存</div>
+            <div class="news-item-desc">美网女单半决赛激战，郑钦文再次面对莱巴金娜，今年第3次被逆转。体育竞技的残酷性与运动员的韧性成为讨论焦点。体育内容在小红书的传播窗口从"赛事期间"延伸到"赛后72小时"，运动员个人故事与情感叙事成为品牌借势的最佳切入点。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=郑钦文今年3次被莱巴金娜逆转" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">多邻国×iPhone联动话题上热搜，品牌借势消费电子大事件的"自然种草"范式</div>
+            <div class="news-item-desc">"多邻国+iPhone的duo是我的多"登上微博热搜，多邻国借iPhone 18发布自然融入用户讨论。这种"不硬蹭、巧嵌入"的借势方式，代表了品牌与消费电子大事件合作的新范式：不是赞助发布会，而是成为用户表达的一部分。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=多邻国+iPhone的duo是我的多" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">AI重塑营销行业分工：一人团队崛起，"创意+AI"复合小组成标配</div>
+            <div class="news-item-desc">2026年品牌营销转型报告显示：AI并非完全替代人力，而是释放个人生产力，重新解构工作环节与流程。团队分工从刚性分割走向弹性融合，"内部核心+外部头部"混合模式成主流。对IP策划而言：善用AI工具快速产出初稿、做竞品研究、批量生成文案方向，是工作方式的标配而非加分项。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4837827.html" target="_blank">→ 虎嗅</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">也门胡塞武装占领红海沿岸战略要地穆哈港及哈尼什群岛，全球航运安全再受威胁</div>
+            <div class="news-item-desc">截至9月11日，也门胡塞武装已占领红海沿岸穆哈港及哈尼什群岛。红海航运通道的安全性再次受到威胁，全球供应链韧性面临新的考验。对品牌出海而言，地缘政治风险正在成为供应链规划的常态化变量。</div>
+            <a class="news-item-link" href="https://zaobao.com.cn/world" target="_blank">→ 联合早报</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#iPhone18Pro全球售价对比 热度84万+</div>
+            <div class="trend-meta">消费电子话题 · 跨平台讨论</div>
+            <div class="trend-obs">💡 趋势观察：iPhone 18 Pro昨日发布，全球售价对比冲上微博热搜第2。小红书上的消费电子内容正从"参数评测"转向"使用场景叙事"——折叠屏怎么拍vlog、端侧AI怎么帮你做攻略。品牌借势苹果发布窗口，应聚焦"产品如何嵌入具体生活场景"，而非单纯比价。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=iPhone18Pro全球售价对比" target="_blank">→ 微博热搜·iPhone18Pro全球售价对比</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#花少8殷桃统筹全局 #花少8全员有嘴 多条热搜同时在线</div>
+            <div class="trend-meta">综艺内容赛道 · 情感向讨论</div>
+            <div class="trend-obs">💡 趋势观察：花少8今日首播，多条话题同时登上热搜。与花少2"母带考古"热潮形成有趣对照：观众审美从"看撕逼"走向"看成长"。小红书上的综艺内容生产窗口从"播出期间"延伸到"跨季讨论"，品牌借势应关注"艺人个人成长叙事"而非"话题冲突"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=花少8全员有嘴" target="_blank">→ 微博热搜·花少8全员有嘴</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#4次考公失败后花2万2旅行6国 热度113万</div>
+            <div class="trend-meta">生活方式话题 · 情感共鸣</div>
+            <div class="trend-obs">💡 趋势观察：考公失败后的旅行故事冲上热搜第1，说明"人生转折点叙事"在当下有极强共鸣。小红书上的旅行内容正从"打卡攻略"转向"人生故事"——用户想看的不是"去哪里"，而是"为什么去""去了之后发生了什么"。品牌做旅行内容，应聚焦"转变时刻"而非"目的地清单"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=4次考公失败后花2万2旅行6国" target="_blank">→ 微博热搜·4次考公失败后花2万2旅行6国</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#10天不吃糖身体变化有多大 热度63万</div>
+            <div class="trend-meta">健康生活方式 · 科学内容</div>
+            <div class="trend-obs">💡 趋势观察：健康生活方式话题持续在小红书发酵。与"戒糖""低碳""间歇性断食"相关的内容，正从"极端实验"转向"可持续习惯"。品牌做健康内容，应聚焦"微小改变的累积效应"而非"快速见效"——用户对"30天挑战"的疲劳感正在上升。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=10天不吃糖身体变化有多大" target="_blank">→ 微博热搜·10天不吃糖身体变化有多大</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#中国人心目中神仙的样子在外网火爆了 热度26万</div>
+            <div class="trend-meta">文化出海话题 · 国家自豪感叙事</div>
+            <div class="trend-obs">💡 趋势观察：中国传统文化元素在海外社交平台引发讨论，"中国神仙"成为视觉符号。小红书上的"华流出海"内容正从"产品展示"转向"文化符号输出"——用户愿意为"被世界认可的中国美学"买单。品牌做文化内容，应聚焦"普世情感+中国符号"的组合。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=中国人心目中神仙的样子在外网火爆了" target="_blank">→ 微博热搜·中国神仙外网火爆</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI+营销</div>
+        <div class="learning-title">AI重构营销分工：从"一人多岗"到"一人团队"的范式跃迁</div>
+        <div class="learning-subtitle">当AI能写文案、做设计、跑数据分析，营销人的核心价值在哪里？</div>
+        <div class="learning-body">
+          <p>2026年的营销行业正在经历一场静默的革命：<strong>AI不是替代人，而是重新定义了"人"的工作边界</strong>。过去，一个营销人需要协调文案、设计、媒介、数据四个团队；现在，一个人+AI工具链，就能完成从创意发想到效果复盘的全流程。</p>
+          <p>这不是"效率提升"那么简单——这是<strong>组织架构的底层重构</strong>。大品牌正在采用"内部核心+外部头部"的混合模式：内部保留少数"策略+创意"核心人才，外部用AI工具完成执行层工作。传统的"大团队作战"模式正在被"小而精的创意单元+AI放大器"取代。</p>
+          <p><strong>营销人的核心价值正在从"执行能力"转向"判断能力"。</strong>当AI能在10分钟内生成100版海报、50条文案、20组数据分析报告，"做得快"不再是竞争力，"选得对"才是。能判断"哪个创意真正打动人""哪组数据背后有什么洞察""哪个方向值得all in"——这是AI做不到的。</p>
+          <p>对平台大事件策划而言，这意味着：<strong>策划团队应该更小、更精、更依赖AI工具</strong>。一个人+AI，能在24小时内完成过去一周的工作量——竞品研究、创意发想、方案撰写、视觉mockup。但最终的"判断"——这个活动能不能打动人、这个品牌合作有没有长期价值、这个创意方向值不值得投入——仍然是人的工作。</p>
+          <p><strong>2026年的营销竞争力公式：判断力×AI杠杆率。</strong>判断力决定方向，AI决定速度。两者缺一不可，但判断力是前提。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.huxiu.com/article/4837827.html" target="_blank">虎嗅《2026年品牌营销转型：AI重塑分工、情绪营销深化》</a> ·
+          <a href="https://post.smzdm.com/p/a95g7gv5/" target="_blank">什么值得买《今日AI圈值得关注的动态》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 阿尔勒摄影节</span>
+      </div>
+
+      <img class="festival-banner"
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Arles_amphitheatre.jpg/1280px-Arles_amphitheatre.jpg"
+        alt="Arles Roman Amphitheatre"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="festival-banner-placeholder" style="display:none">📷🎨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">摄影艺术</span>
+          <span class="festival-tag">法国·阿尔勒</span>
+          <span class="festival-tag">每年7-10月</span>
+          <span class="festival-tag">始于1970年</span>
+        </div>
+        <div class="festival-name">阿尔勒摄影节</div>
+        <div class="festival-name-en">Les Rencontres d'Arles · 全球最具影响力的国际摄影节</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从古希腊剧场到摄影圣殿</div>
+          <div class="festival-block-body">
+            <p>1970年，法国南部小城阿尔勒。一群摄影爱好者在古罗马剧场的石阶上办了第一届摄影展——没有赞助商，没有媒体，只有30位摄影师和他们的作品。没人想到，这个起点会长成今天的样子。</p>
+            <p>阿尔勒摄影节的独特之处在于它的"在地性"：展览不在白盒子画廊，而在古城的每个角落——古罗马剧场、中世纪修道院、废弃工厂、河边仓库。<strong>摄影与城市空间对话</strong>，这是阿尔勒57年从未改变的基因。</p>
+            <p>历年主题折射摄影史的演变：从1970年代的"纪实摄影"，到1990年代的"观念摄影"，到2010年代的"数字转向"，再到2020年代的"<strong>AI与摄影的边界</strong>"。每一届阿尔勒，都是对"什么是摄影"这个问题的重新回答。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】2026年第57届："Worlds to Reread"</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">57届</div>
+                <div class="festival-stat-label">连续举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">40+</div>
+                <div class="festival-stat-label">展览数量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">7.6-10.4</div>
+                <div class="festival-stat-label">2026展期（7月6日-10月4日）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10万+</div>
+                <div class="festival-stat-label">年度参观人次</div>
+              </div>
+            </div>
+            <p>2026年第57届阿尔勒摄影节主题为"<strong>Worlds to Reread</strong>"（重读世界），探讨摄影如何重新诠释我们已知的事物。展览分布在阿尔勒古城的40余个场地，从7月6日持续至10月4日。</p>
+            <p><strong>今年的焦点议题：AI与摄影。</strong>当AI能在几秒内生成"照片级"图像，摄影的定义正在被重写。阿尔勒2026专门设置了"AI生成图像"单元，邀请摄影师、艺术家、技术专家共同探讨：当"拍摄"不再是摄影的必要条件，摄影的本质是什么？</p>
+            <p>阿尔勒不只是展览——它是<strong>摄影产业的年度坐标</strong>。Portfolio Prize（ portfolios评审）是全球摄影新人最重要的出道通道之一；Book Prize（摄影书奖）推动摄影出版生态；Workshop（工作坊）让年轻摄影师直接接触大师。这套"展览+奖项+教育"的三位一体模式，让阿尔勒从"节庆"升级为"产业基础设施"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>AI与内容的边界问题，正在成为所有创意产业的共同命题。</strong>阿尔勒的选择是：不回避，而是把争议变成展览本身。这对小红书平台大事件有直接启发——当AI生成内容越来越多，平台如何定义"真实"？如何在"效率"与"真实性"之间找到平衡？</p>
+          </div>
+          <div class="festival-insight">
+            <strong>💡 对小红书平台大事件的启发：</strong>阿尔勒最值得借鉴的是它的"<strong>在地性策展</strong>"思维——不是把作品放进白盒子，而是让作品与城市空间对话。平台大事件策划可以问自己：我们的活动能不能不做"标准展厅"，而是让内容与具体场景（社区、街道、咖啡馆）产生化学反应？另外，阿尔勒的"展览+奖项+教育"三位一体模式，对平台内容生态也有参考价值——不只是"展示好内容"，而是"培育好内容的生产机制"。最后，AI与摄影的边界讨论，正是小红书接下来需要面对的命题：当AI能生成"完美"的种草笔记，"真实体验"的价值该如何被重新定义和彰显？
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.rencontres-arles.com/en" target="_blank">Les Rencontres d'Arles 官网</a> ·
+          <a href="https://www.rencontres-arles.com/en/expositions/2026" target="_blank">2026展览介绍</a> ·
+          <a href="https://www.festivalenfrance.com/en/festival/les-rencontres-de-la-photographie-darles" target="_blank">Festival en France·阿尔勒摄影节</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 摄影史</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">📷 主题策展 · 摄影史上的革命者</div>
+        <div class="knowledge-headline">从布列松到杉本博司：摄影如何改变了我们观看世界的方式</div>
+        <div class="knowledge-tagline">「你按下快门的那一刻，时间已经被你重新定义。」</div>
+
+        <div class="knowledge-intro">
+          摄影术诞生于1839年，但"摄影"这件事的真正革命，不是技术的发明，而是<strong>观看方式的革命</strong>。布列松说"决定性瞬间"，意思是：世界每秒都在发生无数件事，但只有一个瞬间，所有元素恰好对齐——光影、构图、情感、意义。摄影师的工作，是在混沌中识别秩序。<br><br>
+          从布列松的"街头抓拍"，到罗伯特·弗兰克的"美国人"，到杉本博司的"长时间曝光"，再到AI生成图像的"无相机摄影"——每一次技术变革，都在重新回答同一个问题：<strong>什么是"真实"？什么是"看见"？</strong>
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Henri_Cartier-Bresson._Manet%27s_Garden%2C_1968.jpg/440px-Henri_Cartier-Bresson._Manet%27s_Garden%2C_1968.jpg"
+              alt="Henri Cartier-Bresson"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">亨利·卡蒂埃-布列松</div>
+              <div class="knowledge-card-sub">Henri Cartier-Bresson · 法国 · 决定性瞬间</div>
+              <div class="knowledge-card-work">"决定性瞬间"理论的提出者。用徕卡相机在街头抓拍，相信世界每秒都在发生奇迹，摄影师的工作是"在对的时间站在对的地方"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Robert_Frank_-_Robert_Frank.jpg/440px-Robert_Frank_-_Robert_Frank.jpg"
+              alt="Robert Frank"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🇺🇸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">罗伯特·弗兰克</div>
+              <div class="knowledge-card-sub">Robert Frank · 瑞士/美国 · 《美国人》</div>
+              <div class="knowledge-card-work">1958年出版《The Americans》，用模糊、倾斜、过曝的"不完美"照片，颠覆了"好照片"的定义。他说："我不想要那种漂亮的照片，我想要真实的。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Dorothea_Lange_1936.jpg/440px-Dorothea_Lange_1936.jpg"
+              alt="Dorothea Lange"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌾</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">多萝西娅·兰格</div>
+              <div class="knowledge-card-sub">Dorothea Lange · 美国 · 纪实摄影</div>
+              <div class="knowledge-card-work">《移民母亲》是大萧条最具代表性的影像。她用相机证明：摄影不只是艺术，还是社会变革的工具。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Ansel_Adams_and_Camera.jpg/440px-Ansel_Adams_and_Camera.jpg"
+              alt="Ansel Adams"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏔️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">安塞尔·亚当斯</div>
+              <div class="knowledge-card-sub">Ansel Adams · 美国 · 风光摄影</div>
+              <div class="knowledge-card-work">用大画幅相机拍摄美国西部风光，发明了"区域曝光法"。他的约塞米蒂照片，让无数人第一次"看见"了美国。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌊</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">杉本博司</div>
+              <div class="knowledge-card-sub">Hiroshi Sugimoto · 日本 · 长时间曝光</div>
+              <div class="knowledge-card-work">《海景》系列用数小时曝光，把海洋变成一片灰色平面。他说："我拍的不是海，是时间本身。"摄影从"捕捉瞬间"变成"累积时间"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🤖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">AI生成图像</div>
+              <div class="knowledge-card-sub">2020s · 无相机摄影</div>
+              <div class="knowledge-card-work">当AI能在几秒内生成"照片级"图像，"拍摄"不再是摄影的必要条件。摄影的定义正在被重写：从"记录现实"变成"创造现实"。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          摄影史和平台大事件有一个共同的命题：<strong>如何在信息过载的时代，让用户"真正看见"。</strong>布列松的答案是"等待决定性瞬间"，弗兰克的答案是"拥抱不完美"，杉本博司的答案是"用时间换空间"。对平台内容而言，答案可能是：不追求"更多"，而是追求"更深"——让用户在滑过一千张图之后，因为某一张停下来，那才是真正的"看见"。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
