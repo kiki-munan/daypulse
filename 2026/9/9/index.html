@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/9</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0c3547 0%, #1a6b4a 50%, #c4653a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/9/index.html" class="active">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 09</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">中国8月进出口数据亮眼：单月增长19.8%，进出口总值34.78万亿元同比增17.6%</div>
+            <div class="news-item-desc">海关总署9月8日发布数据，8月出口增长18.6%、进口增长21.7%，连续4个月保持两位数增长。汽车和高科技产品需求强劲驱动出口上行。进口月度增速连续6个月超过出口，反映内需持续修复。全年外贸增势稳健，但专家提示需关注对贸易伙伴的依赖度风险。</div>
+            <a class="news-item-link" href="https://news.sina.com.cn/zx/gj/2026-09-08/doc-inircewu6052303.shtml" target="_blank">→ 新华社/新浪新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">商务部对日本产二氯二氢硅初裁倾销成立，9月8日起征收保证金</div>
+            <div class="news-item-desc">二氯二氢硅是半导体制造关键原材料。商务部初裁认定日本产品2022-2024年对华倾销致国内产业实质损害，价格累计下跌31%。这是中国在半导材领域运用贸易救济工具的又一动作，中日产业博弈从终端芯片向原材料环节延伸。</div>
+            <a class="news-item-link" href="https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_01c15948864a45d186abb146fe30a42b.html" target="_blank">→ 商务部公告</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果秋季发布会今夜开启：iPhone 18 Pro + 首款折叠屏iPhone Ultra齐发，新任CEO特努斯首秀</div>
+            <div class="news-item-desc">苹果官宣北京时间9月10日凌晨1点举行"Surprise and Shine"发布会。这将是新任CEO约翰·特努斯接替库克后的首次公开登台，产品阵容史无前例——iPhone 18 Pro系列领衔，折叠屏iPhone Ultra同台亮相。Ultra定位超高端，传闻定价2.5万美元级别，用新形态对冲标准版缺席的销量缺口。全球科技界屏息以待。</div>
+            <a class="news-item-link" href="https://www.ithome.com/0/994/787.htm" target="_blank">→ IT之家</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中美计划9月就AI治理举行会谈，为超级智能竞争建立风险管控框架</div>
+            <div class="news-item-desc">路透社报道，中美两国计划于9月24日前举行AI治理会谈，旨在管控先进AI模型发展中的竞争风险。同期，国内AI行业进入"深度转型"阶段——从模型军备竞赛转向应用落地和商业闭环。AI从"能做什么"开始转向"应该如何做"。</div>
+            <a class="news-item-link" href="https://sputniknews.cn/20260721/1072422161.html" target="_blank">→ 路透社/卫星通讯社</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">法国"反超快时尚"法9月1日正式生效：单件纺织品最高罚19.50欧元，Shein/Temu首当其冲</div>
+            <div class="news-item-desc">法国开创欧盟先例，对符合条件的纺织产品按环境评分征收附加费。商务部已就此回应中欧贸易磋商热点。快时尚的成本优势正被"环境成本"重新定义——可持续消费从理念走向立法，全球时尚供应链面临结构性重塑。对出海品牌和国内设计师品牌都是风向标。</div>
+            <a class="news-item-link" href="https://www.news.cn/fortune/20260903/32731dd9487947b2a84a8867e4664eb6/c.html" target="_blank">→ 新华网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国庆黄金周倒计时：旅游消费内容热度持续攀升，"反向旅游"成新趋势</div>
+            <div class="news-item-desc">距离十一黄金周不到三周，小红书旅行内容进入年度高峰期。今年"反向旅游"（去小众目的地、避开人潮）话题热度显著上升。9月27日世界旅游日主题聚焦"AI与数字转型重塑旅游业"，与平台内容生态形成共振窗口。</div>
+            <a class="news-item-link" href="https://www.untourism.int/zh-hans/world-tourism-day-2026" target="_blank">→ 联合国旅游组织</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">"这样的吃播该全面叫停了"登热搜，短视频内容伦理再成焦点</div>
+            <div class="news-item-desc">极端进食类内容长期存在健康争议，今日以75万热度登上微博热搜。舆论从"个人选择"转向"平台责任"讨论。小红书作为生活方式平台，内容调性把控是其区别于短视频竞品的核心壁垒之一——这类话题天然强化"有品质的生活方式"定位。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%BF%99%E6%A0%B7%E7%9A%84%E5%90%83%E6%92%AD%E8%AF%A5%E5%85%A8%E9%9D%A2%E5%8F%AB%E5%81%9C%E4%BA%86" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">耐克给郑钦文写的文案引发热议，运动员IP内容价值再升级</div>
+            <div class="news-item-desc">耐克为中国网球选手郑钦文定制的文案在微博引发19万热度讨论。从谷爱凌到郑钦文，运动品牌与运动员的深度内容绑定正在取代传统代言模式——用"为一个人写一段话"的方式，让品牌精神借由运动员个人故事被感知。体育IP的内容化运营是2026年最值得关注的营销趋势之一。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%80%90%E5%85%8B%E7%BB%99%E9%83%91%E9%92%A6%E6%96%87%E5%86%99%E7%9A%84%E6%96%87%E6%A1%88" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">香港首任特首董建华逝世，236万热度刷屏</div>
+            <div class="news-item-desc">香港特别行政区首任行政长官董建华逝世，消息迅速占据微博热搜第一，热度236万。各界悼念，回顾其作为"一国两制"实践开创期的关键角色。这是今日最具重量的新闻事件，公众情绪偏庄重肃穆。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%A6%99%E6%B8%AF%E9%A6%96%E4%BB%BB%E7%89%B9%E9%A6%96%E8%91%A3%E5%BB%BA%E5%8D%8E%E9%80%9D%E4%B8%96" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">日本名古屋强降雨创历史纪录，极端天气频率加速</div>
+            <div class="news-item-desc">日本中部城市名古屋遭遇创纪录强降雨，城市内涝严重。12万热度关注。全球极端天气事件频发正在重塑公众对气候议题的感知——从抽象数据到切身经历，这也将影响消费端对"可持续"的认知深度和紧迫感。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%97%A5%E6%9C%AC%E5%90%8D%E5%8F%A4%E5%B1%8B%E5%BC%BA%E9%99%8D%E9%9B%A8%E5%88%9B%E5%8E%86%E5%8F%B2%E7%BA%AA%E5%BD%95" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#iPhone18Pro发布会倒计时 热度35万+</div>
+            <div class="trend-meta">数码科技赛道 · 消费电子事件</div>
+            <div class="trend-obs">💡 趋势观察：苹果秋季发布会进入24小时倒计时。新任CEO特努斯首秀+折叠屏iPhone Ultra，话题浓度史无前例。小红书数码区的"开箱+首评"内容将在发布后48小时内迎来年度流量峰值。品牌侧的"借势营销"窗口极为短暂——建议提前准备素材模板，发布会结束2小时内完成第一波内容投放。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=iPhone18Pro%E5%8F%91%E5%B8%83%E4%BC%9A%E5%80%92%E8%AE%A1%E6%97%B6" target="_blank">→ 微博热搜·iPhone18Pro发布会倒计时</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#这段话杀死了内耗型人格 热度76万</div>
+            <div class="trend-meta">心理自助赛道 · 情感共鸣型内容</div>
+            <div class="trend-obs">💡 趋势观察：76万热度的金句型热搜，指向当下最热的"情绪自救"话题。小红书是这类内容的天然主场——从心理学自助到生活方式调适，"反内耗"已经成为平台用户的日常高频需求。品牌切入路径：用"共情型"而非"焦虑型"文案建立情感连接，理解>教导，陪伴>说教。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%BF%99%E6%AE%B5%E8%AF%9D%E6%9D%80%E6%AD%BB%E4%BA%86%E5%86%85%E8%80%97%E5%9E%8B%E4%BA%BA%E6%A0%BC" target="_blank">→ 微博热搜·内耗型人格</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#这样的吃播该全面叫停了 热度75万</div>
+            <div class="trend-meta">内容治理赛道 · 平台生态议题</div>
+            <div class="trend-obs">💡 趋势观察：极端进食内容长期处于争议区——75万热度说明公众对这类内容的"流量合法性"开始形成共识性否定。对小红书而言，这恰恰是其"有品质的生活方式"定位与纯流量驱动平台的差异所在。内容调性的把控，不仅是治理问题，更是品牌资产——用户信任建立在"这里的内容值得看"之上。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%BF%99%E6%A0%B7%E7%9A%84%E5%90%83%E6%92%AD%E8%AF%A5%E5%85%A8%E9%9D%A2%E5%8F%AB%E5%81%9C%E4%BA%86" target="_blank">→ 微博热搜·吃播叫停</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#金球奖 提名热议，体育×娱乐跨界内容升温</div>
+            <div class="trend-meta">体育赛事 · 娱乐时尚交叉赛道</div>
+            <div class="trend-obs">💡 趋势观察：金球奖提名讨论进入白热化，哈兰德、C罗等球星话题叠加皇马2:1国米的欧冠赛事。小红书上"球星穿搭""赛场边的时尚"类内容正在成为体育+时尚+娱乐的交叉增长点。品牌可关注"运动员场外风格"这一蓝海内容赛道——体育IP不再只是赛事，而是全天候的生活方式表达。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%87%91%E7%90%83%E5%A5%96" target="_blank">→ 微博热搜·金球奖</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#耐克给郑钦文写的文案 热度19万</div>
+            <div class="trend-meta">品牌营销赛道 · 运动员IP内容</div>
+            <div class="trend-obs">💡 趋势观察：耐克为郑钦文撰写的定制文案在微博引爆19万热度，品牌×运动员的内容共创模式再获验证。从谷爱凌到郑钦文，"为一个人写一段话"正在取代"请一个代言人拍一支广告"——品牌精神借由运动员的个人叙事被感知，这种"轻量但深情"的内容策略，恰恰是小红书用户最买账的方式。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%80%90%E5%85%8B%E7%BB%99%E9%83%91%E9%92%A6%E6%96%87%E5%86%99%E7%9A%84%E6%96%87%E6%A1%88" target="_blank">→ 微博热搜·耐克郑钦文文案</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 产品发布叙事学</div>
+        <div class="learning-title">Surprise and Shine：一场产品发布会如何成为全球注意力仪式</div>
+        <div class="learning-subtitle">从乔布斯到特努斯——苹果教会了我们什么？</div>
+        <div class="learning-body">
+          <p>今夜，苹果将举行2026年秋季发布会。主题叫"Surprise and Shine"。这让人想起：<strong>产品发布会，什么时候变成了一种文化仪式？</strong></p>
+          <p>1984年，苹果用《1984》广告片发布了Macintosh——那不是一次产品说明，而是一声文化宣言。2007年，乔布斯站在Macworld舞台上，用"今天苹果要重新发明手机"作为开场白——然后从牛仔裤口袋里掏出了iPhone。那个掏口袋的动作，成为21世纪最经典的产品亮相瞬间。</p>
+          <p>苹果教会营销界最重要的一课是：<strong>发布会本身就是最重要的产品</strong>。不是PPT，不是舞台设计，不是明星嘉宾——是那个"从悬念到揭晓"的叙事节奏。每一场成功的苹果发布会，都遵循着一个古老的叙事结构：一个问题——一个方案——一个Demo——一个Wow moment——一个情感收尾。</p>
+          <p>库克时代的苹果，将这种叙事从"一个人的表演"进化为"一个团队的协作"。而今天，特努斯——这位工业设计师出身的CEO——将首次站在舞台上。他的首秀之所以值得关注，不仅因为折叠屏iPhone Ultra，更因为<strong>一个设计师如何讲述产品故事</strong>，将带来全新的叙事可能。</p>
+          <p>对所有做品牌活动、做发布会、做IP大事件的人来说，苹果模式的核心启示是：<strong>发布会不是信息传递，是注意力管理</strong>。信息的密度与观众注意力成反比——当你试图传递所有信息时，观众的注意力被稀释为零；当你只传递一个信息时，这个信息会被放大到无限。特努斯今晚的考验，不是产品好不好——而是他能不能用"一个人的风格"重新定义苹果与观众之间的情感连接。</p>
+          <p>这才是"Surprise and Shine"的真正含义——不是给产品一个惊喜，而是给观众一个理由，让他们重新相信"被一个产品打动"这件事本身。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.sohu.com/a/1073296342_122965577" target="_blank">搜狐·苹果发布会前瞻</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2073877028714168631" target="_blank">知乎·iPhone 18 Pro深度分析</a> ·
+          <a href="https://www.ithome.com/0/994/787.htm" target="_blank">IT之家·发布会定档报道</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 世界旅游日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🌍✈️🧳</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">全球节日</span>
+          <span class="festival-tag">联合国设立</span>
+          <span class="festival-tag">每年9月27日</span>
+          <span class="festival-tag">始于1980年</span>
+        </div>
+        <div class="festival-name">世界旅游日</div>
+        <div class="festival-name-en">World Tourism Day · 始于1980年 · 联合国世界旅游组织（UNW Tourism）</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】一次致敬，催生了一个全球节日</div>
+          <div class="festival-block-body">
+            <p>1970年9月27日，墨西哥城。国际官方旅游联盟在这一天通过了世界旅游组织（WTO，后更名为UNW Tourism）章程——一个标志性的时刻：旅游从"个人休闲"正式进入"全球产业治理"的视野。</p>
+            <p>十年后的1979年，世界旅游组织第三次代表大会决定：将9月27日定为<strong>世界旅游日</strong>，以纪念这个日子。1980年，首个世界旅游日在全球范围内庆祝，主题为"旅游的贡献"。</p>
+            <p>历年主题折射时代脉搏：从1980年代的"旅游促进文化交流"，到1990年代的"旅游：通往和平之桥"，到2000年代的"可持续旅游"，到2010年代的"数字技术与旅游"。每年由不同东道国主办官方庆典——2025年在马来西亚马六甲，主题为"旅游与可持续转型"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】当旅游成为全球最大的文化对话</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">150+</div>
+                <div class="festival-stat-label">参与国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">14亿+</div>
+                <div class="festival-stat-label">2026年全球旅游人次（预计）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026</div>
+                <div class="festival-stat-label">主题：数字议程与AI重塑旅游</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">46年</div>
+                <div class="festival-stat-label">自1980年至今</div>
+              </div>
+            </div>
+            <p>2026年世界旅游日主题聚焦<strong>"数字议程与人工智能重塑旅游业"</strong>——这与小红书作为旅行内容平台的崛起形成了有趣的呼应。当AI开始帮用户规划行程、推荐目的地、生成旅行攻略，旅行内容的生产方式正在经历范式转换。</p>
+            <p>但有趣的是，无论技术如何演进，旅行内容最打动人的部分始终是"一个人对另一个地方的真实感受"——这恰好是小红书的长板：不是攻略工具，而是<strong>一个由真实体验构成的旅行灵感生态</strong>。从"去哪儿"到"为什么去"，从"打卡清单"到"生活方式表达"，旅行在小红书上已经超越了信息层，进入了意义层。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】旅行永远是人类最好的自我教育</div>
+          <div class="festival-block-body">
+            <p><strong>2026年亮点：</strong>AI与数字转型正式成为旅游产业的"第一议题"。UN Tourism倡导用技术推动更包容、更可持续的旅游生态——不是替代人的体验，而是让体验的门槛更低、触达更广。</p>
+            <p>对中国市场而言，国庆黄金周+世界旅游日（9月27日）构成了9-10月的"旅游内容双高峰"。小红书旅行赛道的"反向旅游"（去小众目的地）趋势正在重塑旅游内容的叙事方式——从"必去清单"到"只有我知道的角落"，从"热门打卡"到"个人发现"。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>世界旅游日最核心的精神，不是"去更多地方"，而是"通过旅行理解不同的人和世界"。对平台而言，旅行内容不只是"攻略+美图"——它是一个关于"好奇心"和"开放性"的价值主张。大事件策划可以围绕"让旅行成为对话"展开：用户共创的旅行故事、城市漫步路线、美食地图……让平台的内容生态本身成为一个"目的地"。旅行的本质不是到达，是出发那一刻的勇气——而小红书的价值，是让每个人的真实体验成为另一个人的灵感起点。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.untourism.int/zh-hans/world-tourism-day-2026" target="_blank">UN Tourism · 2026世界旅游日</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E4%B8%96%E7%95%8C%E6%97%85%E6%B8%B8%E6%97%A5" target="_blank">维基百科 · 世界旅游日</a> ·
+          <a href="https://www.untourism.int/zh-hans/world-tourism-day-2025" target="_blank">UN Tourism · 2025世界旅游日</a> ·
+          <a href="https://www.sohu.com/a/588486437_121106822" target="_blank">搜狐 · 世界旅游日专题</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 设计思想</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎯 主题策展 · 改变观看方式的设计师</div>
+        <div class="knowledge-headline">从Dieter Rams到郭培：五个改变我们"看"的方式的人</div>
+        <div class="knowledge-tagline">「好的设计是尽可能少的设计。少，但更好。」——Dieter Rams</div>
+
+        <div class="knowledge-intro">
+          今夜苹果发布会，全球目光聚焦于一个新产品如何被"呈现"。但"呈现"的背后，是一整套关于"什么是好的设计"的哲学体系。<br><br>
+          从1950年代的包豪斯到今天的新中式美学，有一批设计师，他们改变的不是产品的外形——而是人类<strong>观看世界的方式</strong>。他们让我们意识到：设计不是装饰，是一种认知框架。<br><br>
+          今天苹果发布会前夜，让我们认识这五位（组）改变了我们"看"的方式的设计师。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Dieter_Rams_2019.jpg/440px-Dieter_Rams_2019.jpg"
+              alt="迪特·拉姆斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🔲</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">迪特·拉姆斯 Dieter Rams</div>
+              <div class="knowledge-card-sub">德国 · 1932– · 博朗首席设计师</div>
+              <div class="knowledge-card-work">"好的设计十原则"——从"尽可能少"到" environmentally friendly"。他设计的博朗收音机、计算器、 clocks，至今仍是极简主义的教科书。Jony Ive公开说："如果没有Rams，就没有苹果的设计。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Jony_Ive_in_London_%28cropped%29.jpg/440px-Jony_Ive_in_London_%28cropped%29.jpg"
+              alt="乔纳森·艾维"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍎</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">乔纳森·艾维 Jony Ive</div>
+              <div class="knowledge-card-sub">英国 · 1967– · 苹果前首席设计官</div>
+              <div class="knowledge-card-work">iMac G3的半透明、iPhone的圆角矩形、MacBook的铝合金一体——他把Rams的"少即是多"翻译成了数字时代的语言。"真正的简洁不是删减到没有东西，而是从混乱中创造出秩序。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Naoto_Fukasawa.jpg/440px-Naoto_Fukasawa.jpg"
+              alt="深泽直人"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">◯</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">深泽直人 Naoto Fukasawa</div>
+              <div class="knowledge-card-sub">日本 · 1956– · "Super Normal"理念创始人</div>
+              <div class="knowledge-card-work">"无意识设计"（Without Thought）——好的设计不应该要求你"注意到它"。他的壁挂式CD机（MUJI）像换气扇一样自然。他的哲学是：最好的设计，是让人感觉"本来就该这样"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏔️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">马岩松</div>
+              <div class="knowledge-card-sub">中国 · 1975– · MAD建筑事务所创始人</div>
+              <div class="knowledge-card-work">曾师从扎哈·哈迪德，回国后提出"山水城市"——用东方山水画的意境重新定义当代建筑。哈尔滨大剧院的流线银白色体量嵌入湿地，像一座从大地里长出来的雕塑。他用建筑说：东方美学不是复古，是对未来的想象。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">👘</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">郭培</div>
+              <div class="knowledge-card-sub">中国 · 高级定制服装设计师</div>
+              <div class="knowledge-card-work">2015年Rihanna在Met Gala穿的那件25公斤明黄长袍——出自郭培之手。她用30年把中国手工刺绣推上世界高级定制的最高舞台。她说："我不做'中国风'，我做的是我理解的美，碰巧我来自中国。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Naoto_Fukasawa_MUJI.jpg/440px-Naoto_Fukasawa_MUJI.jpg"
+              alt="原研哉"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">〇</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">原研哉 Kenya Hara</div>
+              <div class="knowledge-card-sub">日本 · 1958– · 无印良品艺术总监</div>
+              <div class="knowledge-card-work">"空"（Emptiness）不是"什么都没有"，而是"什么都可以成为"。他把无印良品从"便宜好用的日用品"提升为一种生活哲学——用"空"的容器，装下每个人自己的生活方式。设计最高境界，不是被看见，而是让人忘记它的存在。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六位设计师的共同点是：<strong>他们都拒绝让设计仅仅成为"好看"</strong>。Rams说"少但更好"，Ive说"从混乱中创造秩序"，深泽直人说"不要注意到设计"，马岩松说"用东方想象未来"，郭培说"做我理解的美"，原研哉说"空即无限"。他们改变了我们观看产品、建筑、服装、生活的方式——而这，正是所有好的品牌传播试图做的事：不是改变用户的选择，而是改变用户看待世界的方式。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
