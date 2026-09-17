@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/17</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a3a2e 0%, #2d6a4f 50%, #95d5b2 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/17/index.html" class="active">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/14/index.html">2026 / 9 / 14</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/4/index.html">2026 / 9 / 4</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 17</div>
+      <div class="day-week">星期四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美联储凌晨宣布加息25个基点，联邦基金利率升至3.75%-4.00%，点阵图暗示年内或再加息一次</div>
+            <div class="news-item-desc">北京时间9月17日凌晨2点，美联储FOMC宣布加息25个基点，将利率区间上调至3.75%-4.00%，符合市场预期。最新点阵图中位数显示2026年或将再加息一次。声明发布后美股全线跳水，市场开始消化"higher for longer"的持续信号。</div>
+            <a class="news-item-link" href="https://finance.eastmoney.com/a/202609173876476519.html" target="_blank">→ 东方财富网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">8月经济数据出炉：工业增加值+5.2%，进出口+19.8%，社零1-8月+2.5%，"十五五"开局平稳</div>
+            <div class="news-item-desc">国家统计局9月15日发布数据，8月全国规模以上工业增加值同比增长5.2%，服务业生产指数增长4.1%，货物进出口总额增长19.8%。1-8月社零同比增长2.5%。工业生产保持韧性，外贸表现亮眼，但消费恢复节奏偏缓仍是主要观察点。</div>
+            <a class="news-item-link" href="https://m.gmw.cn/2026-09/15/content_1304563941.htm" target="_blank">→ 光明网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">苹果首款折叠屏iPhone Duo正式发布，256GB国行15999元，10月16日预购</div>
+            <div class="news-item-desc">9月10日苹果秋季发布会上，首款横向"书本式"折叠屏iPhone Duo正式亮相。内屏7.6英寸、外屏5.4英寸，搭载台积电2nm A20 Pro芯片，采用纳米纹理折痕工艺。Pro系列9999元起、Duo 15999元起，标准版iPhone 18延至2027年春季——苹果首次采用分批发售策略。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260911A04CM800" target="_blank">→ 腾讯新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">苹果规划搭载M8 Ultra芯片的企业级AI服务器，拟采用英伟达网络设备</div>
+            <div class="news-item-desc">据知情人士透露，苹果正在研发面向AI开发者、企业和政府机构的自研芯片企业级服务器，低配版集成两颗M8 Ultra芯片集群，高配版搭载四颗。这标志着苹果从"设备制造商"向"AI基础设施供应商"的战略延伸，与英伟达在企业AI市场形成新的竞合关系。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908no68.html" target="_blank">→ 新浪科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">联合国秘书长古特雷斯警告AI安全风险，呼吁加强全球监管，下周联大聚焦AI治理</div>
+            <div class="news-item-desc">古特雷斯在联大开幕前警告各国：AI快速发展带来的安全风险不容忽视，全球不能承受AI安全领域"逐底竞争"的后果。这与美国"现有监管已足够"的立场形成鲜明分歧。加强AI监管将成为下周纽约联合国大会的核心议题之一。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908nojm.html" target="_blank">→ 新浪科技</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">理想i9定价引i8车主不满，新能源车企"产品迭代vs老用户情感"再成行业焦点</div>
+            <div class="news-item-desc">理想汽车新车型i9发布后，其定价策略引发i8老车主集体不满，"被背刺"讨论冲上微博热搜。新能源车企产品迭代速度加快，但定价调整极易触发老用户的情感反弹。如何在"产品创新"与"用户信任"之间建立平衡机制，是所有车企需要回答的长期命题。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%90%86%E6%83%B3i9%E5%AE%9A%E4%BB%B7%E5%BC%95i8%E8%BD%A6%E4%B8%BB%E4%B8%8D%E6%BB%A1" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">第37届上海旅游节花车巡游全城启动，21辆主题花车+21支境内外方队走进十区</div>
+            <div class="news-item-desc">9月12日外滩大巡游启幕后，21辆花车从9月13日起分批次驶入静安、崇明、虹口、嘉定等十个区域开展巡游或展示。今年旅游节涵盖170余项活动，持续至10月6日。文旅融合进入成熟期，"跟着花车游上海"成为今秋上海最具辨识度的城市IP。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260904A0DDSX00" target="_blank">→ 腾讯新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">樊振东×马伊琍"史诗级会面"冲上热搜，跨界互动打破体育与娱乐边界</div>
+            <div class="news-item-desc">乒乓球奥运冠军樊振东与演员马伊琍的跨界互动引发热议，"东儿和东儿额娘"的趣味称呼在微博和小红书多平台传播。体育明星与文娱名人的自然互动正成为新型内容素材——真实、有趣、不刻意，是这类话题传播的核心驱动力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%A8%8A%E6%8C%AF%E4%B8%9C%E9%A9%AC%E4%BC%8A%E7%90%8D%E5%8F%B2%E8%AF%97%E7%BA%A7%E4%BC%9A%E9%9D%A2" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">#iPhone18Duo评测 登上热搜，科技评测内容在小红书加速破圈</div>
+            <div class="news-item-desc">苹果首款折叠屏手机发布后，大量科技评测博主在小红书发布深度体验内容，"折痕控制""手写笔适配""多任务分屏"成为讨论热词。消费电子话题在小红书的热度持续攀升，平台正从"生活方式社区"向"全品类决策入口"迁移。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=iPhone18Duo%E8%AF%84%E6%B5%8B" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">光明乳业深度参与第37届上海旅游节，城市限定新品"梧桐树下享浓"将乳品文化融入文旅场景</div>
+            <div class="news-item-desc">光明乳业以官方合作伙伴身份参与上海旅游节，通过外滩花车巡游、官方伴手礼矩阵、"牧场-工厂-博物馆"全产业链文旅路线共建，旗下城市限定新品"梧桐树下享浓上海鲜牛奶"亮相。品牌文化与城市文旅的融合，正在为快消品牌打开新的营销叙事空间。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260914A068LD00" target="_blank">→ 腾讯新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">数英网启动2026世界清洁日视觉共创计划，品牌环保营销从"表态"走向"共创"</div>
+            <div class="news-item-desc">距9月20日世界清洁日三天，数英网发起主题海报征集活动。越来越多品牌选择通过"用户共创"而非"品牌宣言"的方式参与环保议题——让受众成为内容的创作者而非接收者，是2026年品牌社会责任营销的核心方法论转向。</div>
+            <a class="news-item-link" href="https://www.digitaling.com/articles/1564471.html" target="_blank">→ 数英网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">黄金价格高位震荡，美联储加息叠加地缘不确定性，避险逻辑与强美元博弈加剧</div>
+            <div class="news-item-desc">"黄金"冲上微博热搜。在美联储加息落地后，金价短期承压但韧性犹存——地缘冲突风险、全球央行增持黄金、通胀预期黏性等因素形成多空交织。市场正重新评估"higher for longer"环境下的资产配置逻辑。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%BB%84%E9%87%91" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普称利率应降至1%或更低，施压美联储独立性的声音持续升温</div>
+            <div class="news-item-desc">在美联储宣布加息后数小时，特朗普再次公开施压，声称利率应降至1%甚至更低。这与美联储的紧缩操作形成尖锐矛盾。总统对货币政策的直接干预正在削弱市场对美联储独立性的信心，全球资本流动的不确定性进一步加剧。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%89%B9%E6%9C%97%E6%99%AE%E7%A7%B0%E5%88%A9%E7%8E%87%E5%BA%94%E9%99%8D%E8%87%B31%25%E6%88%96%E6%9B%B4%E4%BD%8E" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#iPhone18Duo评测 热度20万+，折叠屏内容生态加速</div>
+            <div class="trend-meta">消费电子赛道 · 科技生活方式内容</div>
+            <div class="trend-obs">💡 趋势观察：苹果首款折叠屏手机引发小红书科技内容井喷。从"折痕实拍"到"多任务分屏技巧"，科技评测正在从专业社区向生活方式平台迁移。对品牌而言，折叠屏发布周期是"科技种草"的黄金窗口——首发体验内容天然自带高互动和高收藏属性。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=iPhone18Duo%E8%AF%84%E6%B5%8B" target="_blank">→ 微博热搜·iPhone18Duo评测</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#理想i9定价引i8车主不满 热度48万，新能源车主圈层情绪爆发</div>
+            <div class="trend-meta">汽车内容赛道 · 品牌用户关系话题</div>
+            <div class="trend-obs">💡 趋势观察：新能源车企定价策略引发的老用户情感反弹，正在从小众论坛扩散至主流社交平台。小红书上的车主分享、使用体验类内容天然具有"口碑放大器"效应——一次定价失误可能抵消数月种草积累的信任资产。品牌在迭代节奏上需要更审慎的"用户情感定价"策略。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%90%86%E6%83%B3i9%E5%AE%9A%E4%BB%B7%E5%BC%95i8%E8%BD%A6%E4%B8%BB%E4%B8%8D%E6%BB%A1" target="_blank">→ 微博热搜·理想i9定价</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#举手式睡姿是身体在求救 热度299万，健康话题霸榜</div>
+            <div class="trend-meta">健康内容赛道 · 生活方式实用信息</div>
+            <div class="trend-obs">💡 趋势观察：健康类实用内容以299万热度登顶微博热搜，说明"身体信号解读"类话题天然具备跨圈层传播力。这类内容在小红书上的延伸路径很清晰：从科普帖到个人经验分享再到产品种草（枕头、床垫、助眠产品）。健康赛道仍是品牌种草的高确定性场景。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%BE%E6%89%8B%E5%BC%8F%E7%9D%A1%E5%A7%BF%E6%98%AF%E8%BA%AB%E4%BD%93%E5%9C%A8%E6%B1%82%E6%95%91" target="_blank">→ 微博热搜·举手式睡姿</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#樊振东马伊琍史诗级会面 热度22万，运动员"人格化内容"持续破圈</div>
+            <div class="trend-meta">体育×娱乐跨界 · 人格化内容传播</div>
+            <div class="trend-obs">💡 趋势观察：运动员在非竞技场景下的真实互动——偶遇、聊天、日常——比官方宣传内容更有传播穿透力。"东儿和东儿额娘"的轻松互动，正是用户最想看到的"去光环化"内容。品牌与运动员合作时，应留出更多"非竞技内容"的创作空间，让人格而非成绩成为连接点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%A8%8A%E6%8C%AF%E4%B8%9C%E9%A9%AC%E4%BC%8A%E7%90%8D%E5%8F%B2%E8%AF%97%E7%BA%A7%E4%BC%9A%E9%9D%A2" target="_blank">→ 微博热搜·樊振东马伊琍</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#中国体操队在机场等了6小时 #国乒落地名古屋被困机场 双热搜联动</div>
+            <div class="trend-meta">体育赛事话题 · 运动员日常内容</div>
+            <div class="trend-obs">💡 趋势观察：国乒和体操队同日遭遇机场困境，两条热搜联动形成"中国运动员出行条件"的讨论热潮。用户对运动员"金牌之外"的真实处境高度关注——疲惫、等待、不便，这些内容比赛场高光更容易引发共情。体育IP品牌合作应关注"赛场之外"的内容切口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%9B%9D%E5%9B%BD%E4%B9%92%E8%90%BD%E5%9C%B0%E5%90%8D%E5%8F%A4%E5%B1%8B%E8%A2%AB%E5%9B%B0%E6%9C%BA%E5%9C%BA" target="_blank">→ 微博热搜·国乒被困机场</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 产品稀缺感设计</div>
+        <div class="learning-title">苹果折叠屏的稀缺感制造术：一份关于时间、价格、叙事的精密设计</div>
+        <div class="learning-subtitle">iPhone Duo不只是一部手机——它是苹果对"稀缺性"最完整的商业表达</div>
+        <div class="learning-body">
+          <p>苹果首款折叠屏手机从传闻到落地用了整整六年。但今天真正值得拆解的不是产品本身，而是苹果对它的<strong>三层稀缺感设计</strong>——时间稀缺、价格稀缺、叙事稀缺。这是一个教科书级别的高端产品上市策略。</p>
+          <p><strong>第一层：时间稀缺。</strong>苹果没有跟随三星、华为在2019-2024年扎堆入局，而是等到2026年——等供应链成熟、等用户习惯被培育、等折痕问题的技术方案足够有说服力。当苹果出手时，它不是在追赶趋势，而是宣布：折叠屏的"正确答案"由我来定义。同时，标准版iPhone 18推迟到2027年春季发售，人为制造了"高端即时可得、标准版需等待"的分层体验——<strong>时间差本身就是稀缺性</strong>。</p>
+          <p><strong>第二层：价格稀缺。</strong>Pro起价9999元、Duo起价15999元。这个定价不在"高端溢价"区间，而在"身份表达"区间。当产品价格超过某个阈值，它就不再是功能消费，而是<strong>身份消费和情感消费</strong>。在小红书上搜索"iPhone Duo"，出现的不是"值不值得买"的功能讨论，而是"拥有这种体验是什么感觉"的情感表达——这正是苹果想要的。</p>
+          <p><strong>第三层：叙事稀缺。</strong>苹果用"iPhone"而非新品类名称来定义折叠屏——这意味着在苹果的话语体系里，折叠屏不是另一个品类，而是iPhone的"下一步"。A20 Pro芯片、纳米纹理折痕工艺、2nm制程——每一个技术参数都在说同一句话：<strong>这不是跟随者，这是定义者</strong>。叙事的一致性，让产品从"硬件"变成了"宣言"。</p>
+          <p>对品牌大事件策划而言，最核心的启发是：<strong>稀缺感不是供应不足，是策略设计</strong>。苹果清楚知道：产品是用户叙事中的"目的地"而非"入口"——用户购买它是为了"拥有这个体验"，而不是"通过它到达别的地方"。当产品是目的地时，稀缺和高价就是放大器；当产品是入口时，低价和开放才是策略。品牌在策划活动时，也需要回答同一个问题：<strong>你的活动，是目的地还是入口？</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://baike.baidu.com/item/iPhone%2018/66937148" target="_blank">百度百科·iPhone 18</a> ·
+          <a href="https://post.smzdm.com/p/ako9w75r/" target="_blank">什么值得买·iPhone 18系列最全整理</a> ·
+          <a href="https://news.qq.com/rain/a/20260911A04CM800" target="_blank">腾讯新闻·新品密集发布消费电子板块迎新一轮催化</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 世界清洁日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🌍♻️🧹</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">环保行动</span>
+          <span class="festival-tag">全球180+国家</span>
+          <span class="festival-tag">每年9月20日</span>
+          <span class="festival-tag">公民行动运动</span>
+        </div>
+        <div class="festival-name">世界清洁日</div>
+        <div class="festival-name-en">World Cleanup Day · 始于2018年 · 2026年主题："从光盘行动到清洁城市"</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从爱沙尼亚到一个全球运动</div>
+          <div class="festival-block-body">
+            <p>2008年，爱沙尼亚。一个叫Rainer Nõlvak的普通公民，因为受不了家附近非法垃圾场的存在，发起了一场叫"<strong>做干净！（Teeme Ära!）</strong>"的全国清洁行动。50,000名志愿者在一天之内集结，清除了全国非法堆放的垃圾。一个人，一天，一个国家——这件事本身就成了最好的故事。</p>
+            <p>这颗种子用了十年长成一棵大树。2018年9月15日，第一届<strong>世界清洁日</strong>正式启动，覆盖150个国家，1790万人同一天走出家门清理地球。它不是一场活动，是一次<strong>全球公民的共同表态</strong>：我们不等待政府，我们自己动手。</p>
+            <p>历年主题跟随时代脉搏：从最初聚焦"固体废物清理"，到关注海洋塑料污染，到2024年的"清理我们的食物和地球"（Clean Up Our Food and Earth），再到2026年的<strong>"从光盘行动到清洁城市"</strong>——议题从"捡起垃圾"扩展到"食物浪费"这个更大、更隐蔽、也更具系统性的环境议题。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球最大的公民环保行动</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">180+</div>
+                <div class="festival-stat-label">参与国家</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1亿+</div>
+                <div class="festival-stat-label">累计参与人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2026/9/20</div>
+                <div class="festival-stat-label">本周六</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">食物浪费</div>
+                <div class="festival-stat-label">2026年核心议题</div>
+              </div>
+            </div>
+            <p>世界清洁日不是传统意义上的"节日"——它没有庆典、没有游行、没有颁奖典礼。它的"仪式感"来自一个极其朴素的行动：<strong>弯腰，捡起地上的垃圾</strong>。但正是这个动作，让它成为全球参与度最高的环保行动之一。</p>
+            <p>2026年，联合国将全球纪念活动的焦点锁定在<strong>食物浪费</strong>——这是全球城市与社区面临的最大、最可预防的废物来源之一。主题"从光盘行动到清洁城市"将个人餐桌上的选择与城市尺度的环境行动连接起来，构建了一条从"我"到"我们"的完整叙事链。</p>
+            <p>品牌参与也在升级：从"发一条环保声明"到"发起一场用户共创"。数英网今年发起的世界清洁日视觉共创计划，邀请设计师和用户共同创作主题海报——<strong>品牌不再"代言"环保，而是搭建一个让用户自己表达环保态度的平台</strong>。这个转变，恰好与小红书上"可持续时尚""零浪费生活""旧物改造"等内容生态高度契合。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】下届展望与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>下一步方向：</strong>世界清洁日运动正在从"一次性行动日"向"全年常态化社区行动"转型。UN-Habitat（联合国人居署）已加入为合作伙伴，推动将清洁行动嵌入城市治理的日常框架。数据化追踪（清理了多少吨垃圾、覆盖了多少社区）将成为未来运动的核心叙事工具。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>世界清洁日最核心的设计智慧是——<strong>把一件"很大的事"拆解成一个"任何人都能做一秒"的动作</strong>。弯腰、捡起、拍一张照、发出去。没有门槛，没有资格审查，没有"你做得不够好"的评判。IP大事件如果能学到这一点——让参与变得像呼吸一样自然，让每一个微小的行动都值得被看见和记录——那就是真正理解了"大众参与"的本质。另外，世界清洁日本周六（9月20日），小红书上的"可持续生活""户外清洁挑战""旧物新生"类内容可以提前布局，环保议题×生活方式×行动参与，是天然的内容三合一配方。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.un.org/zh/observances/cleanup-day" target="_blank">联合国·世界清洁日</a> ·
+          <a href="https://www.digitaling.com/articles/1564471.html" target="_blank">数英网·2026世界清洁日视觉共创计划</a> ·
+          <a href="https://unhabitat.org/world-cleanup-day-2026" target="_blank">UN-Habitat·World Cleanup Day 2026</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 日本动画电影</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 用画笔创造世界的人</div>
+        <div class="knowledge-headline">从宫崎骏到细田守：六位用动画电影构建宇宙的日本导演</div>
+        <div class="knowledge-tagline">「每一帧都是一封写给世界的情书——或者一封质问信。」</div>
+
+        <div class="knowledge-intro">
+          日本动画电影（Anime Film）是全球影像史上最独特的存在之一。它不是"卡通片"，不是"儿童娱乐"——它是一个民族用最极致的想象力，探讨生死、记忆、孤独、成长、自然与科技之间关系的视觉哲学。<br><br>
+          理解六位核心导演，基本就掌握了日本动画电影的精神地图：<strong>宫崎骏</strong>建造世界、<strong>高畑勋</strong>凝视日常、<strong>今敏</strong>撕裂梦境、<strong>押井守</strong>追问灵魂、<strong>新海诚</strong>丈量距离、<strong>细田守</strong>连接虚实。他们共同构成了一条从1980年代延续至今的创作脉络——动画不是现实的替代品，而是现实的另一种真实。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Hayao_Miyazaki_2012.jpg/440px-Hayao_Miyazaki_2012.jpg"
+              alt="宫崎骏"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌿</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">宫崎骏</div>
+              <div class="knowledge-card-sub">Hayao Miyazaki · 1941- · 吉卜力联合创始人</div>
+              <div class="knowledge-card-work">《千与千寻》获奥斯卡最佳动画长片。用飞行、森林、少女构建了一整套关于人与自然如何共处的视觉哲学。反复宣布退休又反复回来——因为他"还有想画的风景"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Isao_Takahata_2012.jpg/440px-Isao_Takahata_2012.jpg"
+              alt="高畑勋"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍃</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">高畑勋</div>
+              <div class="knowledge-card-sub">Isao Takahata · 1935-2018 · 吉卜力另一位灵魂</div>
+              <div class="knowledge-card-work">《萤火虫之墓》让人不敢看第二遍；《辉夜姬物语》用水墨笔触讲了一个关于"来到这个世界又不得不离开"的终极故事。他不造梦——他让你直视生活本身。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🪞</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">今敏</div>
+              <div class="knowledge-card-sub">Satoshi Kon · 1963-2010 · 梦境建筑师</div>
+              <div class="knowledge-card-work">《未麻的部屋》《红辣椒》《千年女优》——在梦与现实之间制造裂缝，让你分不清哪边是真。诺兰的《盗梦空间》被广泛认为受其影响。47岁英年早逝，留下四部电影，每一部都是神作。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🐕</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">押井守</div>
+              <div class="knowledge-card-sub">Mamoru Oshii · 1951- · 哲学型动画先锋</div>
+              <div class="knowledge-card-work">《攻壳机动队》问了一个至今没有答案的问题：当你的身体全是机械零件，你还是"你"吗？他用动画探讨的不是故事，是存在的本质。影响了《黑客帝国》和整个赛博朋克美学体系。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌧️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">新海诚</div>
+              <div class="knowledge-card-sub">Makoto Shinkai · 1973- · 距离与光的美学家</div>
+              <div class="knowledge-card-work">《你的名字。》全球票房超3.5亿美元。每一帧都是壁纸级画面——他把"错过"和"渴望"画成了光、云和列车时刻表。日本动画电影在宫崎骏之后最重要的商业接力者。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">👨‍👩‍👧‍👦</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">细田守</div>
+              <div class="knowledge-card-sub">Mamoru Hosoda · 1967- · 数字时代的家庭叙事者</div>
+              <div class="knowledge-card-work">《穿越时空的少女》《夏日大作战》《怪物之子》——用虚拟世界（互联网、游戏、怪兽世界）映照真实世界的家庭、成长和离别。他是六位导演中最"年轻"也最"日常"的一个。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          日本动画电影和IP营销策划的底层联系：<strong>都是用视觉叙事创造一种"进入感"</strong>。宫崎骏让你想住进那个世界，今敏让你怀疑自己是否在做梦，新海诚让你想坐上那班列车。好的IP活动也一样——不是让人"看到"一个活动，而是让人"进入"一种状态。当你策划一场活动时，试着问自己：我想让人进入的是什么样的世界？
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
