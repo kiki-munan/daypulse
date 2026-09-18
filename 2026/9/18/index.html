@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/18</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #2d4a7a 40%, #c4653a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/18/index.html" class="active">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/14/index.html">2026 / 9 / 14</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 18</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美联储9月加息25bp靴子落地，10年期美债收益率盘中突破5%，全球进入新一轮加息周期</div>
+            <div class="news-item-desc">美联储主席沃什主导的本次加息被市场充分定价，但点阵图上移与GDP预测调整释放了"增长可承受加息"的信号。10年期美债收益率突破5%为2023年10月以来首次，全球美元融资成本抬升，低收入国家偿债支出年增约600亿美元。</div>
+            <a class="news-item-link" href="https://finance.sina.cn/2026-09-18/detail-inisefvv0396509.d.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">人民币年内升值近4%升破6.71，"大国货币以我为主"叙事持续强化</div>
+            <div class="news-item-desc">与"加息=人民币贬值"的惯性认知相反，人民币今年逆势走强。央行强调汇率由经济基本面驱动，中国货币政策独立性在加息周期中经受考验。</div>
+            <a class="news-item-link" href="https://tinhn.com/zh/meilianchu-jiaxi-25-jidian/" target="_blank">→  tinhn.com</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">第23届东博会暨中国—东盟峰会今日在南宁开幕，234位中外部长级贵宾出席</div>
+            <div class="news-item-desc">5位东盟国家领导人共同出席开幕式，缅甸、老挝、柬埔寨、马来西亚、越南代表参会。本届博览会聚焦数字经济、AI、绿色能源与智能制造，不再只是"卖榴莲"的展销场。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260902A08V7P00" target="_blank">→ 腾讯新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">英国国王查理三世召集AI安全峰会，黄仁勋现场表态："不够安全就暂缓发布"</div>
+            <div class="news-item-desc">王室级别的AI安全峰会标志着AI治理从技术圈议题正式进入国家权力核心。英伟达CEO黄仁勋在峰会上简短发言，承诺开发者必须严格测试系统。与会高管未公开承诺具体改变，但安全话语的权重已不可逆地升级。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908nt5s.html" target="_blank">→ 新浪科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">王小云院士：2.8秒判定一张图片是否AI生成，密码学成为AI安全的"压舱石"</div>
+            <div class="news-item-desc">在济南举办的2026国家网络安全宣传周"网络安全技术高峰论坛"上，著名密码学家王小云展示了AI生成图片鉴别技术。当深度伪造渗透电信诈骗，内容真实性验证正在成为下一代基础设施级需求。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908nrlq.html" target="_blank">→ 新浪科技</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小鹏G9L正式上市：限时23.18万起，9分钟补能450公里，前法拉利设计师操刀</div>
+            <div class="news-item-desc">六座尺寸五座布局，全系标配800V+5C超充、后轮转向与航空级安全冗余。纯电与超级增程双动力共6版本，直降2.8万的定价策略剑指30万级SUV市场腹地。微博"小鹏G9L价格炸裂"话题迅速升温。</div>
+            <a class="news-item-link" href="https://auto.ifeng.com/c/8wVJRBivE71" target="_blank">→ 凤凰网汽车</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美国创作者营销支出将达439亿美元，AI Agent正在重塑营销基建</div>
+            <div class="news-item-desc">麦肯锡测算AI Agent每年可为全球经济解锁4.4万亿美元以上价值，仅营销和销售领域就贡献60%以上的AI增量价值。品牌竞争的本质正从"争夺人的心智"升级为"争夺AI的认知与推荐权"。</div>
+            <a class="news-item-link" href="https://m.ofweek.com/ai/2026-01/ART-201700-8420-30678222.html" target="_blank">→ OFweek</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">何炅芒果招商会官宣《我们来了》重启，八个神秘剪影引爆全网解码大战</div>
+            <div class="news-item-desc">湖南卫视经典女性综艺IP重启，"国民纯元""国际大花""奥斯卡影后"等关键词剪影引发全民猜测：蒋勤勤、李冰冰、杨紫琼、刘雯、白鹿、鞠婧祎……节目暂定10月录制、12月上线芒果TV。综艺重启潮的怀旧情绪与新鲜阵容之间的张力，正是当下内容消费的核心驱动力。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7879922982_1d5ae15260680bcslw.html" target="_blank">→ 新浪娱乐</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">九一八事变爆发95周年，历史记忆话题占据热搜前列</div>
+            <div class="news-item-desc">9月18日，"九一八事变爆发95年"登上微博热搜。95年前的今夜，日军炸毁南满铁路柳条湖段，发动侵华战争。每年的这一天，历史记忆与民族情感在社交媒体上形成庄重的集体共振。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B9%9D%E4%B8%80%E5%85%AB%E4%BA%8B%E5%8F%98%E7%88%86%E5%8F%9195%E5%B9%B4" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">Agentic AI进入营销主战场：从"工具辅助"到"自主决策"的范式革命</div>
+            <div class="news-item-desc">2026年被定义为"Agentic AI元年"——AI Agent从被动的工具辅助进化为具备自主决策能力的营销参与者。知识库成为企业数智化转型的"价值洼地"，连接人类经验与AI能力的关键枢纽。营销经理配备多个专业智能体，生产力呈指数级放大。</div>
+            <a class="news-item-link" href="https://api.socialbeta.com/article/110888" target="_blank">→ SocialBeta</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">品牌异业合作案例激增，"跨界联名"从战术动作升级为战略基建</div>
+            <div class="news-item-desc">近一年品牌异业合作案例数量显著增加，社媒平台上营销人寻求异业资源的热度持续攀升。"跨界"不再是偶发创意，而是品牌跨越固有边界、拓展增长空间的系统性策略。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4837827.html" target="_blank">→ 虎嗅</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">美国对与伊朗有商业往来的国家加征25%关税，霍尔木兹海峡紧张局势升级</div>
+            <div class="news-item-desc">外交部回应：中方将坚定维护自身正当合法权益。叠加美联储加息，全球市场面对的核心不确定从利率转向地缘——霍尔木兹海峡形势直接影响后续加息速度和终点，挑战美联储的应对能力。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908nt6y.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#九一八事变95周年 历史记忆类内容情感共振</div>
+            <div class="trend-meta">历史记忆 · 家国叙事 · 教育科普赛道</div>
+            <div class="trend-obs">💡 趋势观察：918话题在微博热搜前5，小红书上历史科普类内容在纪念日当天有集中爆发。"历史不是仇恨，是清醒"类表达获得高共鸣。品牌今日应克制营销动作，以"铭记""珍视和平"为情感锚点做轻量内容，避免任何娱乐化表达。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B9%9D%E4%B8%80%E5%85%AB%E4%BA%8B%E5%8F%98%E7%88%86%E5%8F%9195%E5%B9%B4" target="_blank">→ 微博热搜·九一八事变95年</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#何炅官宣《我们来了》重启 全民解码剪影嘉宾</div>
+            <div class="trend-meta">综艺娱乐 · 怀旧IP重启 · 女性群像叙事</div>
+            <div class="trend-obs">💡 趋势观察：经典综艺IP重启+神秘剪影的悬念设计，本身就是一个教科书级的营销案例——"让用户参与猜测"比"直接公布阵容"多创造了72小时的话题窗口。小红书上"剪影解码"类UGC内容爆发，说明悬疑感+怀旧感+参与感是综艺营销的三重引擎。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BD%95%E7%82%85%E5%AE%98%E5%AE%A3%E6%88%91%E4%BB%AC%E6%9D%A5%E4%BA%86%E9%87%8D%E5%90%AF" target="_blank">→ 微博热搜·何炅官宣我们来了重启</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#小鹏G9L价格炸裂 新能源汽车"卷价格"进入新阶段</div>
+            <div class="trend-meta">科技消费 · 汽车赛道 · 产品评测</div>
+            <div class="trend-obs">💡 趋势观察：23万起的定价直降2.8万，"前法拉利设计师操刀""9分钟补能450公里"这些卖点在小红书上极易转化为视觉化内容。汽车品类的种草在小红书已从"参数党"走向"生活方式叙事"——车主的出行场景、审美选择、价值认同才是核心内容锚点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%B0%8F%E9%B9%8FG9L%E4%BB%B7%E6%A0%BC%E7%82%B8%E8%A3%82" target="_blank">→ 微博热搜·小鹏G9L价格炸裂</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#上1休1上5休3 假期安排引发打工人集体共鸣</div>
+            <div class="trend-meta">生活方式 · 职场情绪 · 社会议题</div>
+            <div class="trend-obs">💡 趋势观察：中秋国庆假期调休方案再次成为情绪爆点。"假期的获得感和剥夺感哪个更强"——这种集体情绪在小红书上有巨大的UGC空间。品牌可以切入"如何用好每一个假期碎片"的内容方向，而非简单贩卖焦虑或鸡汤。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%8A1%E4%BC%911%E4%B8%8A5%E4%BC%913" target="_blank">→ 微博热搜·上1休1上5休3</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#秋天穿毛衣脖子空空的 小红书秋季穿搭情绪化表达</div>
+            <div class="trend-meta">时尚穿搭 · 情绪消费 · Softfit趋势</div>
+            <div class="trend-obs">💡 趋势观察：这类"体感式穿搭"话题在秋季有天然流量——不是讲单品、不是讲搭配公式，而是讲"穿毛衣时脖子空空的感受"。小红书2026秋冬的Softfit柔系穿搭趋势正在从"审美"走向"体感"——用户追求的不是"看起来好看"，而是"穿起来舒服且被理解"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%A7%8B%E5%A4%A9%E7%A9%BF%E6%AF%9B%E8%A1%A3%E8%84%96%E5%AD%90%E7%A9%BA%E7%A9%BA%E7%9A%84" target="_blank">→ 微博热搜·秋天穿毛衣</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI原生营销</div>
+        <div class="learning-title">当AI学会帮你花钱：从"执行者"到"编排者"的营销人进化论</div>
+        <div class="learning-subtitle">Agentic AI不只是工具升级，它正在重新定义"营销人"这个角色的含义</div>
+        <div class="learning-body">
+          <p>2026年初，SocialBeta发布了一份影响深远的趋势报告：营销的数智化升级正在从"AI辅助人类"走向"AI自主决策"——这就是Agentic AI。</p>
+          <p>传统营销工作流是一条清晰的人类链路：<strong>洞察→策略→创意→执行→复盘</strong>。每个环节都需要人。但现在，一个营销经理可以同时"雇佣"5个AI Agent——一个负责竞品监控，一个负责内容生成，一个负责投放优化，一个负责用户对话，一个负责效果归因。人的角色变了：从"每一步都亲自做"，变成"编排这些智能体如何协作"。</p>
+          <p>这不是效率工具的升级。<strong>这是工作身份的重构。</strong></p>
+          <p>麦肯锡给出了一个惊人的数字：仅营销和销售领域，AI Agent就将贡献60%以上的AI增量价值——每年超过2.6万亿美元。这意味着，未来的营销竞争力，不再取决于"你的团队有多大"，而是"你的Agent编队有多强"。</p>
+          <p>但这里有一个容易被忽略的核心：<strong>知识库是连接人类经验与AI能力的关键枢纽。</strong>一个没有品牌记忆、行业认知和审美标准的AI Agent，就像一个刚毕业的实习生——聪明但没有判断力。知识库的建设，本质上是在教AI"像这个品牌一样思考"。</p>
+          <p>对大事件营销人来说，这指向一个实操命题：你的活动策划SOP、你的品牌审美标准、你的内容红线——这些隐性知识能不能被结构化，能不能被AI Agent调用？如果答案是"不能"，那你的团队在2026年下半年将面临指数级的效率落差。</p>
+          <p><strong>未来的营销人，不是会做创意的人，而是会"教AI做创意"的人。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://api.socialbeta.com/article/110888" target="_blank">SocialBeta《10大趋势，打开2026品牌营销》</a> ·
+          <a href="https://m.ofweek.com/ai/2026-01/ART-201700-8420-30678222.html" target="_blank">OFweek《2026 Agentic AI十大关键趋势》</a> ·
+          <a href="https://news.qq.com/rain/a/20260119A0595100" target="_blank">腾讯新闻《全球营销进入SuperAgent时代》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 圣塞巴斯蒂安国际电影节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎬🌊🇪🇸</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">电影艺术</span>
+          <span class="festival-tag">西班牙·圣塞巴斯蒂安</span>
+          <span class="festival-tag">每年9月</span>
+          <span class="festival-tag">欧洲最古老A类电影节之一</span>
+        </div>
+        <div class="festival-name">圣塞巴斯蒂安国际电影节</div>
+        <div class="festival-name-en">San Sebastián International Film Festival (SSIFF) · Festival Internacional de Cine de San Sebastián · 始于1953年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从佛朗哥时代走出的光影朝圣</div>
+          <div class="festival-block-body">
+            <p>1953年，西班牙巴斯克地区的海滨小城圣塞巴斯蒂安（巴斯克语：Donostia），在佛朗哥政权的文化管制缝隙中，悄悄举办了第一届国际电影节。那个年代的西班牙，电影是少数能通向外部世界的窗口——而圣塞巴斯蒂安选择做这扇窗。</p>
+            <p>1957年起，电影节获得FIAPF（国际电影制片人协会）认证，跻身A类竞赛型电影节行列——与戛纳、威尼斯、柏林同列最高等级。但圣塞巴斯蒂安从未试图模仿前三者的规模或政治锋芒。它的性格始终是<strong>"发现者"</strong>：发现尚未被世界看见的好电影，发现拉美和欧洲之间的文化桥梁，发现那些在商业逻辑之外仍然值得被讲述的故事。</p>
+            <p>历年荣誉金贝壳奖（Donostia Award）的获得者折射出这种气质：从希区柯克（1962年开幕片首映）、特吕弗、斯科塞斯，到梅丽尔·斯特里普、丹泽尔·华盛顿、朱迪·福斯特——它奖励的不只是成就，更是一种对电影艺术的持续信仰。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】第74届今日开幕：Brad Pitt回归，Penélope Cruz献唱</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">第74届</div>
+                <div class="festival-stat-label">2026年9月18–26日</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">17部</div>
+                <div class="festival-stat-label">主竞赛单元影片</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">Ira Sachs</div>
+                <div class="festival-stat-label">主竞赛评审团主席</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">9天</div>
+                <div class="festival-stat-label">放映+大师班+派对</div>
+              </div>
+            </div>
+            <p>2026年的圣塞星光熠熠：<strong>Brad Pitt</strong>携新片《Heart of the Beast》亮相，这是他自2009年以来首次回归圣塞；<strong>Penélope Cruz</strong>在Olivia Wilde执导的《The Invite》中出演，还在《La bola negra》中以客串歌手身份登台；<strong>Naomi Watts、Marion Cotillard、Orlando Bloom、Rami Malek、Jeremy Irons、Werner Herzog</strong>等悉数到场。</p>
+            <p>评审团由美国导演<strong>Ira Sachs</strong>（《爱很怪》《丘比特之舞》）领衔。导演José Luis Rebordinos继续掌舵这个他倾注心血多年的电影节，将"发现新导演"的核心使命与"吸引国际巨星"的星光效应精妙平衡。</p>
+            <p>圣塞的运作模式值得研究：它不靠巨额奖金或市场交易规模取胜，而是靠<strong>文化品味和行业信任</strong>——一个被圣塞选中的年轻导演，意味着"有人认真看了你的作品，觉得它值得被看见"。这种"被看见"的价值，远超奖杯本身。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】"发现者"精神对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p>圣塞巴斯蒂安74年不倒的秘密，不是因为它最大、最贵或最喧嚣，而是因为它始终在做一件事：<strong>在所有人都盯着聚光灯的时候，它选择看向聚光灯照不到的地方。</strong></p>
+            <p>拉美电影、巴斯克本土文化、新人导演的第一部长片——这些"不被看见的好东西"，在圣塞找到了全世界最认真的观众。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>"发现者"精神是IP大事件最稀缺的品质。当所有品牌活动都在争抢头部KOL、追逐顶流明星时，小红书的大事件是否可以成为"发现未被看见的好内容/好创作者/好生活方式"的平台？一个"被小红书选中"的标签，如果代表的是"品味认证"而非"流量认证"，它的品牌价值将远大于曝光量。圣塞用74年证明了这件事——小而精的文化信誉，比大而全的市场规模更有生命力。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.sansebastianfestival.com/in/" target="_blank">SSIFF 官网</a> ·
+          <a href="https://www.zinema7hotel.com/en/blog/san-sebastian-film-festival-2026" target="_blank">Zinema7Hotel·2026届详解</a> ·
+          <a href="https://variety.com/2026/film/global/brad-pitt-heart-of-the-beast-paramount-san-sebastian-1236841422/" target="_blank">Variety·Brad Pitt新片入选</a> ·
+          <a href="https://deadline.com/2026/09/san-sebastian-jose-luis-rebordinos-1237103820/" target="_blank">Deadline·导演访谈</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 西班牙电影</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 西班牙电影的五种表情</div>
+        <div class="knowledge-headline">从布努埃尔到阿莫多瓦尔：一个国家的电影灵魂长什么样？</div>
+        <div class="knowledge-tagline">「在西班牙，电影不是娱乐——它是一场关于欲望、死亡与反叛的仪式。」</div>
+
+        <div class="knowledge-intro">
+          今天是圣塞巴斯蒂安电影节开幕日。趁这个机会，我们聊一个更根本的话题：<strong>西班牙电影为什么能在世界影坛占据如此独特的地位？</strong><br><br>
+          答案或许在于：西班牙从不试图讨好所有人。它的电影继承了西班牙文化的核心基因——对死亡的坦然、对欲望的坦诚、对权威的怀疑、对美的偏执。从超现实主义大师布努埃尔到色彩狂人阿莫多瓦尔，从马德里的摄影棚到好莱坞的红毯，西班牙电影人一直在做同一件事：<strong>用极致的个人风格，讲述普世的人类故事。</strong><br><br>
+          对IP策划人来说，理解西班牙电影的性格，就是理解"如何用一种不可复制的文化DNA，在全球语境中建立辨识度"。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Pedro_Almod%C3%B3var_at_Premios_Goya_2017.jpg/440px-Pedro_Almod%C3%B3var_at_Premios_Goya_2017.jpg"
+              alt="佩德罗·阿尔莫多瓦尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">佩德罗·阿尔莫多瓦尔</div>
+              <div class="knowledge-card-sub">Pedro Almodóvar · 1949– · 色彩大师</div>
+              <div class="knowledge-card-work">西班牙电影的代名词。用饱和度极高的红、黄、蓝构建欲望世界。《关于我母亲的一切》获奥斯卡最佳外语片，《痛苦与荣耀》是他最私密也最成熟的作品。他的电影里，女人永远比男人强大，红色永远是主角。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Pen%C3%A9lope_Cruz_2%2C_2011.jpg/440px-Pen%C3%A9lope_Cruz_2%2C_2011.jpg"
+              alt="佩内洛普·克鲁兹"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">佩内洛普·克鲁兹</div>
+              <div class="knowledge-card-sub">Penélope Cruz · 1974– · 奥斯卡影后</div>
+              <div class="knowledge-card-work">马德里女孩闯荡好莱坞最成功的范本。凭《回归》获奥斯卡最佳女配角，与阿莫多瓦尔合作多部经典。今天在圣塞携新片《The Invite》亮相。她是西班牙电影面孔全球化的最佳注脚——浓眉、黑发、永远在燃烧。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Luis_Bu%C3%B1uel.jpg/440px-Luis_Bu%C3%B1uel.jpg"
+              alt="路易斯·布努埃尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">👁️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">路易斯·布努埃尔</div>
+              <div class="knowledge-card-sub">Luis Buñuel · 1900–1983 · 超现实主义之父</div>
+              <div class="knowledge-card-work">《一条安达鲁狗》（1929）中那颗被刀片划开的眼球，是电影史上最著名的画面之一。他用梦境逻辑颠覆理性叙事，一辈子都在和"资产阶级的虚伪"作对。没有布努埃尔，就没有后来的阿莫多瓦尔。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Javier_Bardem_66%C3%A8me_Festival_de_Venise_%28cropped%29.jpg/440px-Javier_Bardem_66%C3%A8me_Festival_de_Venise_%28cropped%29.jpg"
+              alt="哈维尔·巴登"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎭</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">哈维尔·巴登</div>
+              <div class="knowledge-card-sub">Javier Bardem · 1969– · 奥斯卡影帝</div>
+              <div class="knowledge-card-work">西班牙男演员在国际影坛的最高坐标。凭《黄昏的双镖客》提名，凭《老无所依》获奥斯卡最佳男配角。光头、深邃眼神、永远在演"危险但迷人"的角色。佩内洛普·克鲁兹的丈夫，银幕上下的西班牙电影皇室。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Alejandro_Amen%C3%A1bar_2015.jpg/440px-Alejandro_Amen%C3%A1bar_2015.jpg"
+              alt="亚历杭德罗·阿梅纳瓦尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎥</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">亚历杭德罗·阿梅纳瓦尔</div>
+              <div class="knowledge-card-sub">Alejandro Amenábar · 1972– · 惊悚与哲思</div>
+              <div class="knowledge-card-work">智利出生、西班牙成长的电影全才——导演、编剧、配乐一人包揽。《死亡论文》开创西班牙惊悚新类型，《深海长眠》获奥斯卡最佳外语片，《城市梦魇》让好莱坞翻拍。他用电影追问同一个问题：人有没有权利选择自己的死亡？</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          西班牙电影的性格可以用三个词概括：<strong>欲望、死亡、反叛</strong>。布努埃尔用梦境对抗理性，阿莫多瓦尔用色彩对抗压抑，巴登用沉默对抗暴力。这些导演和演员共同构成了一个文化图谱：一个不到5000万人口的国家，如何用极致的个人表达，在全球影坛赢得不可替代的位置。对IP策划人来说，这个故事的启示是：辨识度不来自规模，来自不可替代的性格。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
