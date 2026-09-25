@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/22</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a3a5c 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/22/index.html" class="active">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/19/index.html">2026 / 9 / 19</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/16/index.html">2026 / 9 / 16</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 22</div>
+      <div class="day-week">星期二</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">A股超百股涨停，"吃药喝酒"行情重现，消费+科技双主线引领市场反弹</div>
+            <div class="news-item-desc">周五A股大幅走强，超百家个股涨停。消费板块（白酒、医药）与科技板块双轮驱动，市场情绪明显回暖。但部分权重股逆势下挫，板块分化信号值得关注——结构性行情特征愈发鲜明。</div>
+            <a class="news-item-link" href="https://www.nbd.com.cn/" target="_blank">→ 每日经济新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国家发改委今日10:00召开9月新闻发布会，聚焦稳增长政策落地与四季度经济展望</div>
+            <div class="news-item-desc">财联社预告，发改委将于9月22日上午10点举行月度例行发布会。市场预期将围绕扩大内需、民营经济扶持、重大项目推进等核心议题展开，或释放四季度稳增长政策加码信号。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260921A0789B00" target="_blank">→ 财联社/腾讯新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普发文称"谁赢得AI，谁就胜出"——美国不会扼杀AI发展，但会谨慎行事</div>
+            <div class="news-item-desc">美国总统特朗普在Truth Social发帖淡化AI风险，强调美国在AI领域保持领先，同时表态如有必要将由司法部等执法机构管控AI相关风险。这一表态被视为对硅谷AI安全派与监管派的直接回应，AI治理的"美式路径"轮廓更清晰。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908ocl0.html" target="_blank">→ 新浪科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">MiniMax正式开源新一代通用视频模型H3：支持多模态输入、2K分辨率、15秒立体声视频</div>
+            <div class="news-item-desc">稀宇科技发布H3视频模型，由三模块组成，H3-Base已开源支持SGLang/vLLM本地部署。同期，Genspark创始人景鲲推出GenOffice——全球首个全功能开源AI Office套件，支持文档/表格/PPT/PDF编辑，免费无广告。</div>
+            <a class="news-item-link" href="https://ai-bot.cn/daily-ai-news/" target="_blank">→ AI工具集</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic计划将IPO推迟至11月，估值约2万亿美元，有望超SpaceX成年度最大IPO</div>
+            <div class="news-item-desc">Anthropic近日向早期投资者和合作伙伴介绍新产品。公司预计2026年底年化收入超1100亿美元。尽管AI模型开发节奏放缓引发讨论，顾问和投资者认为不会大幅影响财务前景。AI赛道的资本化叙事正在进入"超级独角兽"阶段。</div>
+            <a class="news-item-link" href="https://readhub.cn/daily" target="_blank">→ Readhub</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">1-8月化妆品零售额3094亿元，同比+6.1%增速翻倍，首个强制性国标发布重塑安全门槛</div>
+            <div class="news-item-desc">国家统计局数据显示，美妆消费复苏势头持续强化，较去年同期3.3%的增速接近翻倍。同时市场监管总局发布《化妆品安全通用要求》强制性国标，将于2028年1月实施，全链条重塑行业合规门槛。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260921A037O400" target="_blank">→ 腾讯新闻·新消费早参</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">小米18 Pro宣布搭载原生硬件防窥屏，央视点赞：物理级隐私保护技术突破</div>
+            <div class="news-item-desc">小米在屏幕像素结构层面实现底层创新：普通像素保持宽视角，防窥像素收窄至正面可见。开启时仅保留防窥像素工作，从物理层面实现防窥，兼顾画质与隐私。移动办公时代的隐私刚需正在驱动硬件创新。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908ocp2.html" target="_blank">→ 新浪科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">vivo X500系列发布，定价策略引发热议："给友商压力"登上热搜</div>
+            <div class="news-item-desc">vivo X500系列正式发布，多条相关话题登上微博热搜。"定价给友商压力""灭霸500"等话题显示手机厂商在秋季新品周期的激烈竞争。消费电子产品仍是社交平台上讨论度最高的品类之一。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=vivo+X500%E7%B3%BB%E5%88%97%E5%8F%91%E5%B8%83" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">名古屋亚运会游泳赛持续高燃：中国游泳队"金金金金金"，潘展乐称张展硕为"奇迹之子"</div>
+            <div class="news-item-desc">名古屋亚运会游泳赛进入白热化阶段，中国队在多个项目夺金。18岁小将张展硕200自分段游出1分42秒92创个人最佳，潘展乐/张展硕接力组合上演惊天逆转，多条话题霸榜微博热搜。新老交替的中国游泳正展现强大统治力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%BD%98%E5%B1%95%E4%B9%90+%E5%BC%A0%E5%B1%95%E7%A1%95" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">曝某S+级女演员片酬从几千万降至100万，影视行业薪酬结构深度重塑</div>
+            <div class="news-item-desc">话题迅速登上热搜，引发行业内外广泛讨论。背后是"限薪令"持续发酵+市场自发调整的双重结果。演员价值评估体系正从"流量定价"向"演技+内容质量定价"迁移，中腰部创作者的生存空间正在扩大。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%9B%9D%E6%9F%90S%E5%8A%A0%E5%A5%B3%E4%B8%BB%E7%89%87%E9%85%AC%E4%BB%8E%E5%87%A0%E5%8D%83%E4%B8%87%E9%99%8D%E8%87%B3100%E4%B8%87" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">2026年品牌营销11大趋势：AI智能体+情绪营销+线下场景回流成三大关键词</div>
+            <div class="news-item-desc">虎嗅报告显示，2026年营销核心逻辑从流量驱动转向用户心智运营。AI重构营销分工，"一人公司"时代到来；情绪营销从单一温情走向荒诞、敬畏、抽象多元并存；线下场景回流，实体空间成为品牌"原生内容发生器"。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4837827.html" target="_blank">→ 虎嗅网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">小红书月活突破4亿，全面押注中长视频+深度内容，获2026世界杯转播权</div>
+            <div class="news-item-desc">平台从"好物种草"全面进化为品效合一生态，2分钟以上中长视频成2026新流量突破口。世界杯转播权的获取标志着小红书向"内容全品类平台"的野心升级。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4861801.html" target="_blank">→ 虎嗅网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">第81届联大高级别周今日开幕：主题"重建信任、应对变革"，全球领导人齐聚纽约</div>
+            <div class="news-item-desc">联合国大会第81届会议高级别周于9月22日在纽约正式开启，孟加拉国代表Khalilur Rahman主持本届会议。各国领导人将围绕核裁军、气候行动、地区冲突等全球议题展开辩论。中东冲突、海上航运安全、全球能源价格高企等议题备受关注。</div>
+            <a class="news-item-link" href="https://www.un.org/en/high-level-week-2026" target="_blank">→ 联合国官网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普回应中美元首会晤：双方保持沟通，市场对缓和对话持乐观预期</div>
+            <div class="news-item-desc">特朗普在Truth Social上就中美元首会晤相关话题发表回应，表态倾向推进对话。中美关系的边际变化直接影响全球资本市场风险偏好和供应链预期。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%89%B9%E6%9C%97%E6%99%AE%E5%9B%9E%E5%BA%94%E4%B8%AD%E7%BE%8E%E5%85%83%E9%A6%96%E4%BC%9A%E6%99%A4" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#名古屋亚运会游泳 中国游泳队霸榜热搜</div>
+            <div class="trend-meta">体育赛事 · 情感向内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：潘展乐/张展硕相关话题占据微博热搜前5席中3席，"奇迹之子""教科书级别"等情感标签密集出现。体育明星的新老交替叙事天然具有极强传播力——品牌体育营销的关键在于抓住"运动员个人故事"的情感峰值时刻，而非仅仅是赛事结果本身。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%BD%98%E5%B1%95%E4%B9%90%E7%A7%B0%E5%BC%A0%E5%B1%95%E7%A1%95%E6%98%AF%E5%A5%87%E8%BF%B9%E4%B9%8B%E5%AD%90" target="_blank">→ 微博热搜·潘展乐称张展硕是奇迹之子</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#中国女子仙本那旅游遭男子闯入脱衣 热度34万</div>
+            <div class="trend-meta">社会民生 · 出境游安全</div>
+            <div class="trend-obs">💡 趋势观察：出境游安全话题持续在小红书有强传播力。女性用户占多数的平台上，女性出行安全类内容天然具有情绪共振。旅行品牌可通过"安全出行指南"类实用内容建立品牌信任——在恐慌情绪中提供解决方案，比回避话题更有价值。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%AD%E5%9B%BD%E5%A5%B3%E5%AD%90%E4%BB%99%E6%9C%AC%E9%82%A3%E6%97%85%E6%B8%B8%E9%81%AD%E7%94%B7%E5%AD%90%E9%97%AF%E5%85%A5%E8%84%B1%E8%A1%A3" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#两部门紧急拨付2亿支持4省救灾</div>
+            <div class="trend-meta">公共服务 · 社会治理</div>
+            <div class="trend-obs">💡 趋势观察：灾害事件期间，公益类和社会互助类内容的参与度在小红书显著上升。品牌在灾害期间的角色定位应为"行动者"而非"旁观者"——提供物资支持或流量支持的实际行动，比沉默更能获得用户认同。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%A4%E9%83%A8%E9%97%A8%E7%B4%A7%E6%80%A5%E6%8B%A8%E4%BB%982%E4%BA%BF%E6%94%AF%E6%8C%814%E7%9C%81%E6%95%91%E7%81%BE" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#vivo X500系列发布 科技产品评测内容密集</div>
+            <div class="trend-meta">消费电子 · 新品发布</div>
+            <div class="trend-obs">💡 趋势观察：vivo X500相关话题占据5席热搜，"定价+体验"双维度讨论构成高效传播链路。手机品类的种草内容在小红书的决策影响力持续增强——品牌应在新品发布后48小时内完成"首发体验"内容的密集铺排。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=vivo+X500%E7%B3%BB%E5%88%97%E5%8F%91%E5%B8%83" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#曝某S+女主片酬降至百万 #金鹰奖最佳男女主 行业+娱乐双线话题</div>
+            <div class="trend-meta">娱乐产业 · 职场生态</div>
+            <div class="trend-obs">💡 趋势观察：两个热搜共同指向一个趋势——影视行业的"去泡沫化"正在从政策驱动走向市场自发。片酬下降→中腰部创作者机会增加→内容多样性提升。对平台内容策划而言，"去头部依赖"意味着优质内容本身的竞争力权重正在上升。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%9B%9D%E6%9F%90S%E5%8A%A0%E5%A5%B3%E4%B8%BB%E7%89%87%E9%85%AC%E4%BB%8E%E5%87%A0%E5%8D%83%E4%B8%87%E9%99%8D%E8%87%B3100%E4%B8%87" target="_blank">→ 微博热搜</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 营销范式迁移</div>
+        <div class="learning-title">从「流量运营」到「心智运营」：2026年营销的底层逻辑迁移</div>
+        <div class="learning-subtitle">当流量红利彻底消退，品牌靠什么留在用户心里？</div>
+        <div class="learning-body">
+          <p>过去十年，中国营销界的主线叙事是"流量"——找到流量洼地，抢占流量入口，把流量转化为GMV。但2026年，这条路径已经走到了尽头。</p>
+          <p>不是因为流量不存在了，而是因为<strong>用户不再因为"被触达"就"被说服"</strong>。信息过饱和让每一次注意力的分配都变得极其苛刻——用户不是没有看到你的广告，而是看到了，滑过去，没有任何痕迹。</p>
+          <p>虎嗅最新报告显示的三大趋势，本质上是对同一个命题的不同切面：<strong>AI智能体让"一人公司"成为可能</strong>——绝味、施耐德等头部企业已通过AI打通设计/文案/策略的跨职能边界；<strong>情绪营销从单一温情走向多元</strong>——荒诞、敬畏、抽象感正在取代"感动哭"的单一模板；<strong>线下场景回流</strong>——实体空间正在从"卖场"变成"内容发生器"。</p>
+          <p><strong>这三个趋势的共同指向是：营销的战场从"眼球"转移到了"心智"。</strong>所谓心智运营，不是让用户记住你，而是让用户感到"这个品牌理解我"。它要求品牌不再追求覆盖更多人，而是在有限但精准的触点里，制造真正的"认知共振"。</p>
+          <p>对平台大事件策划而言，这意味着：每一场活动不应该只是一次"曝光"，而应该是一次"心智的锚定"——用户参加完之后，记住的不是"活动现场很热闹"，而是"那一刻我感受到了一些东西"。</p>
+          <p>回看2026年最成功的营销案例，它们都有一个共同特征：<strong>不是让用户说"我看到了"，而是让用户说"我感受到了"</strong>。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.huxiu.com/article/4837827.html" target="_blank">虎嗅《2026影响品牌的11个营销趋势》</a> ·
+          <a href="https://m.adquan.com/detail/0-357871" target="_blank">广告门《2026年品牌营销趋势：在时代变革中深耕价值》</a> ·
+          <a href="https://api.socialbeta.com/article/110888" target="_blank">SocialBeta《10大趋势，打开2026品牌营销》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 国际和平日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🕊️🌍✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">联合国纪念日</span>
+          <span class="festival-tag">全球</span>
+          <span class="festival-tag">每年9月21日</span>
+          <span class="festival-tag">和平文化</span>
+        </div>
+        <div class="festival-name">国际和平日</div>
+        <div class="festival-name-en">International Day of Peace · 联合国设立于1981年 · 每年9月21日</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从"和平周"到全球停火日</div>
+          <div class="festival-block-body">
+            <p>1981年，联合国大会通过决议，设立"国际和平日"。最初的日期定在9月第三个星期二——与联大开幕同步，象征和平是国际秩序的基石。2001年，第55届联大通过决议，将和平日固定为每年<strong>9月21日</strong>，并呼吁全球在这一天实现24小时停火与非暴力。</p>
+            <p>但和平日的根，远比联合国更深。1898年，俄国沙皇尼古拉二世发起"海牙和平会议"，试图用国际法约束战争。1982年，日本和平运动人士在广岛发起"和平之钟"——每年8月6日敲响，纪念原子弹爆炸。这个传统后来延伸到和平日，全球数百座寺庙和教堂在9月21日同步鸣钟。</p>
+            <p>历年主题折射人类困境的变迁：从冷战时期的"裁军与和平"，到9/11后的"反恐与对话"，到2010年代的"可持续发展即和平"，再到2020年代的"后疫情时代的信任重建"。每一年的主题，都是对当下最紧迫人类议题的回应。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】不只是纪念日，是一个全球性的文化行动场</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">193</div>
+                <div class="festival-stat-label">联合国成员国参与</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">500+</div>
+                <div class="festival-stat-label">全球平行纪念活动</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">43年</div>
+                <div class="festival-stat-label">自1981年设立至今</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">$30亿+</div>
+                <div class="festival-stat-label">和平主题相关品牌价值</div>
+              </div>
+            </div>
+            <p>当代和平日的运作模式远超"鸣钟纪念"：联合国总部举行和平钟仪式，秘书长发表讲话；全球各地举办和平马拉松、跨文化音乐节、社区对话、青年和平大使评选。和平日的文化影响力在于——<strong>它把"和平"这个抽象概念，变成了一个可以参与、可以体验、可以分享的行动日。</strong></p>
+            <p>小野洋子每年在和平日前后发起"Give Peace a Chance"系列活动，延续列侬的和平遗产。2024年巴黎奥运会期间，和平主题与体育精神的结合达到新高度——开幕式上的和平象征装置引发全球讨论。和平正在从"政治叙事"走向"文化IP"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026主题"重建信任"与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026年主题：</strong>"Restoring trust, managing transformation"（重建信任，应对变革）——恰好与第81届联大主题一致。高级别周今日开幕，全球领导人将围绕这一主题展开对话。数字化参与方式正在打破地理限制：元宇宙和平展览、全球连线对话、AI驱动的多语言实时翻译……让每个人都能成为"和平行动者"。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>和平日的核心策略价值在于它证明了——<strong>一个抽象的价值理念，如果能被转化为"可参与、可体验、可分享"的具体行动，就能拥有全球级别的传播力。</strong>小红书擅长的是把"美好生活"这个抽象概念变成具体的种草内容。如果能把"和平""善意""连接"这类普世价值也变成可感的用户故事、可参与的互动机制、可分享的视觉内容——比如和平主题的旅行目的地共创、和平主题的装置艺术打卡、和平主题的公益行动接力——那"价值观"本身就可以成为最强的IP。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.un.org/en/observances/peace-day" target="_blank">联合国·国际和平日官网</a> ·
+          <a href="https://www.un.org/en/high-level-week-2026" target="_blank">联合国·第81届联大高级别周</a> ·
+          <a href="https://sdg.iisd.org/events/81st-session-of-the-un-general-assembly-unga-81/" target="_blank">IISD·UNGA 81</a> ·
+          <a href="https://peaceculture.org/" target="_blank">和平文化运动</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 音乐与和平</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🕊️ 主题策展 · 用歌声回应时代的人</div>
+        <div class="knowledge-headline">从《Imagine》到《光辉岁月》：那些用音乐回答"人类该怎么办"的声音</div>
+        <div class="knowledge-tagline">「你可以说我是梦想家，但我不是唯一的一个。」—— John Lennon</div>
+
+        <div class="knowledge-intro">
+          和平不只是政治概念，它是一种人类共同的渴望——对更好的世界的想象。有一批音乐人，把这种想象写进了歌里，让它们比任何演讲都传播得更远、更久。<br><br>
+          今天是国际和平日，恰逢联大高级别周开幕。我们用六张面孔，串起一条"音乐回应时代"的脉络——从1960年代的反战运动到今天，这些声音从未停止。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/John_Lennon_1969_%28cropped%29.jpg/440px-John_Lennon_1969_%28cropped%29.jpg"
+              alt="John Lennon"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">约翰·列侬</div>
+              <div class="knowledge-card-sub">John Lennon · 英国 · 1940-1980</div>
+              <div class="knowledge-card-work">《Imagine》是全球传唱度最高的和平之歌。与小野洋子的"Bed-In"和平静坐，把蜜月变成了非暴力抗议。他用音乐证明了：一首歌可以比一场战争更有力量。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Bob_Marley_promoting_Babylon_by_the_Bus_1973.jpg/440px-Bob_Marley_promoting_Babylon_by_the_Bus_1973.jpg"
+              alt="Bob Marley"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎶</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">鲍勃·马利</div>
+              <div class="knowledge-card-sub">Bob Marley · 牙买加 · 1945-1981</div>
+              <div class="knowledge-card-work">《One Love》《Get Up, Stand Up》——雷鬼音乐之王，用音乐作为被压迫者的武器。1978年在牙买加"一个和平演唱会"上，让对立政治领袖手牵手同台。音乐可以缝合政治无法愈合的伤口。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ryuichi_Sakamoto_at_New_Music_in_America_%281990%29.jpg/440px-Ryuichi_Sakamoto_at_New_Music_in_America_%281990%29.jpg"
+              alt="Ryuichi Sakamoto"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">坂本龙一</div>
+              <div class="knowledge-card-sub">坂本龍一 · 日本 · 1952-2023</div>
+              <div class="knowledge-card-work">《Merry Christmas Mr. Lawrence》——用音乐在东西方之间搭桥。晚年投身环保与反核运动。他说"音乐不应该只是娱乐"，2023年离世前的遗作《Opus》，是他留给世界的最后一个音符。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Yoko_Ono_-_1976_%28cropped%29.jpg/440px-Yoko_Ono_-_1976_%28cropped%29.jpg"
+              alt="Yoko Ono"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">小野洋子</div>
+              <div class="knowledge-card-sub">Yoko Ono · 日本/美国 · 1933-</div>
+              <div class="knowledge-card-work">《Cut Piece》——让观众剪开她的衣服，行为艺术的极致信任实验。至今仍在创作，90多岁依然活跃于和平运动。"Imagine Peace Tower"在冰岛每年从列侬忌日亮到年底——是她永不放弃的证明。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Beyond</div>
+              <div class="knowledge-card-sub">中国香港 · 摇滚乐队 · 1983-</div>
+              <div class="knowledge-card-work">《光辉岁月》献给曼德拉，《海阔天空》唱给所有不放弃理想的人。Beyond是华语世界"用音乐追求自由与和平"的代名词。黄家驹1993年意外离世，但Beyond至今仍是KTV里最让人合唱到热泪盈眶的声音。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌏</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">罗大佑</div>
+              <div class="knowledge-card-sub">中国台湾 · 华语流行音乐教父 · 1954-</div>
+              <div class="knowledge-card-work">《亚细亚的孤儿》《明天会更好》——用音乐追问台湾身份认同、亚洲命运和人类未来。他是华语流行音乐的"良知之声"，证明了用母语写作也能触及全人类的命题。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这六位音乐人/乐队，跨越了六十年的时间和五个国家，但他们都在回答同一个问题：<strong>声音能走多远？能留多久？</strong>答案各不相同——列侬用一首歌让全世界合唱，马利用节拍让被遗忘的人站起来，坂本龙一用沉默对抗噪音，小野洋子用一生的执着证明和平不是一天的事，Beyond用粤语证明了母语也可以是全人类的语言，罗大佑用一首《明天会更好》让几代人相信未来可期。对IP活动策划来说，音乐永远是最强的情感容器——三分钟内，它能让一群陌生人感受到同一件事。当我们为大事件选择音乐或音乐人时，我们选择的不仅是"背景声"，而是"这个活动的精神底色"。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
