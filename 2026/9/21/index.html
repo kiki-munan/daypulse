@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/21</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/21/index.html" class="active">2026 / 9 / 21</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 21</div>
+      <div class="day-week">星期一</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">9月LPR报价持平：1年期3.0%、5年期3.5%，连续16个月"按兵不动"</div>
+            <div class="news-item-desc">央行9月20日公布最新LPR，两个品种均与上月持平。21世纪经济报道分析指出，四季度存在下调空间。当前货币政策处于"观望期"——美联储降息节奏、人民币汇率与银行净息差三重压力交织，利率决策的耐心考验仍在持续。</div>
+            <a class="news-item-link" href="https://m.21jingji.com/article/20260920/herald/8350094848bccfde6e5592f0e5d17b67.html" target="_blank">→ 21经济网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">国务院部署应对人口老龄化：科技创新提升医养水平，银发经济加速规范化</div>
+            <div class="news-item-desc">国务院常务会议指出，要全面客观认识人口老龄化影响，深入实施积极应对人口老龄化国家战略。银发经济正从"边缘赛道"走向主流叙事——养老金融、健康管理、适老化科技成为新的消费增长极。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-09-21/doc-inispuec0911230.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic发布Fable 5.1与Mythos 5.1：定位"世界最先进的编程和知识工作模型"</div>
+            <div class="news-item-desc">9月1日发布的Fable 5.1专注复杂智能体工作流和科研任务，Terminal-Bench v2.1得分91.4%，SciCode得分62.0%。Anthropic同期公布的研发自动化指数显示，Claude已主导约26%的AI研发工作——半年前这一比例不到1%。AI正在加速"自己研发自己"的循环。</div>
+            <a class="news-item-link" href="https://iaipie.com/ai%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9C%80%E6%96%B0%E8%BF%9B%E5%B1%95%E6%B7%B1%E5%BA%A6%E7%9B%98%E7%82%B9%EF%BC%882026%E5%B9%B49%E6%9C%88%E7%AF%87%EF%BC%89%EF%BC%9A%E8%B6%85%E7%BA%A7%E5%8F%91%E5%B8%83/" target="_blank">→ 无矩AI</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI首席科学家发文：AI已形成"异星心智"，呼吁行业自愿减速至安全标准确立</div>
+            <div class="news-item-desc">Anthropic CEO达里奥·阿莫代伊此前发表《我们必须控制前沿》呼吁协同管控，OpenAI Sam Altman、Elon Musk表示认同。但英伟达黄仁勋公开反对放缓，认为"AI世界末日论"并不成立。AI产业内部罕见的公开分歧，将"发展vs安全"的命题推向舆论中心。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908o4o2.html" target="_blank">→ 新浪科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">AI落地进入"深水区"：9月密集更新，AI助手嵌入办公软件与操作系统</div>
+            <div class="news-item-desc">阿里Qwen3.8-Max-0902、Google Gemini 3.8 Flash、科大讯飞Spark-X2.5……2026年9月成为AI模型"超级发布周"。落地形态正从对话窗口向操作系统与终端硬件延伸。模型自主行为带来的安全议题，与资本博弈并行推进。</div>
+            <a class="news-item-link" href="https://news.qq.com/rain/a/20260919A0AQ2F00" target="_blank">→ 腾讯新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">"把配料表中的白砂糖还给我们"登微博热搜第一，229万讨论量引爆食品健康话题</div>
+            <div class="news-item-desc">消费者对食品配料表的关注度再创新高。母婴测评团队对嘉宝、英氏等6大品牌28款产品实测发现，标称"儿童零食"却含白砂糖、果葡糖浆的产品被直接列入黑名单。"看得懂配料表"正从消费者素养升级为消费决策的硬门槛。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%8A%8A%E9%85%8D%E6%96%99%E8%A1%A8%E4%B8%AD%E7%9A%84%E7%99%BD%E7%A0%82%E7%B3%96%E8%BF%98%E7%BB%99%E6%88%91%E4%BB%AC" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">保时捷终端降价30万仍遇冷：卡宴优惠后仍61万起，中国消费者购买力结构性转移</div>
+            <div class="news-item-desc">"卡宴降30万还得61万"登上微博热搜。超豪华品牌在华困境持续加深——不是价格不够低，而是消费心理已发生根本转变。新能源高端品牌的崛起正在重新定义"值得花这个钱"的评判标准。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%8D%A1%E5%AE%B4%E9%99%8D30%E4%B8%87%E8%BF%98%E5%BE%9761%E4%B8%87" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">爱知·名古屋亚运会首金日：中国队首日7金，潘展乐48秒07预赛第一晋级百米自由泳决赛</div>
+            <div class="news-item-desc">第20届亚运会9月20日正式开赛，首个金牌日产生31枚金牌。李冰洁15分53秒52卫冕女子1500米自由泳。中国游泳队整体强势开局。潘展乐"最后一米前都觉得要输了"的赛后采访登上热搜——体育叙事的"真实感"永远是最佳剧本。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7879995911_1d5af320706802jv64.html" target="_blank">→ 新浪新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《披荆斩棘》最新排名引爆讨论：刘畊宏张卓尔淘汰，"两大冤案"争议持续发酵</div>
+            <div class="news-item-desc">《披荆斩棘》排名相关话题霸榜微博热搜。综艺竞赛的"淘汰经济学"——谁走谁留成为社交货币。对品牌综艺营销的启示：争议性赛制设计是双刃剑，但"意难平"情绪本身就是最大的传播引擎。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%8A%AB%E8%8D%86%E6%96%A9%E6%A3%98%E6%8E%92%E5%90%8D" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">卡塔尔斡旋美伊恢复谈判：多方表态"希望达成协议"，霍尔木兹海峡安全成核心议题</div>
+            <div class="news-item-desc">卡塔尔外交部发言人表示，过去几周一直与美伊双方交换意见，努力弥合分歧。任何解决方案需确保地区稳定并保护霍尔木兹海峡等战略水道。与此同时，美方签署对俄制裁法案，中国商务部表态"正常经贸合作不受第三方干扰"——全球能源地缘博弈持续升温。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908o7ok.html" target="_blank">→ 新浪国际</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#亚运会 #中国队金牌速度 持续霸榜，体育赛事内容迎来亚运周期</div>
+            <div class="trend-meta">体育赛事话题 · 情感向内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：爱知·名古屋亚运会正式开幕，中国游泳队首日7金的成绩让"亚运会"话题在微博和小红书同步升温。对小红书而言，体育赛事是天然的"情绪放大器"——运动员的个人故事、赛前紧张、赛后采访都是二次创作的优质素材。品牌应关注赛事期间"运动员同款""运动穿搭""健身打卡"等衍生内容链路的布局。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BA%9A%E8%BF%90%E4%BC%9A" target="_blank">→ 微博热搜·亚运会</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#把配料表中的白砂糖还给我们 热度229万，食品健康话题引爆全民讨论</div>
+            <div class="trend-meta">食品消费赛道 · 健康生活方式</div>
+            <div class="trend-obs">💡 趋势观察：配料表话题登热搜第一，说明"透明消费"已从理念落地为大众情绪。小红书上"看配料表买东西"类笔记的互动率持续走高。对品牌而言，"成分透明"不再是加分项，而是入场券。食品品牌若能在内容中主动展示配料逻辑——为什么用这个替代那个——反而能赢得信任。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8A%8A%E9%85%8D%E6%96%99%E8%A1%A8%E4%B8%AD%E7%9A%84%E7%99%BD%E7%A0%82%E7%B3%96%E8%BF%98%E7%BB%99%E6%88%91%E4%BB%AC" target="_blank">→ 微博热搜·配料表白砂糖</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#今起公积金提取场景6变9 民生政策利好引发关注</div>
+            <div class="trend-meta">民生政策赛道 · 生活实用内容</div>
+            <div class="trend-obs">💡 趋势观察：公积金提取场景从6种扩展到9种，直接触达年轻用户的住房焦虑。小红书上"公积金怎么用""租房提取攻略"类内容搜索量预计走高。对品牌来说，民生政策热点是"实用内容种草"的窗口——家居、租房、生活方式品牌可以围绕"公积金新政+生活品质提升"构建内容叙事。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BB%8A%E8%B5%B7%E5%85%AC%E7%A7%AF%E9%87%91%E6%8F%90%E5%8F%96%E5%9C%BA%E6%99%AF6%E5%8F%989" target="_blank">→ 微博热搜·公积金提取</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#披荆斩棘排名 #湾区升明月 综艺与晚会内容双热</div>
+            <div class="trend-meta">综艺娱乐赛道 · 情感共鸣内容</div>
+            <div class="trend-obs">💡 趋势观察：《披荆斩棘》最新排名和"湾区升明月"晚会同步霸榜，综艺类内容在周末后迎来讨论高峰。"张凌赫檀健次拥抱""古巨基苏有朋林心如唱情深深雨濛濛"等情感向切片内容传播力极强。小红书的"综艺二创"内容生态——截图+情绪文案+个人解读——正在成为综艺传播的主阵地之一。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8A%AB%E8%8D%86%E6%96%A9%E6%A3%98%E6%8E%92%E5%90%8D" target="_blank">→ 微博热搜·披荆斩棘</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#vivo X500系列 发布引发讨论，手机市场"AI功能军备赛"升温</div>
+            <div class="trend-meta">消费电子赛道 · 科技生活内容</div>
+            <div class="trend-obs">💡 趋势观察：vivo X500系列登上热搜，消费者对手机"AI能力"的关注度持续走高。小红书上"手机拍照对比""AI修教程"等内容的搜索热度在新品发布周期内显著上升。对品牌而言，新品发布期是"场景化种草"的黄金窗口——不是讲参数，而是讲"用这款手机你能拍出什么样的生活"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=vivo+X500%E7%B3%BB%E5%88%97" target="_blank">→ 微博热搜·vivo X500</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 品牌叙事升维</div>
+        <div class="learning-title">从"流量收割"到"心智占领"：2026年品牌广告的底层逻辑迁移</div>
+        <div class="learning-subtitle">当功能介绍不再打动人，情绪价值成为品牌的新货币</div>
+        <div class="learning-body">
+          <p>2026年，品牌营销正处在一个由多重宏观力量共同驱动的转型关口。过去依赖流量扩张与标准化传播的增长路径，面对用户结构多元化、媒介生态复杂化以及信息过载的环境，逐渐失去原有效能。</p>
+          <p>分众传媒董事长江南春提出核心观点：<strong>"商品只满足功能还不够，还要能抚慰心灵、触动情绪，情绪价值比功能介绍更能打动人心。"</strong>他以爱仕达"锅坚强"广告为例——将产品耐用属性与"家庭安全感"绑定，通过"27天烧不坏的锅，守护全家安全"的文案，在电梯屏投放后品牌关注度提升120%。</p>
+          <p>这个案例的底层逻辑是：<strong>品牌不是在卖产品，而是在提供一种"情感保险"</strong>。消费者购买的不仅是一口锅，而是"我的家人吃饭是安全的"这种安心感。当功能趋同，情感叙事成为差异化的最后壁垒。</p>
+          <p>广告门2026年趋势报告进一步指出，品牌叙事正从"宏大愿景"转向"具体一秒"——不再描述"让天下没有难做的生意"，而是演示"早上用AI 30秒点一杯咖啡"的具象时刻。<strong>叙事越小，共鸣越深。</strong></p>
+          <p>对小红书内容生态而言，这个趋势意味着：真正能打动人种草的内容，不是"这个产品有多好"，而是"用了这个产品之后，我的生活多了一个什么样的具体瞬间"。从种草到种"场景"，从卖货到卖"感受"——这是2026年所有品牌内容创作者必须完成的一次认知升级。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.adquan.com/article/359105" target="_blank">广告门《2026年品牌广告制作指南：从"流量收割"到"心智占领"》</a> ·
+          <a href="https://m.adquan.com/detail/0-358532" target="_blank">广告门《2026影响品牌的11个营销趋势》</a> ·
+          <a href="https://www.trendhunter.com/slideshow/september-2026-marketing" target="_blank">Trend Hunter《September 2026 Marketing Trends》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 世界阿尔茨海默病日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🧠💭🕯️</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">健康公益</span>
+          <span class="festival-tag">全球性纪念日</span>
+          <span class="festival-tag">每年9月21日</span>
+          <span class="festival-tag">始于1994年</span>
+        </div>
+        <div class="festival-name">世界阿尔茨海默病日</div>
+        <div class="festival-name-en">World Alzheimer's Day · 2026年主题："The Earlier You Know, The More You Can Do"</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从一个疑问开始：当记忆消失，"我"还在吗？</div>
+          <div class="festival-block-body">
+            <p>1994年9月21日，英国爱丁堡。国际阿尔茨海默病协会（ADI）在成立十周年之际，与世界卫生组织（WHO）共同发起设立"世界阿尔茨海默病日"。彼时，阿尔茨海默病对多数公众而言还是一个陌生的医学名词——人们知道"老了会忘事"，但不知道这是一种疾病，更不知道它正在悄悄吞噬全球数千万人的记忆与尊严。</p>
+            <p>三十年过去，这个日子从一个小众的医学倡导日，生长为全球最具影响力的神经退行性疾病公共倡导平台之一。<strong>2012年，ADI进一步将倡导周期扩展为"世界阿尔茨海默病月"</strong>——整个九月都成为关注脑健康、消除病耻感、推动早诊早治的行动窗口。9月21日仍然是焦点日，但倡导的深度和广度已被拉长了三十倍。</p>
+            <p>历年主题折射出人类对这种疾病认知的进化轨迹：从最初的" awareness"（认知），到"care"（照护），到"reduce risk"（风险预防），再到2026年的<strong>"越早知晓，越能行动：痴呆症诊断的意义"</strong>——焦点从"让更多人知道"转向了"让更多人行动"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】5500万人正在遗忘，而全球应对才刚起步</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">5500万+</div>
+                <div class="festival-stat-label">全球痴呆症患者数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">≈3倍</div>
+                <div class="festival-stat-label">2050年预计增长倍数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">690万</div>
+                <div class="festival-stat-label">美国65岁以上患者</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10万亿$</div>
+                <div class="festival-stat-label">全球年经济负担</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">30年</div>
+                <div class="festival-stat-label">设立至今</div>
+              </div>
+            </div>
+            <p>阿尔茨海默病不只是医学问题——它是一个<strong>社会基础设施级别的挑战</strong>。照护者的身心耗竭、医疗系统的承载极限、家庭财务的长期透支、社会对"失智"的深层恐惧与病耻感……每一层都需要系统性的回应。</p>
+            <p>2026年，AI辅助早期筛查技术取得突破性进展——通过分析语言模式、眼动轨迹和日常行为数据，AI可以在临床症状出现前数年识别高风险个体。这使得"越早知晓，越能行动"不再只是一句口号，而成为可落地的技术路径。与此同时，全球痴呆症友好社区（Dementia-Friendly Community）运动在40余个国家推进，试图用空间设计、社区培训和公共教育，让患者在失去记忆之前，先失去被歧视的恐惧。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】记忆会消失，但关注不应如此</div>
+          <div class="festival-block-body">
+            <p><strong>2026年核心议题：</strong>"诊断时间差"——从出现第一个症状到获得正式诊断，平均间隔超过2年。这意味着大量患者错过了早期干预的黄金窗口。2026年主题直指这一痛点：推动更快、更可及的诊断路径。</p>
+            <p>在中国，阿尔茨海默病患者约1000万人，但就诊率不足30%。"老糊涂不是病"的观念根深蒂固，使得大量家庭在疾病中期甚至晚期才寻求帮助。银发经济浪潮下，脑健康管理正从边缘需求走向主流消费场景——记忆筛查、认知训练、适老化智能设备，都可能成为下一个增长赛道。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>阿尔茨海默病日提醒我们，"记忆"是人类最柔软的共同经验。在品牌营销层面，"记忆"是一个具有极高情感势能的主题——它可以连接代际（"你记得奶奶最后一次认出你是什么时候"）、连接自我（"那些你以为忘了但其实一直记得的事"）、连接文化（"一座城市消失中的老味道"）。如果小红书做大事件IP，"记忆"主题的叙事潜力远未被开发——它可以是一个线上话题，也可以是一个线下装置，更可以是一个让陌生人因为"共同的遗忘"而产生连接的时刻。<strong>最好的品牌叙事，不是制造快乐，是触达人人都有的、说不出口的那一点点心酸。</strong>
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.alz.int/world-alzheimers-day/" target="_blank">Alzheimer's Disease International (ADI)</a> ·
+          <a href="https://www.awarenessdays.com/awareness-days-calendar/world-alzheimers-day/" target="_blank">Awareness Days · World Alzheimer's Day 2026</a> ·
+          <a href="https://www.medindia.net/news/healthwatch/world-alzheimers-day-2026-the-earlier-you-know-the-more-you-can-do-225286-1.htm" target="_blank">MedIndia · 2026年主题解读</a> ·
+          <a href="https://www.pacehospital.com/world-alzheimers-day" target="_blank">PACE Hospital · 历史与发展</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 记忆与时间</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🧠 主题策展 · 记忆的艺术家</div>
+        <div class="knowledge-headline">他们一生只做一件事：在遗忘的河床上，打捞那些不肯消失的东西</div>
+        <div class="knowledge-tagline">「我们由记忆构成。当记忆消散，我们是什么？」</div>
+
+        <div class="knowledge-intro">
+          今天9月21日是世界阿尔茨海默病日——一个关于"失去记忆"的日子。<br><br>
+          但在艺术史上，有一批创作者毕生都在与记忆角力。他们用镜头、文字、色彩和音符，试图抓住那些正在流逝的瞬间——童年的气味、爱人的背影、一座即将消失的城市。他们的作品，本质上都是对抗遗忘的方式。<br><br>
+          认识这几位"记忆的艺术家"，就是在认识人类最柔软的那部分自己。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Ry%C5%8Dichi_Sakamoto_in_2017_%28cropped%29.jpg/440px-Ry%C5%8Dichi_Sakamoto_in_2017_%28cropped%29.jpg"
+              alt="坂本龙一"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">坂本龙一</div>
+              <div class="knowledge-card-sub">Ryuichi Sakamoto · 日本 · 1952-2023</div>
+              <div class="knowledge-card-work">《Merry Christmas Mr. Lawrence》是战争中的一瞬温柔，《Aqua》是面对死亡时的平静低语。晚年与癌症共存的专辑《12》，每一首都是"我还在"的证明。他说：\"艺术是漫长的，人生是短暂的。\"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Andrei_Tarkovsky_%28reconstructed%29.jpg/440px-Andrei_Tarkovsky_%28reconstructed%29.jpg"
+              alt="塔可夫斯基"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">塔可夫斯基</div>
+              <div class="knowledge-card-sub">Andrei Tarkovsky · 苏联 · 1932-1986</div>
+              <div class="knowledge-card-work">《镜子》用私人记忆的碎片搭建了一座电影神殿——母亲的头发、童年的雨天、燃烧的谷仓。他的"雕刻时光"理论说：电影不是讲故事，是让人重新体验时间本身。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Giorgio_Morandi_-_His_Studio_01.jpg/440px-Giorgio_Morandi_-_His_Studio_01.jpg"
+              alt="莫兰迪"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">莫兰迪</div>
+              <div class="knowledge-card-sub">Giorgio Morandi · 意大利 · 1890-1964</div>
+              <div class="knowledge-card-work">一辈子画桌上的瓶瓶罐罐，从不离开博洛尼亚。那些灰调的静物不是在画物体——是在画"注视"本身。莫兰迪色系风靡全球，本质是人们渴望那种"安静地看一会儿"的能力。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Wong_Kar-wai_2018.jpg/440px-Wong_Kar-wai_2018.jpg"
+              alt="王家卫"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎥</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王家卫</div>
+              <div class="knowledge-card-sub">中国香港 · 1958—</div>
+              <div class="knowledge-card-work">《花样年华》拍的是"错过的时间"，《重庆森林》拍的是"过期的记忆"。他的电影永远关于一个问题：如何在一个人消失之后，继续想念他？"如果记忆是一个罐头，我希望它永远不会过期。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">📚</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">张爱玲</div>
+              <div class="knowledge-card-sub">中国 · 1920-1995</div>
+              <div class="knowledge-card-work">"三十年前的月亮早已沉下去了，然而三十年前的故事还没完完。"她用文字的琥珀封存了一个时代的体面与苍凉。《半生缘》里那句"我们回不去了"，是中文文学里关于记忆最残忍也最精确的一句话。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🕯️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">普鲁斯特</div>
+              <div class="knowledge-card-sub">Marcel Proust · 法国 · 1871-1922</div>
+              <div class="knowledge-card-work">一块浸泡在茶水里的玛德琳蛋糕，唤醒了一整个童年的世界。《追忆似水年华》7卷巨著告诉我们：真正的发现之旅，不在于寻找新风景，而在于拥有新的眼睛。"当人亡物毁之后，唯有味觉和气味，依旧长久地记忆。"</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          在阿尔茨海默病日认识这些"记忆的艺术家"，不是为了悲伤，而是为了理解一件事：<strong>记忆不是大脑的存储功能，它是人之所以为人的核心证据。</strong>坂本龙一用琴键留住心跳，塔可夫斯基用镜头留住雨水，莫兰迪用灰调留住凝视，王家卫用独白留住错过，张爱玲用文字留住时代，普鲁斯特用味觉留住时间。当记忆开始消逝的时侯，这些作品就是最好的提醒——我们活过，爱过，看见过。这些，值得被记住。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
