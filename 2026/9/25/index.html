@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/25</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #0d0d2b 0%, #1a1a3e 30%, #4a2c6e 60%, #c4653a 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/25/index.html" class="active">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 25</div>
+      <div class="day-week">星期五 · 中秋节</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">中美元首华盛顿会晤，特朗普称"一次伟大的会晤"，中方邀请10万名美国青少年来华交流学习</div>
+            <div class="news-item-desc">中美元首在华盛顿举行正式会晤，双方就经贸、科技、人文交流等议题深入交换意见。特朗普在会后表示这是一次"伟大的会晤"，特朗普夫人还脱皮手套与中方随行人员握手。中方宣布邀请10万名美国青少年来华交流学习，释放民间外交善意信号。微博热搜#中美元首华盛顿会晤#热度突破100万。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B8%AD%E7%BE%8E%E5%85%83%E9%A6%96%E5%8D%8E%E7%9B%9B%E9%A1%BF%E4%BC%9A%E6%99%A4" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国2025年对外直接投资流量达2135.8亿美元，同比增11.1%，连续9年全球前三</div>
+            <div class="news-item-desc">商务部等三部门联合发布《2025年度中国对外直接投资统计公报》，截至2025年底中国在境外设立企业5.8万家，遍布189个国家和地区，每年为东道国创造就业岗位超200万个。中国对外投资正经历从"数量追赶"到"质量跃升"的系统性转变。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908oqow.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">AI大模型周更竞赛白热化：GPT-6 Sol/Luna双Agent模型上线，Claude Opus 5.5与Grok 4.7同周更新</div>
+            <div class="news-item-desc">本周（9/21-9/25）AI行业密集更新：OpenAI发布GPT-6 Sol和GPT-6 Luna两款Agent模型，Anthropic更新Claude Opus 5.5，xAI推出Grok 4.7，国内MiMo开源模型同步迭代。大模型竞争正式从"参数竞赛"转向"Agent能力竞赛"——谁能更好地替人类完成复杂任务，成为下一阶段的决胜标准。</div>
+            <a class="news-item-link" href="https://zhuanlan.zhihu.com/p/670574382" target="_blank">→ 知乎</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI、Anthropic掌门人联合国安理会双双呼吁警惕AI发展风险，AI安全首次进入最高级别国际讨论</div>
+            <div class="news-item-desc">联合国安理会围绕"人工智能与国际安全"举行高级别会议，OpenAI CEO Sam Altman和Anthropic CEO Dario Amodei同时出席并呼吁各国警惕AI发展过快的安全风险。AI安全问题首次以如此直接的方式进入联合国安理会高级别议程，标志着全球AI治理从行业自律走向国际政治博弈。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908oml2.html" target="_blank">→ 新浪科技</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">余承东回应华为"四界"发展策略，问界品牌持续扩张引发行业关注</div>
+            <div class="news-item-desc">华为鸿蒙智行"四界"（问界、智界、享界、尊界）布局持续推进，余承东在最新采访中回应了四界差异化定位与协同策略。微博#问界四界#话题冲上热搜，反映出消费者对国产智能汽车生态的高度关注。华为的"手机+车机+全屋智能"一体化叙事正在加速兑现。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%97%AE%E7%95%8C+%E5%9B%9B%E7%95%8C" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中国前8个月黄金进口超1000吨，央行连续22个月增持，去美元化战略深化</div>
+            <div class="news-item-desc">受国内金价溢价、人民币走强及进口配额放宽驱动，2026年前8个月黄金进口创2017年以来同期最快增速。央行8月单月增持20.2吨创两年新高，官方储备达2387吨。居民端中国黄金ETF前8月净增44吨，远超全球同类产品，黄金"避险+保值"双重属性推动资产配置长期重构。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908oqo4.html" target="_blank">→ 新浪财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">亚运会国乒男团决赛负日本摘银，王楚钦0:3不敌张本智和，国乒男团颁奖后纷纷摘下银牌</div>
+            <div class="news-item-desc">2026年名古屋亚运会乒乓球男团决赛，中国队惜败日本队获得银牌。王楚钦0:3负于张本智和引发广泛讨论，#国乒男团丢银怀念张继科# #邓亚萍谈国乒男团输日本# 等多个话题冲上微博热搜。女团方面，中国队3:0横扫日本夺金，孙颖莎与丁宁的颁奖互动成为温馨话题。</div>
+            <a class="news-item-link" href="https://www.olympics.com/zh/news/2026-aichi-nagoya-asian-games-chinese-table-tennis-team-event-results-tracker" target="_blank">→ Olympics.com</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中秋夜：冰淇淋月饼切上热搜，月饼消费从"仪式感"走向"好玩感"</div>
+            <div class="news-item-desc">中秋当晚，#冰淇淋月饼切开瞬间馋哭了#登上微博热搜。传统月饼的消费叙事正在被重塑——年轻消费者不再满足于"吃月饼"的仪式感，更追求"切开月饼"的视觉惊喜和社交分享价值。从哈根达斯到星巴克，冰淇淋月饼、流心月饼的"切面美学"正在成为中秋节新的内容货币。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%86%B0%E6%B7%87%E6%B7%8B%E6%9C%88%E9%A5%BC%E5%88%87%E5%BC%80%E7%9E%AC%E9%97%B4%E9%A6%8B%E5%93%AD%E4%BA%86" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">2026品牌营销趋势：异业合作成为品牌破圈增长新引擎，"求异业合作"成小红书高频搜索词</div>
+            <div class="news-item-desc">虎嗅和SocialBeta的年度趋势报告指出，2026年品牌营销的核心变化之一是异业合作的爆发式增长。小红书上"求异业合作"相关内容激增，品牌通过共创内容、短期联动、话题植入，在弱关联状态下实现人物特质、消费场景与品牌特点的共振。预算有限的中小品牌尤其依赖这一路径突破增长瓶颈。</div>
+            <a class="news-item-link" href="https://m.huxiu.com/article/4837827.html" target="_blank">→ 虎嗅</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中秋文案大赛：品牌节日借势从"祝福海报"进化为"文化叙事"</div>
+            <div class="news-item-desc">#中秋文案# #中秋祝福文案# 两个话题同时登上微博热搜，反映公众对节日内容品质的要求在升级。头部品牌今年普遍放弃传统"月圆人团圆"的海报套路，转向更细腻的"个体情感"叙事——从"你应该团圆"变成"你选择如何度过这个夜晚"。节日营销的颗粒度正在变得更细。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B8%AD%E7%A7%8B%E6%96%87%E6%A1%88" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#中美元首华盛顿会晤 跨平台话题引爆</div>
+            <div class="trend-meta">时政话题 · 跨平台传播</div>
+            <div class="trend-obs">💡 趋势观察：中美会晤作为当日最大新闻事件，从微博热搜向小红书传导速度极快。"特朗普脱皮手套握手""邀请10万美国青少年来华"等细节成为二创素材。小红书上"港媒标题太搞笑了"等轻松视角内容正在成为高互动话题——国际时政的传播正在从"严肃分析"走向"细节+趣味"叙事。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%AD%E7%BE%8E%E5%85%83%E9%A6%96%E5%8D%8E%E7%9B%9B%E9%A1%BF%E4%BC%9A%E6%99%A4" target="_blank">→ 微博热搜·中美元首华盛顿会晤</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#亚运会国乒赛况 体育情绪在小红书二次发酵</div>
+            <div class="trend-meta">体育赛事 · 情感内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：国乒男团丢银后，"王楚钦0:3张本智和""邓亚萍谈输球""颁奖后摘下银牌"等话题在小红书形成多层讨论——不只是赛况传播，更延伸到"竞技体育的残酷与尊严""新老交替的阵痛"等情感话题。品牌在体育话题上的介入窗口，正在从"夺冠庆祝"扩展到"遗憾中的力量感"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%9B%BD%E4%B9%92%E7%94%B7%E5%9B%A2%E4%B8%A2%E9%93%B6%E6%80%80%E5%BF%B5%E5%BC%A0%E7%BB%A7%E7%A7%91" target="_blank">→ 微博热搜·国乒男团丢银</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#中秋节 #中秋文案 节日内容创作进入"审美竞赛"阶段</div>
+            <div class="trend-meta">节日内容 · 创作赛道</div>
+            <div class="trend-obs">💡 趋势观察：中秋节相关内容在小红书的创作量级达到年度峰值。"中秋文案""中秋祝福文案"两个话题同时登热搜，说明用户对节日内容的品质要求在升级——不再满足于转发祝福，而是寻找"能代表我"的表达。品牌UGC征集、模板化祝福卡片等内容产品的需求在节日前后达到高峰。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%AD%E7%A7%8B%E6%96%87%E6%A1%88" target="_blank">→ 微博热搜·中秋文案</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#花少北复活了 综艺IP的长尾效应与小红书话题传导</div>
+            <div class="trend-meta">综艺内容 · 跨平台传播</div>
+            <div class="trend-obs">💡 趋势观察：《花儿与少年·北斗季》回归消息在小红书引发讨论。综艺IP在小红书的传播有其独特路径——不只是"看综艺"，更是"学穿搭""抄路线""做同款"。品牌与综艺IP的合作逻辑正在从"冠名曝光"转向"在小红书创造衍生内容场景"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%8A%B1%E5%B0%91%E5%8C%97%E5%A4%8D%E6%B4%BB%E4%BA%86" target="_blank">→ 微博热搜·花少北复活了</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#鞠婧祎万花世界 #肖战小城良方 明星内容进入中秋创作窗口</div>
+            <div class="trend-meta">明星话题 · 内容创作赛道</div>
+            <div class="trend-obs">💡 趋势观察：鞠婧祎"万花世界"、肖战新剧《小城良方》首播等明星话题在中秋假期集中释放。中秋假期是明星内容消费的黄金窗口——用户有时间追剧、追综艺、做二创。品牌在假期期间的明星内容投放ROI往往高于日常，这是Q4大事件明星合作策略的重要参考。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%9E%A0%E5%A9%A7%E7%A5%8E%E4%B8%87%E8%8A%B1%E4%B8%96%E7%95%8C" target="_blank">→ 微博热搜·鞠婧祎万花世界</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 异业合作</div>
+        <div class="learning-title">异业合作的2026进化论：从"资源置换"到"注意力共享"的范式迁移</div>
+        <div class="learning-subtitle">为什么小红书上"求异业合作"成了高频搜索词？</div>
+        <div class="learning-body">
+          <p>2026年，一个有趣的信号在品牌圈蔓延：越来越多的品牌——尤其是中小品牌——开始在小红书上主动发帖"求异业合作"。这不是个别现象，而是整个营销生态的结构性变化。</p>
+          <p>传统的异业合作，核心逻辑是<strong>资源置换</strong>：你有100万用户，我有100万用户，双方互换banner位、互换优惠券、互换线下物料。效果可预期，但天花板也可预期——本质上是把存量流量做了一次"互换访问"。</p>
+          <p>2026年的异业合作，核心逻辑变成了<strong>注意力共享</strong>。品牌之间不再互换流量，而是<strong>共同创造一个新的内容场景</strong>，让双方用户在这个场景里自然相遇。瑞幸×线条小狗、喜茶×FENDI、蜜雪冰城×各类IP——这些案例的共同特征是：合作本身成为内容，内容自带传播力。</p>
+          <p>这种转变背后的驱动力有三个：<strong>第一</strong>，单一品牌的投放预算在缩减，但内容创造力没有缩减，品牌需要一个"合作叙事"来放大内容的传播半径；<strong>第二</strong>，消费者注意力已经高度分散，单一品牌的内容很难突破信息茧房，跨品牌内容天然具有"破圈"属性；<strong>第三</strong>，小红书的种草逻辑天然适合"跨界混搭"——用户喜欢看到意想不到的品牌组合，这种"意外感"本身就是内容货币。</p>
+          <p>对平台大事件策划的启发很直接：<strong>活动的合作伙伴选择，不应该只考虑"谁给的钱多"，而应该考虑"谁和我们一起出现的画面，本身就能产生话题"</strong>。当两个品牌的并置本身就让人想拍照发出去的时候，合作的价值已经超越了赞助金额。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://m.huxiu.com/article/4837827.html" target="_blank">虎嗅《2026影响品牌的11个营销趋势》</a> ·
+          <a href="https://finance.sina.com.cn/roll/2026-02-05/doc-inhkuptf2832714.shtml" target="_blank">新浪财经·异业合作趋势分析</a> ·
+          <a href="https://socialbeta.com/article/110888" target="_blank">SocialBeta《10大趋势，打开2026品牌营销》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 白夜艺术节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🌙✨🎨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">当代艺术</span>
+          <span class="festival-tag">法国·巴黎</span>
+          <span class="festival-tag">每年10月</span>
+          <span class="festival-tag">通宵开放</span>
+          <span class="festival-tag">免费参与</span>
+        </div>
+        <div class="festival-name">白夜艺术节</div>
+        <div class="festival-name-en">Nuit Blanche · 始于2002年 · 2026年巴黎主会场预计10月3日</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从陀思妥耶夫斯基到一座不眠之城</div>
+          <div class="festival-block-body">
+            <p>"Nuit Blanche"——法语意为"不眠之夜"，这个名字本身就来自俄罗斯文学。陀思妥耶夫斯基1848年的短篇小说《白夜》，讲的是一个孤独的人在圣彼得堡的夏夜里与一位姑娘相遇的故事。整个城市被极北的微光照亮，夜晚和白天融为一体。</p>
+            <p>2002年，巴黎市长贝特朗·德拉诺埃把这个文学意象变成了现实：从日落到日出，巴黎全城的美术馆、教堂、桥梁、公园向公众免费开放，同时邀请艺术家在城市公共空间创作临时装置、行为艺术和光影作品。<strong>第一届Nuit Blanche吸引了150万人走上巴黎街头</strong>，这个数字让所有人意识到：当代艺术不是只存在于白盒子展厅里的——它可以属于整座城市。</p>
+            <p>此后每年，巴黎的白夜之夜都成为欧洲文化日历上的固定坐标。2006年柏林加入，2007年罗马加入，2011年多伦多、东京、首尔……到今天，白夜艺术节已经在<strong>全球20多座城市</strong>落地生根，每座城市根据自己的文化特色重新诠释"不眠之夜"。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一座城市一夜之间的当代艺术实验</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">200万+</div>
+                <div class="festival-stat-label">巴黎年度参与人数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">20+城市</div>
+                <div class="festival-stat-label">全球同步举办</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">完全免费</div>
+                <div class="festival-stat-label">对所有公众开放</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">日落到日出</div>
+                <div class="festival-stat-label">通宵不闭馆</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">24年</div>
+                <div class="festival-stat-label">巴黎连续举办</div>
+              </div>
+            </div>
+            <p><strong>运作模式的核心</strong>：Nuit Blanche没有门票，没有围墙，没有VIP通道。它的运作逻辑是"把整个城市变成一个美术馆"——艺术家在城市最意想不到的角落创作：一座桥下、一个废弃工厂、一条地铁通道、一面临街的窗户。观众不需要买票、不需要预约，只需要<strong>走出家门</strong>。</p>
+            <p>商业合作方面，Nuit Blanche的模式很独特：品牌不冠名具体作品，而是作为"城市合作伙伴"支持公共基础设施（照明、交通延时、安全保障）。Louis Vuitton基金会每年在白夜之夜延长展览时间并提供免费接驳巴士；Dior、Chanel等品牌赞助特定艺术装置，但不要求品牌露出超过作品本身——<strong>品牌退到了"使能者"的位置，而不是"主角"</strong>。</p>
+            <p>在社交媒体时代，Nuit Blanche天然具有极高的传播密度：一夜之内，数万张来自不同城市角落的艺术照片涌入Instagram和小红书，形成了一场自发的"城市美学众筹"。每张照片都是一个人"我在现场"的证明，也是对整座城市文化活力的背书。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026届展望与对小红书平台大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>2026届亮点预期：</strong>巴黎主会场将于10月3日（周六）日落至次日日出举行。今年策展主题为"Luminous Bodies / 发光的身体"，关注身体在公共空间中的存在感——在AI和虚拟现实高速发展的时代，重新强调"肉身在场"的价值。东京、多伦多、首尔等城市也将陆续举办各自的白夜艺术节。</p>
+            <p>值得注意的是，"夜间文化消费"正在成为全球城市更新的新引擎。从巴黎白夜到悉尼灯光音乐节Vivid Sydney，从阿姆斯特丹灯光节到上海城市空间艺术季——越来越多城市发现：<strong>夜间的公共文化内容，是最有效的城市品牌传播载体之一</strong>。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>💡 对小红书平台大事件的启发：</strong>Nuit Blanche最值得学习的不是"通宵"这个形式，而是它的内容分发逻辑——<strong>不中心化、不预设路线、让用户自己发现</strong>。每一个转角都可能遇到一件作品，每一次偶遇都是独一无二的体验。这种"去策展化"的思路，与小红书上"探店""city walk""偶遇美好"的内容基因高度吻合。平台大事件如果能做到"每个参与者的体验路径都不同，每个人都觉得自己发现了一个秘密"——那就是真正做到了"Nuit Blanche精神"。另外，中秋刚过的这个时间节点，"月夜+城市+艺术"的文化联想正好可以成为Q4夜间活动的灵感起点。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.nuitblanche.paris/" target="_blank">Nuit Blanche 巴黎官网</a> ·
+          <a href="https://en.wikipedia.org/wiki/Nuit_Blanche" target="_blank">Wikipedia · Nuit Blanche</a> ·
+          <a href="https://www.toronto.ca/city-government/accountability-operations-city-finances/city-projects-initiatives/nuit-blanche/" target="_blank">Toronto Nuit Blanche</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 月光下的创作者</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🌙 主题策展 · 月光与艺术</div>
+        <div class="knowledge-headline">月光下的创作者们：从贝多芬到宫崎骏，月亮如何成为艺术的永恒缪斯</div>
+        <div class="knowledge-tagline">「举头望明月，低头思故乡。」——一千年来，月亮是人类共同的乡愁。</div>
+
+        <div class="knowledge-intro">
+          昨天是中秋节。在人类文明史中，月亮从来不只是天体——它是诗人举杯邀的对象，是恋人共享的同一轮清辉，是哲学家追问的永恒之谜，是音乐家按下琴键时的第一个音符。<br><br>
+          从古中国的李白到西方的德彪西，从贝多芬的月光奏鸣曲到宫崎骏动画里的那轮月亮——不同文明、不同时代的创作者们，不约而同地选择了月亮作为自己最重要的意象之一。这或许说明：<strong>有些美，是全人类共享的源代码。</strong>
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Claude Debussy by Félix Nadar 1908.jpg/440px-Claude_Debussy_by_F%C3%A9lix_Nadar_1908.jpg"
+              alt="Claude Debussy"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎹</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">德彪西</div>
+              <div class="knowledge-card-sub">Claude Debussy · 法国 · 印象派音乐</div>
+              <div class="knowledge-card-work">《月光》(Clair de Lune)——钢琴曲中最接近月光质感的作品。不是描写月亮，而是让你"成为"月光。1905年出版，至今仍是人类对月光最美的声音翻译。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Beethoven.jpg/440px-Beethoven.jpg"
+              alt="Beethoven"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">贝多芬</div>
+              <div class="knowledge-card-sub">Ludwig van Beethoven · 德国 · 古典乐圣</div>
+              <div class="knowledge-card-work">《月光奏鸣曲》——名字其实不是他起的，是乐评人形容"第一乐章像月光照在琉森湖上"。贝多芬说：世人好像更爱这首而不是我更伟大的作品。天才也有被误解的时刻。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌕</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">李白</div>
+              <div class="knowledge-card-sub">中国 · 唐代 · 诗仙</div>
+              <div class="knowledge-card-work">「举杯邀明月，对影成三人」「今人不见古时月，今月曾经照古人」——中国文学中月亮意象的最高峰。月亮在李白笔下不是风景，是朋友、是镜子、是时间的证据。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Joe_Hisaishi_2023_%28cropped%29.jpg/440px-Joe_Hisaishi_2023_%28cropped%29.jpg"
+              alt="Joe Hisaishi"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎼</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">久石让</div>
+              <div class="knowledge-card-sub">Joe Hisaishi · 日本 · 动画音乐大师</div>
+              <div class="knowledge-card-work">为宫崎骏创作配乐40年。《月亮女神》(Moonlight Densetsu)的编曲、《千与千寻》里月夜的配乐——他用极简旋律制造了东亚观众共同的"月光记忆"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">宫崎骏</div>
+              <div class="knowledge-card-sub">Hayao Miyazaki · 日本 · 动画大师</div>
+              <div class="knowledge-card-work">《千与千寻》的电车穿越月光海面、《龙猫》里姐妹俩在月光下等巴士——宫崎骏动画中的月亮总是"温柔的见证者"，见证孩子变成大人，见证离别和重逢。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Moon_Mural_%281980%29_by_Jack_Whitten_-_Smart_Museum_of_Art_-_University_of_Chicago_-_DSC00438.jpg/440px-Moon_Mural_%281980%29_by_Jack_Whitten_-_Smart_Museum_of_Art_-_University_of_Chicago_-_DSC00438.jpg"
+              alt="Moon Art"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌑</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">草间弥生 × 月亮</div>
+              <div class="knowledge-card-sub">Yayoi Kusama · 日本 · 波点女王</div>
+              <div class="knowledge-card-work">草间弥生的"月亮"系列装置——用镜面球体和LED灯制造无限延伸的月光空间。她曾说：月亮是我童年的恐惧，也是我毕生的治愈。每一颗波点都是一轮月亮。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          中秋之后读这份图谱，有一个感受特别强烈：<strong>月亮是跨越所有文明、所有时代、所有艺术形式的"通用接口"</strong>。贝多芬用它写奏鸣曲，李白用它写乡愁，宫崎骏用它见证成长，德彪西用它创造印象。对IP策划来说，月亮是最好用的"情感连接器"——当你在活动现场设计一轮月亮装置时，你其实正在调用一千年的集体记忆。这是任何预算都买不来的文化势能。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
