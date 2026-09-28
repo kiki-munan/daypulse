@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/9/28</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #2c1810 0%, #8b3a1a 50%, #d4a574 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/9/28/index.html" class="active">2026 / 9 / 28</a></li>
+      <li><a href="/daypulse/2026/9/25/index.html">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 09 · 28</div>
+      <div class="day-week">星期一</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行Q3货币政策例会新增"防范羊群效应"表述，释放稳汇率明确信号</div>
+            <div class="news-item-desc">中国人民银行货币政策委员会第三季度例会首次提出"防范市场'羊群效应'和非理性预期的自我强化"，同时强调"坚持市场在汇率形成中的决定性作用"。四季度企业集中结汇期叠加出口高增，人民币面临季节性升值压力，央行前瞻性引导预期，防止汇率过度波动。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/jjxw/2026-09-28/doc-initimtm8936526.shtml" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中美建立推进贸易理事会等机制，双边经贸对话重回制度化轨道</div>
+            <div class="news-item-desc">微博热搜显示"中美建立推进贸易理事会等机制"热度达125万。这是两国在关税战暂缓后，首次建立常态化经贸磋商机制。从"危机应对"到"制度对话"，标志着中美经贸关系进入可预期、可管理的新阶段。对全球供应链和跨境贸易而言，这是比关税数字更重要的结构性信号。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=中美建立推进贸易理事会等机制" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">杭州数贸会首创Token主题AI未来展区，127国采购商"扫码签约"</div>
+            <div class="news-item-desc">第五届全球数字贸易博览会9月23-27日在杭州举行，展览面积17万平方米，121个国家和地区、29个国际组织参展。首创的"词元（Token）主题AI未来展区"完整呈现算力底座、主流大模型、行业应用的全产业链，探索"瓦特变比特"的算力贸易新路径。AI企业参展占比超三分之一，马来西亚和匈牙利作为主宾国。</div>
+            <a class="news-item-link" href="https://www.sohu.com/a/1080374635_122066679" target="_blank">→ 搜狐科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic Claude模型助力发现新型酶系统，AI制药从概念走向现实</div>
+            <div class="news-item-desc">美国AI初创公司Anthropic宣布，其Claude模型在生物学研究项目中取得首个成果——助力发现一种新型酶系统。此前路透社报道，Anthropic已在旧金山湾区建立湿实验室，将业务从AI拓展至生命科学和药物研发。2026年，AI制药已有企业宣布其AI设计的药物进入三期临床，从概念验证进入产业化阶段。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908p21a.html" target="_blank">→ 新浪科技</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">前苹果Siri工程师推出szn AI智能体，可直接运行在iMessage对话中</div>
+            <div class="news-item-desc">前苹果Siri和Apple Intelligence工程师Nikhil Gupta宣布推出名为szn的AI智能体，可直接运行在iMessage对话中，帮助用户浏览网页、购买商品以及代表用户与商家沟通。这是AI Agent从独立App走向"嵌入式助手"的标志性尝试——当AI不再需要你打开一个专门的入口，而是融入你已有的沟通场景。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908p21c.html" target="_blank">→ 新浪科技</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">胖东来1-8月销售额超195亿，美银调研称九成销售靠外地游客</div>
+            <div class="news-item-desc">胖东来2026年前8个月销售额超195亿元，同比增长26.98%，其中超市业态销售额达107亿元。美银调研报告指出，许昌和新乡本地消费者贡献的销售额不到10%，河南省内约占50%，省外占另外50%——一家地级市超市靠外地客流成为"旅游目的地"。自有品牌占总销售额比例从2020年的几乎为零升至约三分之一。不上市、不扩张、自有资金自建物业的模式，被指在中国零售业难以复制。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4892294.html" target="_blank">→ 虎嗅</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">小米18Pro曝光防窥屏技术，手机隐私保护成高端机新战场</div>
+            <div class="news-item-desc">微博热搜显示"小米18Pro 防窥屏"热度达33万。在手机同质化竞争加剧的背景下，隐私保护正成为高端机型差异化的新卖点。从硬件级防窥到软件级权限管理，用户对"数字边界感"的需求正在重塑产品定义逻辑。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=小米18Pro%20防窥屏" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">18岁严子怡第一投70米46破亚运纪录后"直接下班"，轻松摘金</div>
+            <div class="news-item-desc">9月27日名古屋亚运会女子标枪决赛，18岁的中国小将严子怡第一投就掷出70米46，打破亚运会纪录后直接放弃剩余五轮试投，轻松摘得金牌。这一成绩在女子标枪历史上也属顶尖水平。"第一投即锁定胜局"的统治力表现，让她成为本届亚运会最燃的新星之一。京东随即宣布"严子怡夺金抽免单"，体育营销的即时响应再次验证。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7879995911_1d5af320706802mllc.html" target="_blank">→ 新浪体育</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">电子竞技项目将退出亚运会，明年科威特将举办独立"亚洲电竞运动会"</div>
+            <div class="news-item-desc">亚奥理事会宣布，电竞在爱知·名古屋2026亚运会后将正式退出亚运会programme，明年科威特将举办首届"亚洲电子竞技与智力运动会"。从2018年雅加达表演项目、2023年杭州正式项目，到2026年后独立办赛，电竞在亚运体系内走过"三级跳"。日本和泰国此前已宣布退出本届亚运英雄联盟项目，地缘政治、选手安全等因素让电竞"入亚"之路比想象中更曲折。</div>
+            <a class="news-item-link" href="https://i.ifeng.com/c/8wlycI9pRxW" target="_blank">→ 凤凰网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">Angelababy首登米兰时装周MARNI秀，完成四大时装周"满贯"</div>
+            <div class="news-item-desc">9月24日，Angelababy受MARNI品牌正式邀请首次亮相米兰时装周2027春夏大秀，凭一组外媒高清无修生图刷屏全网，正式集齐纽约、伦敦、巴黎、米兰四大国际时装周，达成个人时尚"满贯"成就。品牌邀约含金量——MARNI前排座位并非随意派发，能受邀坐到该位置等于品牌盖章认定艺人可诠释自家设计。从"单品穿搭"到"品牌层面深度合作"，这是国际时尚资源重新向中国艺人开放的信号。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7879849970_1d5acf7f206801eu88.html" target="_blank">→ 新浪时尚</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">罗永浩遭前投资人郑刚实名举报偷税漏税，"交个朋友"再陷舆论漩涡</div>
+            <div class="news-item-desc">9月27日晚，锤子科技前投资人郑刚在微博实名举报罗永浩及"交个朋友"相关主体，控其通过数十家已注销的有限合伙企业涉嫌重大偷税漏税与洗钱。此前"交个朋友"直播间"发霉沙发（溜溜凳）"产品争议持续发酵，罗永浩连续3天回应。风波未平又添新指控，网红经济的合规风险再次被推到聚光灯下。</div>
+            <a class="news-item-link" href="https://www.163.com/dy/article/L7T25HU205564S43.html" target="_blank">→ 网易新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">塞尔维亚总统武契奇宣布辞职，准备竞逐下届政府总理</div>
+            <div class="news-item-desc">当地时间9月27日晚，塞尔维亚总统武契奇向民众发表讲话，宣布辞职并签署辞呈，提前结束其第二个总统任期。武契奇在讲话中感谢民众两次在总统选举中给予他的信任，随后将竞逐下届政府总理职位。这是塞尔维亚政治格局的一次重大调整，武契奇从总统到总理的"降维"选择，被分析人士解读为对议会多数席位和实际行政权力的追求。</div>
+            <a class="news-item-link" href="https://www.chinanews.com.cn/gj/2026/09-28/10704636.shtml" target="_blank">→ 中新网</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#王楚钦男单 热度147万</div>
+            <div class="trend-meta">体育赛事话题 · 亚运乒乓球</div>
+            <div class="trend-obs">💡 趋势观察：王楚钦在亚运男单赛场连胜晋级四强，微博热度登顶。体育赛事的"造星效应"正在从赛场溢出到生活场景——运动员的穿搭、装备、赛场表情包成为小红书二次创作的素材池。品牌借势体育IP的黄金窗口已从"赛事直播中"前移到"赛前备战叙事"和后移到"赛场外的日常"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=王楚钦%20男单" target="_blank">→ 微博热搜·王楚钦男单</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#贷款中介集体删除朋友圈 热度137万</div>
+            <div class="trend-meta">金融消费话题 · 行业整顿信号</div>
+            <div class="trend-obs">💡 趋势观察："贷款中介集体删除朋友圈"登上热搜第二，背后是金融监管趋严和行业合规整顿的缩影。对小红书而言，金融类内容的"信任成本"正在上升——用户对"理财博主""贷款攻略"的审核标准从"有没有用"变成"可不可信"。平台金融内容的准入门槛和创作者资质审核将成为下一阶段的治理重点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=贷款中介集体删除朋友圈" target="_blank">→ 微博热搜·贷款中介</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#电子竞技项目将退出亚运 热度66万</div>
+            <div class="trend-meta">电竞文化话题 · 产业变局</div>
+            <div class="trend-obs">💡 趋势观察：电竞"入亚"又"出亚"，看似反复实则折射这项新兴运动的身份焦虑。小红书上的电竞内容正在从"赛事解说"向"生活方式"迁移——电竞选手的日常、电竞房的装修、电竞主题的穿搭，都是高互动内容。品牌与电竞的绑定，不应只押注"赛事赞助"，更应关注"电竞文化日常化"的内容场域。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=电子竞技项目将退出亚运" target="_blank">→ 微博热搜·电竞退出亚运</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#罗永浩遭实名举报偷税漏税 热度33万</div>
+            <div class="trend-meta">网红经济话题 · 合规风险</div>
+            <div class="trend-obs">💡 趋势观察：罗永浩"交个朋友"直播间先陷产品质量争议，再遭前投资人实名举报偷税漏税，网红经济的"人设脆弱性"再次显现。对小红书而言，这是"信任电商"叙事的反面教材——当用户对"主播推荐"的信任建立在个人魅力而非制度保障上，任何一次翻车都可能引发连锁反应。平台对带货主播的合规审核和内容真实性要求将进一步提高。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=罗永浩遭实名举报偷税漏税" target="_blank">→ 微博热搜·罗永浩</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#微微一笑很倾城AI换脸后 热度14万</div>
+            <div class="trend-meta">AI与影视话题 · 技术伦理</div>
+            <div class="trend-obs">💡 趋势观察：经典剧集《微微一笑很倾城》用AI换脸技术"修复"后重新引发讨论，技术能力与情感接受度之间的落差成为话题核心。对小红书内容生态而言，AI生成内容（AIGC）正在从"工具辅助"走向"内容主体"——当AI可以"复活"演员、"重写"剧情，用户对"真实性"的定义正在被重新校准。平台对AIGC内容的标注和边界规则，将是接下来的治理重点。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=微微一笑很倾城AI换脸后" target="_blank">→ 微博热搜·AI换脸</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 第三空间</div>
+        <div class="learning-title">从星巴克到小红书：品牌如何成为用户的"第三空间"</div>
+        <div class="learning-subtitle">当物理空间的"第三 place"焦虑遇上数字平台的"第二 home"叙事</div>
+        <div class="learning-body">
+          <p>1999年，星巴克创始人霍华德·舒尔茨在《将心注入》中提出"第三空间"（Third Place）概念——家是第一空间，办公室是第二空间，咖啡馆应该是人们在两者之外愿意停留的"第三个地方"。这个概念定义了星巴克的品牌灵魂，也定义了整整一代人对"消费空间"的想象。</p>
+          <p>二十多年后，"第三空间"的物理形态正在被重新定义。星巴克中国门店从"商务社交"转向"社区连接"，推出"咖啡+酒饮"的Bar Mistura概念；Manner用"小店+外带"模式重新定义城市咖啡的密度；而小红书上，"我的咖啡角""居家咖啡馆"成为高频内容——用户不再去咖啡馆寻找第三空间，而是在家里、在阳台上、在任何角落创造属于自己的"暂停时刻"。</p>
+          <p><strong>第三空间的本质，不是物理位置，而是心理状态。</strong>人们需要一个"既不是工作也不是家庭责任"的地方，去发呆、去连接、去成为自己。这个需求在物理世界由咖啡馆承载，在数字世界由社交平台承载。</p>
+          <p>小红书正在成为用户的"数字第三空间"——不是用来工作（那是飞书和钉钉的事），不是用来维持社会关系（那是微信的事），而是用来"发现我想成为的样子"。种草内容的本质，不是"推荐商品"，而是"提供一种可能性"——你可以这样生活，你可以成为这样的人。</p>
+          <p><strong>对品牌而言，启示是：</strong>不要只思考"我的产品在哪里卖"，而要思考"我的品牌能成为用户的什么空间"。如果你的品牌只能回答"我是卖XX的"，那你只是一个货架；如果你的品牌能回答"我是你愿意停留的地方"，那你才是一个"空间"。胖东来之所以成为"旅游目的地"，不是因为商品，而是因为它成为了用户在购物之外的"情感停留地"。</p>
+          <p>明天是国际咖啡日。咖啡不只是饮品，它是一个关于"暂停"的仪式。而品牌能做的最高级的事，是成为用户生活中那个"愿意暂停的地方"。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://www.huxiu.com/article/4892294.html" target="_blank">虎嗅《美银调研：胖东来外省客流过半》</a> ·
+          <a href="https://www.starbucks.com.cn/about-us/our-heritage" target="_blank">星巴克官网·品牌传承</a> ·
+          <a href="https://book.douban.com/subject/1151912/" target="_blank">《将心注入》霍华德·舒尔茨</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 国际咖啡日</span>
+      </div>
+
+      <div class="festival-banner-placeholder">☕🌍✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">全球节日</span>
+          <span class="festival-tag">UN官方·10月1日</span>
+          <span class="festival-tag">美国传统·9月29日</span>
+          <span class="festival-tag">始于2015年</span>
+        </div>
+        <div class="festival-name">国际咖啡日</div>
+        <div class="festival-name-en">International Coffee Day · 从埃塞俄比亚的牧羊女传说到联合国大会决议</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从牧羊女的传说到全球饮品之王</div>
+          <div class="festival-block-body">
+            <p>关于咖啡的起源，最动人的传说来自埃塞俄比亚：9世纪，一位牧羊女发现她的羊群吃了某种红色浆果后异常兴奋，于是把浆果带给当地修道院的僧侣。僧侣们用这种浆果熬制饮品，帮助自己在漫长的晚祷中保持清醒。这个传说没有确切的历史记载，但它指向一个事实——<strong>咖啡的原初功能，是"帮助人保持清醒"</strong>。</p>
+            <p>15世纪，也门的苏菲派修行者开始饮用咖啡帮助夜间冥想；16世纪，咖啡馆（qahveh khaneh）在奥斯曼帝国出现，成为"智慧学校"——人们在这里下棋、辩论、听音乐、讨论政治。欧洲人第一次接触咖啡是在17世纪的威尼斯，随后伦敦、巴黎、维也纳的咖啡馆成为启蒙运动的思想温床。<strong>伏尔泰据说每天喝50杯咖啡；巴尔扎克在《论现代兴奋剂》中详细记录了自己的咖啡仪式</strong>——咖啡不只是饮品，它是现代知识分子的"工作燃料"。</p>
+            <p>2015年10月1日，国际咖啡组织（ICO）在米兰世博会正式启动首个官方"国际咖啡日"，旨在推广可持续咖啡实践、支持小农户、庆祝咖啡产业创新。2026年3月，联合国大会正式通过决议（A/RES/80/248），将10月1日确立为UN官方的国际咖啡日——<strong>从牧羊女的传说到联合国决议，咖啡用了一千多年完成它的全球化叙事</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一杯咖啡背后的全球产业链</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">22.5亿</div>
+                <div class="festival-stat-label">全球每日消费杯数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">4950亿</div>
+                <div class="festival-stat-label">全球市场规模（美元）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2500万</div>
+                <div class="festival-stat-label">全球咖啡农数量</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">47%</div>
+                <div class="festival-stat-label">美国成人日饮精品咖啡</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1.2%</div>
+                <div class="festival-stat-label">全球人均年增长率</div>
+              </div>
+            </div>
+            <p>今天的咖啡产业已经分化为三个浪潮：<strong>第一波</strong>是速溶和大批量生产（代表：雀巢、麦斯威尔）；<strong>第二波</strong>是连锁咖啡馆体验（代表：星巴克、Costa）；<strong>第三波</strong>是精品咖啡运动（代表：Blue Bottle、% Arabica、Manner），强调单品产地、处理法、烘焙曲线，把咖啡当作葡萄酒来品鉴。</p>
+            <p>在中国，咖啡消费正在经历"从功能性到生活方式"的转变。2026年，中国咖啡市场规模突破万亿，瑞幸、Manner、Seesaw等品牌用不同的价格带和场景定义"中国咖啡文化"。小红书上，"我的咖啡角""居家咖啡仪式""咖啡配餐"成为高频内容——<strong>咖啡不再只是"提神饮料"，而是"我愿意为自己花时间的证明"</strong>。</p>
+            <p>国际咖啡日的核心议题包括：可持续种植（气候变化对咖啡产地的威胁）、公平贸易（确保小农户获得合理报酬）、创新（从AI精准烘焙到冷萃技术）。这是一个关于"一杯好咖啡"如何连接全球2500万农民和20亿消费者的节日。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】AI烘焙、气候挑战与中国咖啡文化输出</div>
+          <div class="festival-block-body">
+            <p><strong>气候挑战：</strong>咖啡树对温度和海拔极为敏感。研究显示，到2050年，适合种植阿拉比卡咖啡的土地可能减少50%。巴西、越南等主产国的极端天气已经开始影响全球供应和价格。可持续种植和替代品种研发（如耐气候的罗布斯塔品种改良）成为产业核心议题。</p>
+            <p><strong>AI与科技：</strong>AI正在进入咖啡产业链的每个环节——从精准农业（传感器监测土壤和气候数据优化种植）、到AI烘焙（算法控制烘焙曲线确保风味一致性）、到智能咖啡机（家用设备用AI复刻咖啡馆口感）。数贸会上展示的"Token经济"和"算力贸易"，未来可能让一杯咖啡的产地信息、烘焙数据、碳足迹全程可追溯。</p>
+            <p><strong>中国文化输出：</strong>中国不只是咖啡消费大国，正在成为咖啡文化创新的输出者。Manner的"小店+外带"模式被海外媒体关注；瑞幸的"生椰拿铁"用中国口味重新定义拿铁；小红书上"中式咖啡"（茶咖、桂花拿铁、陈皮美式）成为内容热点。当星巴克在美国推出"Oleato"（橄榄油咖啡）时，中国的"茶咖融合"已经在小红书上被用户共创出上百种喝法。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台内容生态的启发：</strong>明天是国际咖啡日（美国传统9月29日，UN官方10月1日）。咖啡是小红书上最具"生活方式"属性的品类之一——它连接着居家美学、职场日常、社交仪式感、旅行探索。品牌借势不应只停留在"今天咖啡免费"的促销层面，而应思考：<strong>你的品牌能成为用户"咖啡时刻"的什么角色？</strong>是一个值得分享的场景？是一种情绪的承载？还是一种身份的标识？咖啡日的本质，是让用户意识到"我愿意为自己花这十分钟"——而你的品牌，可以成为这十分钟里最好的陪伴。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.fao.org/newsroom/detail/fao-welcomes-un-resolution-instituting-international-coffee-day/en" target="_blank">FAO·联合国决议</a> ·
+          <a href="https://www.companieshistory.com/coffee-market-statistics" target="_blank">Coffee Market Statistics 2026</a> ·
+          <a href="https://nationalcoffeeassociation.org/" target="_blank">National Coffee Association</a> ·
+          <a href="https://www.ico.org/" target="_blank">International Coffee Organization</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 咖啡与文学</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">☕ 主题策展 · 咖啡馆里的文学大师</div>
+        <div class="knowledge-headline">当咖啡因遇见墨水：那些在咖啡馆里写出杰作的人</div>
+        <div class="knowledge-tagline">「咖啡馆是文学的第二个子宫。」——未知</div>
+
+        <div class="knowledge-intro">
+          如果把文学史摊开来看，你会发现一个惊人的事实：许多伟大的作品，不是在书房里完成的，而是在咖啡馆的嘈杂中写就的。巴尔扎克每天喝50杯咖啡，在巴黎的咖啡馆里观察人间喜剧；萨特和波伏娃在花神咖啡馆写下存在主义的篇章；海明威在巴黎的咖啡馆里写下"如果你有幸在巴黎度过年轻时代，此后无论你去哪里，它都与你同在"；J.K.罗琳在爱丁堡的大象咖啡馆里，一边哄着婴儿车里的孩子，一边写下哈利·波特的第一章。<br><br>
+          咖啡馆为什么能成为文学的温床？因为那里有<strong>恰到好处的孤独</strong>——你独自一人，但周围都是人；你可以观察世界，但不必参与世界；你可以思考，但不会被寂静吞噬。这是创作者最需要的心理状态：<strong>在人群中保持距离，在嘈杂中保持清醒</strong>。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Honor%C3%A9_de_Balzac_%281795-1850%29.jpg/440px-Honor%C3%A9_de_Balzac_%281795-1850%29.jpg"
+              alt="巴尔扎克"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📜</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">巴尔扎克</div>
+              <div class="knowledge-card-sub">Honoré de Balzac · 法国 · 1799-1850</div>
+              <div class="knowledge-card-work">每天喝50杯咖啡，用特浓咖啡在深夜写作。他在《论现代兴奋剂》中详细记录咖啡如何帮助他"看见思想的形状"。《人间喜剧》的91部小说，大部分在咖啡馆的嘈杂中构思完成。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Sartre_1967_crop.jpg/440px-Sartre_1967_crop.jpg"
+              alt="萨特"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🚬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">萨特 & 波伏娃</div>
+              <div class="knowledge-card-sub">Jean-Paul Sartre & Simone de Beauvoir · 法国</div>
+              <div class="knowledge-card-work">巴黎花神咖啡馆（Café de Flore）的常驻客人。萨特在这里写下《存在与虚无》，波伏娃写下《第二性》。他们的"咖啡馆哲学"定义了战后法国知识分子的生活方式——思考不是书房里的独白，而是公共场所的对话。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Ernest_Hemingway_1923.jpg/440px-Ernest_Hemingway_1923.jpg"
+              alt="海明威"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎣</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">海明威</div>
+              <div class="knowledge-card-sub">Ernest Hemingway · 美国 · 1899-1961</div>
+              <div class="knowledge-card-work">1920年代在巴黎的咖啡馆里写下《太阳照常升起》。他写道："如果你有幸在巴黎度过年轻时代，此后无论你去哪里，它都与你同在。"那些在咖啡馆里观察的人、喝过的酒、写过的字，最终都成为了"冰山理论"的水下部分。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/J._K._Rowling_2010_%28cropped%29.jpg/440px-J._K._Rowling_2010_%28cropped%29.jpg"
+              alt="J.K.罗琳"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚡</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">J.K.罗琳</div>
+              <div class="knowledge-card-sub">J.K. Rowling · 英国 · 1965-</div>
+              <div class="knowledge-card-work">爱丁堡的大象咖啡馆（The Elephant House）被称为"哈利·波特诞生地"。她在咖啡馆里一边哄着婴儿车里的孩子，一边写下魔法世界的第一章。从单亲妈妈的困境到全球最畅销的作家，咖啡馆见证了那段"在混乱中创造秩序"的时光。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🍵</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">村上春树</div>
+              <div class="knowledge-card-sub">日本 · 1949-</div>
+              <div class="knowledge-card-work">在开咖啡馆"Peter Cat"的七年里，他学会了"如何用一杯咖啡的时间讲一个故事"。《且听风吟》《1973年的弹子球》的叙事节奏，带着咖啡馆特有的"慢"——不是拖沓，而是恰到好处的停顿。他说："写小说和做咖啡一样，关键在于你知道什么时候该停。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🖋️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">詹姆斯·乔伊斯</div>
+              <div class="knowledge-card-sub">James Joyce · 爱尔兰 · 1882-1941</div>
+              <div class="knowledge-card-work">在苏黎世的咖啡馆里写下《尤利西斯》。据说他写作时要求咖啡馆里必须有足够的噪音——"完全的寂静让我无法思考，我需要人群的嗡嗡声作为背景。"《尤利西斯》的意识流技法，某种程度上就是咖啡馆里"多声部思维"的文学化。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          为什么咖啡馆能催生文学？也许因为那里有一种<strong>"恰到好处的孤独"</strong>——你独自一人，但周围都是人；你可以观察世界，但不必参与世界；你可以思考，但不会被寂静吞噬。这是创作者最需要的心理状态：<strong>在人群中保持距离，在嘈杂中保持清醒</strong>。明天是国际咖啡日，不妨找一个咖啡馆，不是为了工作，不是为了社交，只是为了"暂停"——像那些大师们一样，在咖啡因和墨水的交汇处，看看自己能想出什么。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
