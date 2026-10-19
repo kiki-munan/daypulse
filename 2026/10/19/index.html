@@ -60,23 +60,6 @@
     .trend-source { font-size: 11px; margin-top: 6px; }
     .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
     .trend-source a:hover { opacity: 1; text-decoration: underline; }
-    /* 周末概览 */
-    .weekend-note { font-size: 12px; color: var(--text-muted); background: var(--bg); border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; line-height: 1.7; }
-    .weekend-note strong { color: var(--accent); }
-    .weekend-item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
-    .weekend-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .weekend-day { flex-shrink: 0; width: 40px; text-align: center; padding-top: 2px; }
-    .weekend-day-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; padding: 3px 0; width: 40px; border-radius: 5px; background: var(--tag-bg); color: var(--text-secondary); }
-    .weekend-day-badge.sun { background: var(--accent-light); color: var(--accent); }
-    .weekend-day-date { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
-    .weekend-content { flex: 1; }
-    .weekend-title { font-size: 13.5px; font-weight: 600; line-height: 1.5; margin-bottom: 5px; color: var(--text-primary); }
-    .weekend-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 7px; }
-    .weekend-take { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--accent-light); border-left: 2px solid var(--accent); border-radius: 0 6px 6px 0; padding: 7px 10px; }
-    .weekend-take strong { color: var(--accent); }
-    .weekend-src { font-size: 11px; margin-top: 6px; }
-    .weekend-src a { color: var(--accent); text-decoration: none; opacity: 0.8; }
-    .weekend-src a:hover { opacity: 1; text-decoration: underline; }
     .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
     .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
     .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
@@ -86,6 +69,7 @@
     .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
     .learning-source a { color: var(--accent); text-decoration: none; }
     .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
     .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
     .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
     .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
@@ -110,14 +94,15 @@
     .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
     .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
     .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    .knowledge-card-img-placeholder { width: 100%; height: 100px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
     .knowledge-card-body { padding: 12px; }
     .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
-    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.4; }
-    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
     .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
     .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
-    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } .weekend-item { gap: 10px; } }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
   </style>
 </head>
 <body>
@@ -138,6 +123,11 @@
       <li><a href="/daypulse/2026/9/29/index.html">2026 / 9 / 29</a></li>
       <li><a href="/daypulse/2026/9/28/index.html">2026 / 9 / 28</a></li>
       <li><a href="/daypulse/2026/9/25/index.html">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
     </ul>
     </div>
   </aside>
@@ -145,7 +135,7 @@
   <main class="main-content">
     <div class="day-header">
       <div class="day-date">2026 · 10 · 19</div>
-      <div class="day-week">星期一 · 三季度经济数据日 · 含上周末补录</div>
+      <div class="day-week">星期一</div>
     </div>
 
     <!-- ① 新闻拼盘 -->
@@ -153,177 +143,123 @@
       <div class="section-header">
         <span class="section-icon">🗞</span>
         <span class="section-title">新闻拼盘</span>
-        <span class="section-subtitle">今日精选 · 5 板块</span>
+        <span class="section-subtitle">今日精选 · 6 方向</span>
       </div>
       <div class="section-body">
 
         <div class="news-panel">
           <div class="news-panel-title">宏观 · 经济</div>
           <div class="news-item">
-            <div class="news-item-title">中国经济三季报今日10时公布，市场预期GDP同比4.4%，较二季度4.3%小幅回升</div>
-            <div class="news-item-desc">国新办今日上午10时举行发布会，统计局副局长毛盛勇介绍前三季度国民经济运行情况。同期发布9月工业增加值、社会消费品零售总额、固定资产投资及70城房价月报。机构普遍预期三季报"企稳回升"，主要支撑来自生产端强劲、出口旺盛与低基数效应。</div>
-            <a class="news-item-link" href="https://www.21jingji.com/article/20261019/herald/4bdcfc243f71c6d9fa3b85cd1424896e.html" target="_blank">→ 21经济网</a>
+            <div class="news-item-title">统计局今日发布前三季度成绩单：三季度出口首破 8 万亿元，同比增长 22%</div>
+            <div class="news-item-desc">前三季度出口同比增长 16.4%，其中三季度单季出口规模创历史新高。9 月以来服务消费、基建投资同步升温，机构普遍预期三季度经济延续向好。国新办今日上午同步召开国民经济运行情况发布会。</div>
+            <a class="news-item-link" href="https://www.sohu.com/a/1089495125_99992453" target="_blank">→ 陆家嘴财经早餐</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">2026金融街论坛年会今日开幕，为期四天；中国汽车供应链大会同期召开</div>
-            <div class="news-item-desc">金融街论坛（10/19-10/22）与汽车供应链大会（10/19-10/21）同日开场。前者是观察货币政策与金融监管口径的重要窗口，后者聚焦整车与零部件供应链重构。加上三季度数据发布，"政策—数据—产业"三层信息在同一周密集释放。</div>
-            <a class="news-item-link" href="https://finance.sina.com.cn/stock/y/2026-10-19/doc-inivtchu0795566.shtml" target="_blank">→ 新浪财经</a>
+            <div class="news-item-title">国常会听取"人工智能+"行动进展：以落地应用牵引技术创新，重视算电协同</div>
+            <div class="news-item-desc">会议明确三条主线：夯实底座（技术攻关、算法创新、高质量数据供给）、突出赋能（以实体经济为重点强化供需衔接、加大场景培育）、统筹安全（因业分级分类施策）。政策语言从"鼓励创新"转向"场景落地"，这是本轮 AI 政策最实质的转向。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-10-19/doc-inivtchu0800848.shtml" target="_blank">→ 新浪财经·操盘必读</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">上市公司周末密集回购：中科曙光董事长提议回购3-5亿，长鑫科技前三季预盈1310-1325亿</div>
-            <div class="news-item-desc">10月18日晚，格科微、澜起科技、中科曙光、海光信息、生益科技等多家公司发布回购公告。长鑫科技前三季度预盈1310亿-1325亿元，董事长提议回购10-20亿元股份。存储与算力链的业绩与股价走势出现明显背离。</div>
-            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-10-19/doc-inivtchu0800848.shtml" target="_blank">→ 新浪财经</a>
+            <div class="news-item-title">亚太开盘 AI 链集体杀跌：韩综指一度跌超 3%，SK 海力士跌 4%，日经盘中跌近 1500 点</div>
+            <div class="news-item-desc">存储芯片、半导体设备同步走低，软银跌近 5%。市场分析多指向情绪宣泄而非基本面逆转——AI 资本开支的定价正在从"叙事溢价"回归"业绩验证"。今天下午 A 股的半导体板块会给出同一个问题的另一个答案。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908rkqa.html" target="_blank">→ 新浪财经</a>
           </div>
         </div>
 
         <div class="news-panel">
           <div class="news-panel-title">科技 · AI</div>
           <div class="news-item">
-            <div class="news-item-title">DeepSeek-V4.1-Flash-1017 上线并开源权重，Terminal-Bench 从31.2跃至42.3登顶</div>
-            <div class="news-item-desc">10月17日，DeepSeek将V4.1 Flash更新至1017版本，网页、App、API 同步切换，模型名与价格均不变，权重以MIT协议在Hugging Face与ModelScope公开。官方称"小幅更新"，但11项测试中拿下4项第一，超过Kimi K3、GLM-5.3、GPT-5.6 Sol、Claude Opus 5 的对应成绩。被称为"国庆后国模第一枪"。</div>
-            <a class="news-item-link" href="https://www.ithome.com/1/014/328.htm" target="_blank">→ IT之家</a>
+            <div class="news-item-title">DeepSeek 双发：V4.1-Flash-1017 上线，自研搜索 API 对外开放并按次计费</div>
+            <div class="news-item-desc">新模型网页端与 APP 同步更新，API 价格不变；同时开放的搜索 API 由 AI 原生搜索引擎支撑，日处理数亿次请求、索引千亿级网页，并专门识别过滤 SEO 作弊、GEO 操纵与低质 AIGC。模型厂自己去做搜索，意味着"答案层"的争夺正式开打。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT 热点聚合</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">第二届国际人工智能科学家大会（ICAIS 2026）在京举行，诺奖、图灵奖得主同台论道</div>
-            <div class="news-item-desc">10月17日至19日，大会以"溯源AI初心、拓界科学探索"为主题，汇聚多位诺贝尔奖、图灵奖得主与中外院士，讨论AI如何让科学探索"更快、更广"——从数学猜想到材料发现，AI for Science 正从论文走向实验室日常。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908rin8.html" target="_blank">→ 新浪科技</a>
+            <div class="news-item-title">Anthropic 内部研究：Agent 工时已达员工 6 倍，技术部门初级岗位占比从 21% 降到 14%</div>
+            <div class="news-item-desc">同期初级技术招聘占比从 27% 降至 9%，空缺初级岗位降至 6%，非技术部门基本稳定。这份报告的价值不在于结论惊人，而在于它来自一家 AI 公司自己的用工台账——AI 对组织结构的改造，第一次有了可核对的内部账本。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/nextj30ehkdcjpzpk4fgz1p1w" target="_blank">→ Anthropic Research</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">UIUC+微软论文：顶尖大模型做真实商业分析，正确率不足50%</div>
-            <div class="news-item-desc">研究把"AI为何还没取代BI岗位"这个矛盾摆上台面：在真实企业商业分析任务上，最强模型正确率仍不到一半。结论指向问题定义、口径理解与多步推理的复合误差——这对所有"用AI做数据洞察"的产品都是一次冷静提醒。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908rbhq.html" target="_blank">→ 新浪科技</a>
+            <div class="news-item-title">德国两家法院先后裁定：Google 须为 AI Overview 的错误内容负责</div>
+            <div class="news-item-desc">慕尼黑地区法院认定 AI 搜索摘要属于"公司自己的陈述"而非中立转述；Google 宣布上诉后实际以和解结案，未获上级法院裁决。判例回避了，但逻辑留下了：生成式答案不是索引，是发言。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/bbr25r9mbi8zbbtmu2uiati7f" target="_blank">→ The Decoder</a>
           </div>
         </div>
 
         <div class="news-panel">
           <div class="news-panel-title">行业 · 消费</div>
           <div class="news-item">
-            <div class="news-item-title">双11预售战报：李佳琦直播间首小时场观破千万，美妆占72%，多款上架即售罄</div>
-            <div class="news-item-desc">10月15日天猫双11预售开启，李佳琦直播间当日上线600个商品链接，美妆占比72%。付定金首小时，SK-II、丝塔芙、珀莱雅、娇韵诗、优时颜等爆款销量快速破10万件；海蓝之谜精粹水套组、SK-II神仙水、维密睡衣开售即售罄，凡士林雪融霜、珀莱雅红宝石面霜多次补仓仍售罄。京东双11首日下单用户数同比双位数增长。</div>
-            <a class="news-item-link" href="https://tech.cnr.cn/techgd/20261016/t20261016_527844022.shtml" target="_blank">→ 央广网</a>
+            <div class="news-item-title">双 11 第十八年启幕：天猫 100 万品牌、7200 万款商品，京东亮出超百项服务</div>
+            <div class="news-item-desc">三家平台 10 月 15 日同日开场，却罕见地在同一件事上达成一致——不再只讲低价。天猫押新品与 AI 供给，京东把家政保洁、家电清洗、养老、宠物写成服务 SKU，抖音主打秋冬囤货场景。大促的竞争维度，从价格带挪到了供给结构。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20261016/herald/03b09e5f52673b56f6c88dd94ca5c7f2.html" target="_blank">→ 21 经济网</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">存储芯片股集体跳水：铠侠一周跌26%，市值从60万亿日元缩到22万亿</div>
-            <div class="news-item-desc">过去一年涨价最猛的存储芯片，正在经历最猛的回撤。美光、闪迪、三星、SK海力士股价大跌，铠侠10月9日至16日一周跌26%，市值较高峰期缩水约三分之二——6月时它曾是数十年来首家市值超过丰田的日本芯片公司。同期韩国财政部长称半导体繁荣"至少持续到2027年"，官方口径与市场交易出现罕见分歧。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908rjce.html" target="_blank">→ 新浪科技</a>
+            <div class="news-item-title">美妆双 11 打"四场硬仗"：从冲规模到保利润，明星合作密度创下新高</div>
+            <div class="news-item-desc">2026 年 1—7 月，163 个美妆品牌累计官宣 338 项明星合作，平均每两天就有三个新代言落地。同款、联名限定、话题种草、直播间空降成为标准四件套——注意力采购正在变成一门精算生意。</div>
+            <a class="news-item-link" href="https://eu.36kr.com/zh/p/4019715197147010" target="_blank">→ 36 氪</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">中国化妆品在韩国份额升至8.4%：前9月出口6245万美元，同比增24.5%</div>
-            <div class="news-item-desc">韩国关税厅18日数据：1-9月韩国自华进口化妆品6245万美元，同比+24.5%，而韩国化妆品进口总额增幅仅1.9%，中国份额由6.9%升至8.4%。驱动力是鲜明的产品设计、社交媒体营销与渠道扩张——国货美妆出海第一次在"美妆强国"本土取得结构性份额提升。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908ridm.html" target="_blank">→ 新浪时尚</a>
+            <div class="news-item-title">银发经济提质升级：全国 60 岁以上人口已超 3.23 亿</div>
+            <div class="news-item-desc">政策端强调"多措并举"，供给端却在提醒另一件事：3.23 亿人的消费偏好、内容语言与决策链路，和主流种草语境仍有明显断层。这是被反复提及、却始终没有被真正做透的人群。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%9A%E6%8E%AA%E5%B9%B6%E4%B8%BE%E6%8E%A8%E5%8A%A8%E9%93%B6%E5%8F%91%E7%BB%8F%E6%B5%8E%E6%8F%90%E8%B4%A8%E5%8D%87%E7%BA%A7" target="_blank">→ 微博热搜</a>
           </div>
         </div>
 
         <div class="news-panel">
           <div class="news-panel-title">娱乐 · 文化</div>
           <div class="news-item">
-            <div class="news-item-title">黄子韬徐艺洋官宣当爸妈："落日漫过海面，爱的人都在身边"</div>
-            <div class="news-item-desc">10月18日，徐艺洋微博发布多张生活照，其中一张是与黄子韬牵着小朋友的背影。时间线回溯：2024年7月官宣恋情、同年12月领证、2025年10月办婚礼、2026年10月官宣当爸妈。从"只是老板和员工"到一家三口，这条长达六年的叙事弧，本身就是一场教科书级的"否认—官宣"节奏管理。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908rg74.html" target="_blank">→ 新浪娱乐</a>
+            <div class="news-item-title">2026 维密大秀开秀，奚梦瑶重返 T 台，双话题同时占据热搜前十</div>
+            <div class="news-item-desc">#2026维秘大秀# 与 #奚梦瑶重返维密T台走秀# 一个讲品牌、一个讲人，构成了一次教科书式的"双向叙事"：观众既在消费秀本身，也在消费一个中国面孔与这个舞台之间十几年的关系史。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=2026%E7%BB%B4%E7%A7%98%E5%A4%A7%E7%A7%80" target="_blank">→ 微博热搜</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">王力宏"原唱当场认证"小沈阳版《在梅边》：披荆斩棘五公舞台出圈</div>
-            <div class="news-item-desc">10月17日晚，刚结束郑州演唱会的王力宏在回酒店车上刷到《披荆斩棘》五公直播中小沈阳部落的《在梅边》，发文"燃爆啦"并@小沈阳、唐九洲、颜安。网友评价一针见血："原唱当场认证，比什么宣传都管用。"</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908rgjq.html" target="_blank">→ 新浪娱乐</a>
+            <div class="news-item-title">《余红旧事》黑马出圈，"中剧元年"第一次跑出了爆款</div>
+            <div class="news-item-desc">一部由长剧改成中剧的东北悬疑剧，靠压缩体量换回了叙事密度，在爱奇艺站内热度一路走高。降本增效讲了很多年，这次终于有了一个能被写进案例库的正面样本。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908rkgg.html" target="_blank">→ 新浪影视</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">蒋依依郭麒麟"结婚"传闻冲上热搜，工作室凌晨辟谣："纯属造谣"</div>
-            <div class="news-item-desc">网友爆料二人结婚，词条迅速登顶。18日凌晨蒋依依工作室回应"从认识到现在一直都是好朋友"，郭麒麟对接号亦发文辟谣。二人因2021年《赘婿》结缘，2022年曾有一次类似传闻。谣言—辟谣的24小时循环，已经成为艺人舆情的固定成本。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908ri9w.html" target="_blank">→ 新浪娱乐</a>
+            <div class="news-item-title">《复联 4》重映票房再超《阿凡达》，重回影史单片冠军</div>
+            <div class="news-item-desc">两部电影轮流靠重映夺回王座，已经成了某种周期性仪式。纪录的含金量在被稀释，但"影史第一"这四个字的传播价值，依然足够让院线再排一次片。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908rjc8.html" target="_blank">→ 新浪娱乐</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">维密大秀的"复活叙事"：一场持续七年的品牌资产重组</div>
+            <div class="news-item-desc">从停办、重启，到把"完美身体"改写成"多元的身体"，维密这几年做的事本质上只有一件——把品牌曾经最值钱的资产（秀场）留下来，把最致命的负债（审美霸权）拆掉。秀是壳，重写价值主张才是里子，这也是所有老化品牌唯一可走的路。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%BB%B4%E5%AF%86%E5%A4%A7%E7%A7%80" target="_blank">→ 微博话题</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">大促营销的关键词，从"最低价"换成了"新供给"</div>
+            <div class="news-item-desc">当价格战打到没有增量，平台开始卖别的东西：新品首发权、AI 导购、国补叠加、上门服务包。对品牌而言，这意味着投放素材的重点要从"便宜多少"转向"凭什么只有这里有"——稀缺性重新变成了比折扣更硬的通货。</div>
+            <a class="news-item-link" href="https://stock.jrj.com.cn/2026/10/16171158749305.shtml" target="_blank">→ 金融界</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">338 项明星合作的背面：代言正在从"背书"变成"内容供给"</div>
+            <div class="news-item-desc">品牌买的不再只是那张脸的可信度，而是一整套可以持续产出的内容产能与粉丝运营能力。代价是风险密度同步上升——当合作数量成为 KPI，舆情排查就必须从"选人"前移到"选题"。</div>
+            <a class="news-item-link" href="https://eu.36kr.com/zh/p/4019715197147010" target="_blank">→ 36 氪·美妆双 11</a>
           </div>
         </div>
 
         <div class="news-panel">
           <div class="news-panel-title">国际 · 地缘</div>
           <div class="news-item">
-            <div class="news-item-title">伊朗称"七日重开霍尔木兹海峡"方案仍在桌上，美方已作回应</div>
-            <div class="news-item-desc">伊朗外长阿拉格齐18日表示，伊朗以"七天计划"形式转交美国：若美方有诚意并接受条件，海峡将在第六天开放、第七天开始谈判。霍尔木兹承载全球约20%石油运输，这一纸方案直接牵动油价与全球通胀预期。</div>
-            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908riiw.html" target="_blank">→ 新浪国际</a>
+            <div class="news-item-title">法国全国示威约 55 万人，巴黎、里昂、马赛出现纵火打砸，欧洲多国同步抗议</div>
+            <div class="news-item-desc">抗议焦点是生活成本、公共服务与财政紧缩。里昂旅游局一处分支遭纵火抢劫，马赛、里尔市政厅被闯入。同一周内意大利、葡萄牙、比利时也爆发示威——这不是某一个国家的财政问题，是一整个欧洲的账单到期。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908rjsy.html" target="_blank">→ 新浪国际</a>
           </div>
           <div class="news-item">
-            <div class="news-item-title">特朗普签署行政令，在新一轮对俄制裁生效前两天豁免部分关键制裁与关税</div>
-            <div class="news-item-desc">该制裁法案经参众两院表决通过，总统在生效前两日签署豁免。行政与立法的这一拉扯，说明"制裁"正在变成一种可调节的谈判工具，而非单向的惩罚开关。</div>
-            <a class="news-item-link" href="https://www.voachinese.com/z/1746" target="_blank">→ VOA</a>
-          </div>
-          <div class="news-item">
-            <div class="news-item-title">"取消吃饭"的日本年轻人：每两天才吃一顿，替国家扛下GDP排名下滑的代价</div>
-            <div class="news-item-desc">日本爱媛县一位23岁打工人每两天吃一顿饭，原因是蔬菜和肉类涨价。当"吃饭"从日常变成预算项目，消费降级就不再是营销话术，而是真实的生活结构变化——这也是理解当下中国消费分层的一面镜子。</div>
-            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908ri4i.html" target="_blank">→ 新浪国际</a>
+            <div class="news-item-title">俄乌"能源停火"未果，美国调转矛头对伊朗施压，霍尔木兹海峡商船遇袭增多</div>
+            <div class="news-item-desc">泽连斯基与美方特使通话，通报佛州会晤后的外交进展；俄方称系统性打击仍在继续。与此同时，海峡商船遇袭数量上升，美伊围绕航道控制权的博弈趋紧。两条战线的共同点是：能源与航运，永远是地缘最先疼的地方。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/jjxw/2026-10-19/doc-inivtchx6265107.shtml" target="_blank">→ 新浪财经</a>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- ② 周末概览（补录） -->
-    <section class="section">
-      <div class="section-header">
-        <span class="section-icon">🌅</span>
-        <span class="section-title">周末概览</span>
-        <span class="section-subtitle">10/17 - 10/18 补录 · 4 件不能错过的事</span>
-      </div>
-      <div class="section-body">
-
-        <div class="weekend-note">
-          <strong>补录说明：</strong>周一的日更只覆盖今日，周末两天（周六 10/17、周日 10/18）发生的事容易滑过。这里用 4 条 + 一句趋势判断补齐，只留值得你花 2 分钟的事。
-        </div>
-
-        <div class="weekend-item">
-          <div class="weekend-day">
-            <div class="weekend-day-badge">周六</div>
-            <div class="weekend-day-date">10/17</div>
-          </div>
-          <div class="weekend-content">
-            <div class="weekend-title">DeepSeek-V4.1-Flash-1017 静悄悄上线，还顺手开了源</div>
-            <div class="weekend-desc">没有发布会，没有预热，10月17日下午网页、App、API 三端同步切换到 1017 版本，价格一个字没改，权重以 MIT 协议公开到 Hugging Face 和 ModelScope。官方措辞是"小幅更新"，实测却在 Terminal-Bench 上从 31.2 拉到 42.3 拿下第一，11 项测试里 4 项登顶，把 Kimi K3、GLM-5.3、GPT-5.6 Sol、Claude Opus 5 的对应成绩都超了。海外开发者周末在 Hacker News 上的反馈集中在两点：吞吐快、TTFT 低，"等 agent 干完活的时间变短了"。</div>
-            <div class="weekend-take"><strong>趋势判断：</strong>国产模型的竞争节奏已经换挡——不发大版本、不改名字、不涨价，靠一次"小版本"把 agent 与编程能力往上顶一档。这种"静默迭代"对用户的真实影响，比发布会更大。</div>
-            <div class="weekend-src"><a href="https://zhuanlan.zhihu.com/p/2095077758586167410" target="_blank">→ 知乎·新的斩杀线</a> · <a href="https://news.ycombinator.com/item?id=50129045" target="_blank">→ HN 讨论</a></div>
-          </div>
-        </div>
-
-        <div class="weekend-item">
-          <div class="weekend-day">
-            <div class="weekend-day-badge sun">周日</div>
-            <div class="weekend-day-date">10/18</div>
-          </div>
-          <div class="weekend-content">
-            <div class="weekend-title">演员吴越凌晨3点发文怒斥 AI 换脸带货："谁在利用AI肆意抓人替自己作恶？"</div>
-            <div class="weekend-desc">一个名为"花姐"的账号发布了以"明星同款、吴越推荐"为卖点的护肤品推广视频，用 AI 模仿吴越口吻，宣称"孕妇都能用"，画面还牵扯到邓亚萍的带货镜头。值得注意的是：视频页面<strong>已经标注了"含AI生成内容"</strong>。相关话题当天上午冲上热搜。</div>
-            <div class="weekend-take"><strong>趋势判断：</strong>"标注 AI 生成"正在从合规姿态退化为免责话术——标了，但照样骗。当名人脸可以被低成本租用，品牌最贵的资产不是曝光，而是"这句话确实是他说的"。</div>
-            <div class="weekend-src"><a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rin6.html" target="_blank">→ 新浪科技</a></div>
-          </div>
-        </div>
-
-        <div class="weekend-item">
-          <div class="weekend-day">
-            <div class="weekend-day-badge">周末</div>
-            <div class="weekend-day-date">10/17-18</div>
-          </div>
-          <div class="weekend-content">
-            <div class="weekend-title">存储芯片股集体跳水，与"官方看好"形成正面对撞</div>
-            <div class="weekend-desc">铠侠一周（10/9-10/16）跌 26%，市值从 6 月高峰的 60 万亿日元跌到 22 万亿左右。美光、闪迪、三星、SK海力士同步走弱。另一边，韩国财政部长周六表态"半导体繁荣至少持续到 2027 年"，国内长鑫科技前三季预盈 1310-1325 亿元、董事长提议回购 10-20 亿元。</div>
-            <div class="weekend-take"><strong>趋势判断：</strong>这是 AI 叙事第一次出现"上游涨价见顶"的交易信号。业绩还在，股价先走——市场在给"算力成本能否继续上行"重新定价，这直接关系到明年所有 AI 产品的成本模型。</div>
-            <div class="weekend-src"><a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rjce.html" target="_blank">→ 新浪科技</a> · <a href="https://finance.sina.com.cn/stock/cpbd/2026-10-19/doc-inivtchu0800848.shtml" target="_blank">→ 操盘必读</a></div>
-          </div>
-        </div>
-
-        <div class="weekend-item">
-          <div class="weekend-day">
-            <div class="weekend-day-badge sun">周日</div>
-            <div class="weekend-day-date">10/18</div>
-          </div>
-          <div class="weekend-content">
-            <div class="weekend-title">中国化妆品在韩国份额创下 8.4%，"设计+社媒+渠道"跑通了</div>
-            <div class="weekend-desc">韩国关税厅 18 日数据：1-9 月自华进口化妆品 6245 万美元，同比 +24.5%，而韩国化妆品进口总额只增 1.9%，中国份额从 6.9% 抬到 8.4%。韩媒给出的原因很直接：产品设计辨识度高、社交媒体营销打得准、渠道扩张快。</div>
-            <div class="weekend-take"><strong>判断：</strong>国货美妆出海正在从"性价比替代"转向"审美输出"。在一个把美妆当国产业的国家本土拿到结构性份额，比在东南亚拿十个第一更有说服力。</div>
-            <div class="weekend-src"><a href="https://k.sina.com.cn/article_7857201856_1d45362c001908ridm.html" target="_blank">→ 新浪时尚</a></div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ③ 站内要闻 -->
+    <!-- ② 站内要闻 -->
     <section class="section">
       <div class="section-header">
         <span class="section-icon">📊</span>
@@ -335,57 +271,57 @@
         <div class="trend-item">
           <div class="trend-rank hot">1</div>
           <div class="trend-content">
-            <div class="trend-title">#吴越怒斥AI换脸带货 · 明星肖像被"租用"</div>
-            <div class="trend-meta">AI治理 · 种草信任</div>
-            <div class="trend-obs">💡 趋势观察：这是本周对内容平台最直接的一记提醒。小红书上"真人实测""本人推荐"是种草的核心资产，一旦用户开始怀疑"这个人真的用过吗"，整个信任折价会传导到所有品类。品牌侧的机会点是反向的：把"可验证的真实"做成内容卖点——素人长期使用记录、可追溯的成分/参数、创作者出镜口播，这些"防伪内容"会越来越值钱。</div>
-            <div class="trend-source"><a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rin6.html" target="_blank">→ 新浪科技</a></div>
+            <div class="trend-title">#我们的社会只筛选不培养 登顶热搜，208 万讨论量</div>
+            <div class="trend-meta">社会情绪话题 · 职场与教育赛道</div>
+            <div class="trend-obs">💡 趋势观察：这是一句"结论式标题"，没有事件、没有主角，却能破 200 万——说明它替一大批人说出了一句憋了很久的话。这类"共名式情绪话题"在小红书有极强的二次生长能力：一旦有人在评论区写下自己的具体经历，话题就从观点变成了故事集。对品牌而言，这是最危险也最珍贵的位置：碰它需要真话，蹭它会立刻被识破。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%88%91%E4%BB%AC%E7%9A%84%E7%A4%BE%E4%BC%9A%E5%8F%AA%E7%AD%9B%E9%80%89%E4%B8%8D%E5%9F%B9%E5%85%BB" target="_blank">→ 微博热搜·只筛选不培养</a></div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank hot">2</div>
           <div class="trend-content">
-            <div class="trend-title">#双11预售首日战报 · 美妆占七成，爆款上架即售罄</div>
-            <div class="trend-meta">大促节点 · 美妆个护</div>
-            <div class="trend-obs">💡 趋势观察：今年预售的结构信号很清楚——头部直播间 600 个链接里美妆占 72%，且集中在"面霜/面膜/精华"这类高决策、高复购的品类。对小红书意味着两件事：一是大促前的"决策前内容"窗口已经打开（对比测评、成分科普、肤质匹配），二是"补仓仍售罄"的稀缺感本身可被内容放大，品牌应把"周期预售/补货节奏"当成内容日历的一部分来排。</div>
-            <div class="trend-source"><a href="https://tech.cnr.cn/techgd/20261016/t20261016_527844022.shtml" target="_blank">→ 央广网</a></div>
+            <div class="trend-title">#2026维秘大秀 与 #奚梦瑶重返维密T台走秀 双话题在榜</div>
+            <div class="trend-meta">时尚赛道 · 身体叙事与人物故事</div>
+            <div class="trend-obs">💡 趋势观察：注意这两个话题的分工——一个是"秀"，一个是"人"。品牌话题负责被看见，人物话题负责被讨论。小红书上的时尚内容早已不吃"完美身材"这一套，真正跑量的是"她这些年经历了什么"。秀场内容的站内二次创作，几乎全部发生在人物侧：重返、退场、状态、身材管理。给品牌的提示很直接：大事件想出圈，必须准备好一个"人"的故事，而不只是一组"造型"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A5%9A%E6%A2%A6%E7%91%B6%E9%87%8D%E8%BF%94%E7%BB%B4%E5%AF%86T%E5%8F%B0%E8%B5%B0%E7%A7%80" target="_blank">→ 微博热搜·奚梦瑶重返维密</a></div>
           </div>
         </div>
 
         <div class="trend-item">
-          <div class="trend-rank hot">3</div>
+          <div class="trend-rank">3</div>
           <div class="trend-content">
-            <div class="trend-title">#三季度经济数据今日发布 · 预期4.4%</div>
-            <div class="trend-meta">宏观 · 消费信心</div>
-            <div class="trend-obs">💡 趋势观察：宏观数据在小红书的传播方式一向不是"看数字"，而是"翻译成生活"——工资有没有涨、房租贵不贵、要不要现在买大件。品牌可预判的舆情节奏是：数据好于预期→"消费回暖"类内容有情绪红利；低于预期→"理性消费/平替/断舍离"类内容会起量。两条线都值得提前备好素材。</div>
-            <div class="trend-source"><a href="https://www.21jingji.com/article/20261019/herald/4bdcfc243f71c6d9fa3b85cd1424896e.html" target="_blank">→ 21经济网</a></div>
+            <div class="trend-title">"人类丰容"继续扩散：#人你该丰容了 90 天浏览破亿，#家的丰容计划 破 8 亿</div>
+            <div class="trend-meta">生活方式赛道 · 空间改造与自我照料</div>
+            <div class="trend-obs">💡 趋势观察：一个动物学词汇被借来治疗人的倦怠——这是 2026 年最有解释力的内容母题之一。它的高明之处在于把"我想要更好的生活"翻译成了"我在为环境做设计"，于是消费行为获得了正当性：换一盏灯、挪一次冰箱、学一门手艺，都是"丰容"。对家居、家电、兴趣培训类品牌，这是一个尚未被过度开采的语义入口——不是卖产品，是卖"环境改造的一小步"。</div>
+            <div class="trend-source"><a href="https://www.itopmarketing.com/info22900" target="_blank">→ TopMarketing·小红书热点内容解读</a></div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank">4</div>
           <div class="trend-content">
-            <div class="trend-title">#干发喷雾爆卖上百万件 · "油头懒人神器"到底能不能替代洗头</div>
-            <div class="trend-meta">个护洗护 · 懒人经济</div>
-            <div class="trend-obs">💡 趋势观察：这是典型的"需求真实、认知混乱"品类——用户买的是"一秒高颅顶"，但产品只能"救急"。这类品类的机会不在放大焦虑，而在做"使用边界教育"：什么时候用、能撑多久、长期用会不会堵毛囊。把边界讲清楚的品牌，反而能拿到复购；只讲爽感的，做一锤子买卖。</div>
-            <div class="trend-source"><a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rin2.html" target="_blank">→ 消费者报道</a></div>
+            <div class="trend-title">#AI剧真实到几乎可以替代演员 引发讨论</div>
+            <div class="trend-meta">内容生产赛道 · 创作者生态</div>
+            <div class="trend-obs">💡 趋势观察：当"能不能看出来"不再是问题，讨论就自动转向了"该不该"。这类话题在站内通常有两条并行曲线：技术惊叹（怎么做出来的）与伦理不安（谁被替代了）。品牌与平台在中间地带其实有空间——把 AI 明明白白地当成工具来讲，比假装它不存在更安全，也更容易获得专业创作者的好感。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=AI%E5%89%A7%E7%9C%9F%E5%AE%9E%E5%88%B0%E5%87%A0%E4%B9%8E%E5%8F%AF%E4%BB%A5%E6%9B%BF%E4%BB%A3%E6%BC%94%E5%91%98" target="_blank">→ 微博热搜·AI 剧</a></div>
           </div>
         </div>
 
         <div class="trend-item">
           <div class="trend-rank">5</div>
           <div class="trend-content">
-            <div class="trend-title">#中国美妆在韩国份额升至8.4% · 国货出海新坐标</div>
-            <div class="trend-meta">国货出海 · 品牌势能</div>
-            <div class="trend-obs">💡 趋势观察："被韩国人买走的中国彩妆"是个天然的高传播势能选题——它同时满足民族自豪感与真实数据支撑，比空洞的"国货崛起"更有说服力。品牌做这类内容时建议绑定具体场景（韩国女生怎么用、在哪个渠道买、和本土品牌差在哪），避免变成纯情绪输出。</div>
-            <div class="trend-source"><a href="https://k.sina.com.cn/article_7857201856_1d45362c001908ridm.html" target="_blank">→ 新浪时尚</a></div>
+            <div class="trend-title">银发经济政策话题升温，60 岁以上人口超 3.23 亿</div>
+            <div class="trend-meta">人群红利 · 被低估的增量市场</div>
+            <div class="trend-obs">💡 趋势观察：小红书的主流内容语言与 3.23 亿人的真实需求之间，仍隔着一整套审美与句法。但变化正在发生——"给爸妈买什么""陪父母改造家""退休后第一件事"这类笔记的互动结构，明显不同于年轻向内容：决策者与使用者分离，评论区更像咨询现场。谁能把这套语言做出来，谁就先拿到这块增量。</div>
+            <div class="trend-source"><a href="https://www.qian-gua.com/information/detail/3318" target="_blank">→ 千瓜·小红书平台洞察</a></div>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- ④ 行业学习 -->
+    <!-- ③ 行业学习 -->
     <section class="section">
       <div class="section-header">
         <span class="section-icon">📚</span>
@@ -393,178 +329,203 @@
         <span class="section-subtitle">广告 · 商业 · 营销</span>
       </div>
       <div class="section-body">
-        <div class="learning-label">今日主题 · 背书通胀</div>
-        <div class="learning-title">当一张脸可以被租用：代言体系的信任通胀与品牌的自证义务</div>
-        <div class="learning-subtitle">从吴越凌晨那条微博说起——"含AI生成内容"的标注，为什么救不了品牌？</div>
+        <div class="learning-label">今日主题 · 大促的黄昏</div>
+        <div class="learning-title">第十八年，双 11 不再喊"最低价"</div>
+        <div class="learning-subtitle">一个大促节怎样从"制造稀缺"走到"制造服务"</div>
         <div class="learning-body">
-          <p>10月18日凌晨三点，演员吴越发了一条微博："一觉醒来，谁在利用AI肆意抓人替自己作恶？"她喊话的对象是一个叫"花姐"的账号。这个账号用AI合成了她的形象与口吻，做了一支护肤品推广视频，宣称"明星同款、吴越推荐"，甚至加了一句"孕妇都能用"。视频页面上明确标注了"含AI生成内容"。</p>
-          <p>这条微博之所以炸，不是因为技术有多新，而是因为它暴露了一个结构性问题：<strong>标注了 AI，但欺骗照旧完成。</strong>标注是给监管看的，不是给消费者看的。用户在信息流里刷到的那 3 秒，看到的仍然是"吴越在推荐"。</p>
-          <p>要理解这件事的分量，得先看清代言这门生意到底在卖什么。品牌付给艺人的钱，买的从来不是那张脸的曝光量——曝光可以买投放。买的是<strong>一种可追责的信誉转移</strong>：如果产品出问题，艺人的声誉会受损，所以艺人会谨慎选择。这个"连坐机制"才是背书的价值来源。</p>
-          <p>AI 换脸把这个机制打穿了。当一张脸可以被低成本租用、且不需要承担任何后果时，<strong>背书就从"信用抵押"退化为"视觉素材"</strong>。经济学上这叫劣币驱逐良币：造假成本趋近于零，真代言的溢价就被稀释。我把它叫做<strong>背书通胀</strong>——同样是"某明星推荐"，含金量在快速贬值。</p>
-          <p>这对平台的挑战比想象中更硬。过去十年，内容平台解决真实性的方式是"身份认证 + 内容审核 + 用户举报"，本质是<strong>事后追责</strong>。但AI伪造的供给速度已经超过了审核的处置速度：一个被封，十个重生。事后追责在这里是结构性失效的。</p>
-          <p>所以真正的解题方向只能是<strong>把"真实性"从平台的责任变成内容自带的属性</strong>。可以想见的三条路：<strong>其一，可验证凭证</strong>——艺人代言进入平台时绑定合同/授权哈希，内容侧展示"已授权"而非"含AI"；<strong>其二，转向过程性内容</strong>——比起精修图，未剪辑的试用过程、连续多日记录、素人长周期反馈，这些伪造成本高得多；<strong>其三，把"谁在说"变成"能验证什么"</strong>——从"明星推荐"转向"检测报告、成分表、第三方测评"这类硬证据。</p>
-          <p>对做种草的人来说，这件事的结论并不悲观，反而是个机会窗口：<strong>当"看起来像真的"变得廉价，"确实是真的"就会变成稀缺品，而稀缺品一定溢价。</strong>接下来一两年，我判断品牌预算会从"买一张脸"部分迁移到"买一段可追溯的过程"。谁能把"真实"做成可视化的产品能力，谁就拿走了这轮信任重构的红利。</p>
+          <p>2009 年，淘宝商城在光棍节做了一场促销，27 个品牌参加，销售额 5200 万。它的初衷朴素得几乎不像战略：11 月是零售淡季，得凭空造一个理由出来。</p>
+          <p>这个理由后来长成了全球最大的购物节。它的核心机制从来不是折扣，而是<strong>把时间切成稀缺</strong>——一年只有这一天，所以你必须现在决定。这条逻辑支撑了十几年：零点抢购、限量秒杀、预售锁库存，全部是在给"现在"加压。</p>
+          <p>转折发生在最近五年。当大促从一年一次变成一月一次，当百亿补贴成为日常配置，"稀缺"就被自己稀释了。<strong>大促真正的敌人从来不是彼此，而是"日常"</strong>。于是平台开始换叙事：2026 年三家同日开场，天猫讲 100 万品牌与 7200 万款商品的新品首发，京东把家政保洁、家电清洗、家居安装、养老、宠物写成服务 SKU，抖音干脆只讲秋冬囤货这一个场景。</p>
+          <p>这是一次不太被注意、但很关键的转身：<strong>从"卖更便宜的商品"转向"卖更完整的解决方案"</strong>。价格是标量，服务是矢量——前者只能比大小，后者可以比方向。这也是为什么"服务消费"第一次被写进了大促的主舞台：它不可比价，因而重新变得稀缺。</p>
+          <p>对做平台大事件的人来说，这条曲线值得反复看。任何靠"制造稀缺"起势的 IP，都会在中途遇到同一个问题：当稀缺被自己量产，你还剩什么？双 11 给的答案是把竞争维度从"更便宜"挪到"更完整"——<strong>当价格无法再拉开差距，就去改变比较的方式</strong>。这不是妥协，这是所有长寿 IP 都要学会的第二次创业。</p>
         </div>
         <div class="learning-source">
           📖 参考来源：
-          <a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rin6.html" target="_blank">新浪科技 · 吴越凌晨发文怒斥AI换脸带货</a> ·
-          <a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rin8.html" target="_blank">新浪科技 · ICAIS 2026 AI与科学探索</a> ·
-          <a href="https://k.sina.com.cn/article_7857201856_1d45362c001908rbhq.html" target="_blank">新浪科技 · 顶尖模型商业分析正确率不足50%</a>
+          <a href="https://www.21jingji.com/article/20261016/herald/03b09e5f52673b56f6c88dd94ca5c7f2.html" target="_blank">21 经济网《"双11"错位竞赛》</a> ·
+          <a href="https://www.163.com/dy/article/L9554RUV051182VH.html" target="_blank">网易《2026 双11前瞻：消费狂欢褪色，零售"大促"重置》</a> ·
+          <a href="https://stock.jrj.com.cn/2026/10/16171158749305.shtml" target="_blank">金融界《不止低价！今年"双11"，变了》</a>
         </div>
       </div>
     </section>
 
-    <!-- ⑤ 节日词典 -->
+    <!-- ④ 节日词典 -->
     <section class="section">
       <div class="section-header">
         <span class="section-icon">🎪</span>
         <span class="section-title">节日词典</span>
-        <span class="section-subtitle">今日登场 · 世界镇痛日</span>
+        <span class="section-subtitle">今日登场 · 墨西哥亡灵节</span>
       </div>
 
-      <div class="festival-banner-placeholder">🩹🌡️💊</div>
+      <div class="festival-banner-placeholder">💀🌼🕯️</div>
 
       <div class="section-body">
         <div class="festival-meta">
-          <span class="festival-tag highlight">公共健康</span>
-          <span class="festival-tag">10月第三个周一</span>
-          <span class="festival-tag">IASP 2004年发起</span>
-          <span class="festival-tag">中国镇痛周同期</span>
+          <span class="festival-tag highlight">文化盛事</span>
+          <span class="festival-tag">墨西哥·墨西哥城</span>
+          <span class="festival-tag">每年 11 月 1—2 日</span>
+          <span class="festival-tag">UNESCO 非遗</span>
         </div>
-        <div class="festival-name">世界镇痛日</div>
-        <div class="festival-name-en">Global Day Against Pain · 始于2004年 · 国际疼痛学会（IASP）</div>
+        <div class="festival-name">亡灵节</div>
+        <div class="festival-name-en">Día de los Muertos · 前哥伦布时期起源，2008 年列入人类非遗</div>
 
         <div class="festival-block">
-          <div class="festival-block-title">【过去】一句被写进医学史的话：疼痛本身就是一种疾病</div>
+          <div class="festival-block-title">【过去】不是哀悼，是请客</div>
           <div class="festival-block-body">
-            <p>在很长一段时间里，疼痛只是"症状"——它是某种疾病的信号灯，治好病，灯就灭了。这个观念在20世纪后半叶被彻底推翻。</p>
-            <p>转折点是 <strong>1965 年 Melzack 与 Wall 提出的"门控理论"</strong>：疼痛不是从伤口直达大脑的一条直线，而是脊髓里一道可以被"调大或调小"的闸门——情绪、注意力、预期都会参与调节。这解释了为什么战场上的重伤员可以不喊痛，也解释了安慰剂为什么真的有效。理论一出，疼痛从"被动感受"变成了"可干预的神经过程"。</p>
-            <p>1973 年，国际疼痛研究协会（IASP）成立；<strong>2004 年，IASP 把每年 10 月的第三个周一定为"世界镇痛日"</strong>，中华医学会同期把 10 月第三周定为"中国镇痛周"。这背后是一个观念的正式更名：<strong>慢性疼痛本身就是一种疾病，而不是别的病的附属品。</strong></p>
+            <p>在西班牙人到来之前，墨西哥谷地的纳瓦人已经有了一套完整的生死观：死亡不是终点，是另一段旅程的开始。阿兹特克历法里有一整个月用来祭祀亡者，由死亡女神 Mictēcacihuātl 主管——她是一位"白骨之躯、眼窝里镶着星"的神，负责看守骸骨，并在每年这个时候让亡魂短暂回家。</p>
+            <p>16 世纪，传教士把这场祭祀挪到了天主教万灵节前后，<strong>原住民的祭坛与天主教的追思弥撒合流</strong>，最终固定成 11 月 1 日（迎回夭折的孩子，称"小天使日"）与 11 月 2 日（迎回成人亡者）。融合没有消灭它，反而让它长出了新的皮肤。</p>
+            <p>真正让亡灵节拥有"面孔"的，是 1910 年前后版画家 <strong>José Guadalupe Posada</strong> 画下的那具戴宽檐帽、穿华服的骷髅——他用骷髅讽刺那些把自己装扮成欧洲贵族的墨西哥富人。后来 Diego Rivera 把她画进壁画，并给了她一个名字：<strong>La Catrina</strong>。今天你看到的每一张亡灵节海报，几乎都是她的后代。</p>
           </div>
         </div>
 
         <div class="festival-block">
-          <div class="festival-block-title">【现在】2026 年的主题落在"神经病理性疼痛"上</div>
+          <div class="festival-block-title">【现在】一场把死亡做成公共空间的节日</div>
           <div class="festival-block-body">
             <div class="festival-stats">
               <div class="festival-stat">
-                <div class="festival-stat-num">1/5</div>
-                <div class="festival-stat-label">全球成年人受慢性疼痛困扰</div>
+                <div class="festival-stat-num">11/1–2</div>
+                <div class="festival-stat-label">两天，分迎孩童与成人</div>
               </div>
               <div class="festival-stat">
-                <div class="festival-stat-num">22年</div>
-                <div class="festival-stat-label">世界镇痛日已持续</div>
+                <div class="festival-stat-num">2008</div>
+                <div class="festival-stat-label">列入 UNESCO 人类非遗</div>
               </div>
               <div class="festival-stat">
-                <div class="festival-stat-num">0-10</div>
-                <div class="festival-stat-label">最通用的疼痛数字量表（NRS）</div>
+                <div class="festival-stat-num">4 分钟</div>
+                <div class="festival-stat-label">《幽灵党》开场一镜到底</div>
               </div>
               <div class="festival-stat">
-                <div class="festival-stat-num">第3周</div>
-                <div class="festival-stat-label">中国镇痛周</div>
+                <div class="festival-stat-num">8.14 亿美元</div>
+                <div class="festival-stat-label">《寻梦环游记》全球票房</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">百万级</div>
+                <div class="festival-stat-label">墨西哥城游行年观演人次</div>
               </div>
             </div>
-            <p>今年国内多家医院的义诊主题集中在<strong>"关注神经病理性疼痛"</strong>——带状疱疹后神经痛、糖尿病周围神经病变、三叉神经痛这类"查不出伤口却很痛"的病。它之所以被单独拎出来，是因为它最难被理解：没有可见的损伤，患者常被当成"想太多"。</p>
-            <p>这也解释了为什么疼痛医学最核心的工具不是药，而是<strong>量表</strong>。0 到 10 分，让一种看不见的感受第一次可以被记录、被比较、被写入病历。疼痛医学的全部进步，都建立在这句朴素的方法论上：<strong>先让它可测量，才可能被治疗。</strong></p>
+            <p>它的现场语言极其具体：<strong>万寿菊</strong>（cempasúchil）被铺成一条橙色的路，据说亡魂循着气味与颜色回家；<strong>祭坛</strong>（ofrenda）分三层，摆上亡者生前爱吃的菜、喝过的酒、抽过的烟，孩子的祭坛上放玩具；剪纸幡（papel picado）在风里响，糖骷髅上写着别人的名字——因为那本来就是一句玩笑：<em>我们都会变成这样</em>。</p>
+            <p>商业化来得又快又彻底。2015 年《007：幽灵党》在墨西哥城拍了一段 4 分钟开场长镜头，那场"亡灵节大游行"其实是电影虚构的布景；结果墨西哥城政府在 2016 年真的把游行办了起来，如今它已是城市年度最大的旅游事件之一。2017 年《寻梦环游记》（Coco）把"被遗忘才是真正的死亡"这句设定卖到了全世界，全球票房 8.14 亿美元。</p>
+            <p>有意思的是，这套商业化的成功并没有削弱它的仪式感——因为亡灵节的核心动作是<strong>参与</strong>，不是观看。搭祭坛、做菜、扫墓、化妆上街，每个人都是主角。它卖的不是景观，是"我也能加入"。</p>
           </div>
         </div>
 
         <div class="festival-block">
-          <div class="festival-block-title">【未来】对品牌的一点启发：痛，是小红书上最高频的"未被满足"</div>
+          <div class="festival-block-title">【未来】2026 届：当非遗遇上流量</div>
           <div class="festival-block-body">
-            <p>把镜头从医院转向内容平台，会发现一个有意思的对应关系：<strong>小红书上大量真实需求，都是以"痛"的形式被表达的。</strong>痛经、偏头痛、腰痛、颈椎痛、口腔溃疡、换季烂脸、熬夜后的心悸——这些不是"我想要某个产品"，而是"我受不了这种状态"。</p>
-            <p>疼痛医学给营销人的启发是两层：其一，<strong>描述痛的场景，比描述产品的好，更能建立共情</strong>。用户搜索的不是成分，是"来例假第一天怎么熬过去"。其二，<strong>不要把痛当成焦虑放大器</strong>。医学上对慢性疼痛最有效的干预之一是"疼痛教育"——告诉患者这个痛为什么发生、什么时候会好，恐惧本身就会降低痛感。品牌做"痛"的内容，同理：给出机制解释与边界，比制造恐慌更能换来长期信任。</p>
-          </div>
-          <div class="festival-insight">
-            <strong>给大事件策划的启发：</strong>"世界镇痛日"这类公共健康节点，天生具备"高共鸣 + 低商业感"的双重优势——每个人都痛过。品牌参与的正确姿势不是"卖止痛"，而是<strong>做一次集体的"疼痛命名"</strong>：把那些说不出口的、被当成矫情的痛，一个个叫出名字。命名本身就是一种照顾，而照顾是最难被替代的品牌资产。
+            <p>距本届不到两周，墨西哥城已在布置主祭坛与游行路线。近年最大的争议来自本地社区：<strong>当万寿菊的价格与游客数量一同上涨，"给自家人搭的祭坛"是否会变成"给外人看的展台"？</strong>政府与非遗保护方的应对思路，是把资源往社区与家庭祭坛回补——让最原生的那一层不被舞台挤走。</p>
+            <div class="festival-insight">
+              <strong>对小红书平台大事件的启发：</strong>亡灵节是少数把<strong>"纪念"做成了可参与动作</strong>的节日。它的转化公式很干净：一个普世的情绪（想念）＋ 一套可执行的动作（搭一个台子、摆一样他爱吃的东西、说一句没说完的话）＝ 一场人人能参加的仪式。平台做节点 IP 时最常犯的错，是把情绪做成舞台，把用户做成观众。真正的做法恰恰相反——<strong>给出一个动作模板，把舞台让给用户</strong>。另一个空白点更值得注意：站内关于"如何谈论逝去""如何纪念"的内容长期稀缺而分散，这几乎是唯一还没被消费主义充分占据的情感高地。谁先提供一套体面的表达语言，谁就拿到了一个长周期的内容资产。
+            </div>
           </div>
         </div>
 
         <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
           📖 来源：
-          <a href="https://baike.baidu.com/item/%E4%B8%96%E7%95%8C%E9%95%87%E7%97%9B%E6%97%A5/8445231" target="_blank">世界镇痛日 · 词条</a> ·
-          <a href="https://www.cn-healthcare.com/articlewm/20221011/content-1448504.html" target="_blank">健康界 · 世界镇痛日与抗痛年主题</a> ·
-          <a href="https://www.sohu.com/a/1087748079_400764" target="_blank">2026 世界镇痛日义诊主题：关注神经病理性疼痛</a>
+          <a href="https://zh.wikipedia.org/wiki/%E4%BA%A1%E7%81%B5%E8%8A%82" target="_blank">维基百科·亡灵节</a> ·
+          <a href="https://ich.unesco.org/en/lists" target="_blank">UNESCO 非物质文化遗产名录</a> ·
+          <a href="https://www.britannica.com/topic/Day-of-the-Dead" target="_blank">Britannica · Day of the Dead</a> ·
+          <a href="https://www.nationalgeographic.com/culture/article/day-of-the-dead" target="_blank">National Geographic</a>
         </div>
       </div>
     </section>
 
-    <!-- ⑥ 知识增长 -->
+    <!-- ⑤ 知识增长 -->
     <section class="section">
       <div class="section-header">
         <span class="section-icon">🌐</span>
         <span class="section-title">知识增长</span>
-        <span class="section-subtitle">今日策展 · 看不见的测量</span>
+        <span class="section-subtitle">今日策展 · 拉美文学爆炸</span>
       </div>
       <div class="section-body">
-        <div class="knowledge-theme">🔬 主题策展 · 人类如何测量看不见的感受</div>
-        <div class="knowledge-headline">从 0 到 10：疼痛是怎么被"读"出来的</div>
-        <div class="knowledge-tagline">「所有无法测量的痛苦，都容易被当成不存在。」</div>
+        <div class="knowledge-theme">📖 主题策展 · 六个人与一片大陆</div>
+        <div class="knowledge-headline">马孔多下了一场四年的雨：拉美文学爆炸群像</div>
+        <div class="knowledge-tagline">「他们把一片被讲错了几百年的大陆，重新讲了一遍。」</div>
 
         <div class="knowledge-intro">
-          疼痛是一种彻底的私密体验——它只发生在你身体里，别人永远无法直接验证。这带来一个近乎哲学的问题：<strong>医学怎么敢对一个看不见的东西下诊断、开药、做手术？</strong>答案是：人类花了七十年，发明了一整套把主观感受翻译成客观数据的工具。这套工具背后的思路，比疼痛本身更值得学——<strong>任何"感受型"的东西（疼痛、疲惫、幸福、品牌好感），只要能找到可靠的翻译方式，就能进入理性决策系统。</strong>
+          1960—1970 年代，一批拉美作家几乎同时被欧洲翻译、被世界读到，史称"文学爆炸"（La Explosión）。这不是一场运动，没有宣言、没有共同纲领，甚至彼此并不都合得来。<br><br>
+          他们共享的只有一件事：<strong>拒绝用别人的语法描述自己的现实</strong>。当一片大陆的历史本身就像魔幻——独裁者能活两百年、香蕉公司能屠杀三千人、死者会因为被遗忘而消失——写实主义反而成了谎言。于是他们发明了一种更准确的写法。<br><br>
+          对做内容的人，这是一堂关于"如何讲述不可信之事"的课。
         </div>
 
         <div class="knowledge-cards">
 
           <div class="knowledge-card">
-            <div class="knowledge-card-img-placeholder">🚪</div>
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Gabriel_Garcia_Marquez.jpg/440px-Gabriel_Garcia_Marquez.jpg"
+              alt="加西亚·马尔克斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🦋</div>
             <div class="knowledge-card-body">
-              <div class="knowledge-card-name">Ronald Melzack</div>
-              <div class="knowledge-card-sub">加拿大 · 麦吉尔大学 · 门控理论 & McGill问卷</div>
-              <div class="knowledge-card-work">1965 年与 Wall 提出"门控理论"，推翻疼痛的直线传导模型。1971 年发明 McGill 疼痛问卷（MPQ）——用 78 个词让患者描述疼痛的质感（灼烧、针刺、绞痛），第一次把"什么样的痛"变成了可分类的数据。</div>
+              <div class="knowledge-card-name">加西亚·马尔克斯</div>
+              <div class="knowledge-card-sub">Gabriel García Márquez · 哥伦比亚 · 1982 诺奖</div>
+              <div class="knowledge-card-work">《百年孤独》用一个家族七代人的时间，写尽一片大陆的循环史。开篇那句"多年以后，面对行刑队……"重新定义了小说的时态。</div>
             </div>
           </div>
 
           <div class="knowledge-card">
-            <div class="knowledge-card-img-placeholder">🧠</div>
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Jorge_Luis_Borges_1951%2C_by_Grete_Stern.jpg/440px-Jorge_Luis_Borges_1951%2C_by_Grete_Stern.jpg"
+              alt="博尔赫斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📚</div>
             <div class="knowledge-card-body">
-              <div class="knowledge-card-name">Patrick Wall</div>
-              <div class="knowledge-card-sub">英国 · 神经科学家 · 门控理论共同提出者</div>
-              <div class="knowledge-card-work">与 Melzack 共同写下那篇改变疼痛研究的论文。他后半生最重要的工作是证明"疼痛可以被注意力、情绪和预期调节"——这句话后来演化成了疼痛管理的心理干预体系，也解释了安慰剂为何有效。</div>
+              <div class="knowledge-card-name">豪尔赫·路易斯·博尔赫斯</div>
+              <div class="knowledge-card-sub">Jorge Luis Borges · 阿根廷 · 爆炸的前驱</div>
+              <div class="knowledge-card-work">《小径分岔的花园》把时间写成一张分岔的网。他几乎不写现实，却为整个拉美提供了"如何虚构"的方法论。</div>
             </div>
           </div>
 
           <div class="knowledge-card">
-            <div class="knowledge-card-img-placeholder">💉</div>
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mario_Vargas_Llosa.jpg/440px-Mario_Vargas_Llosa.jpg"
+              alt="巴尔加斯·略萨"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎭</div>
             <div class="knowledge-card-body">
-              <div class="knowledge-card-name">Henry Beecher</div>
-              <div class="knowledge-card-sub">美国 · 麻醉学家 · 安慰剂效应的量化者</div>
-              <div class="knowledge-card-work">二战战地医院里，他发现重伤士兵极少要求吗啡——因为脱离战场后，"伤"的意义变了。1955 年他发表《强大的安慰剂》，用数据证明"相信有效"本身就能产生生理效果，从此所有药物试验都必须设对照组。</div>
+              <div class="knowledge-card-name">马里奥·巴尔加斯·略萨</div>
+              <div class="knowledge-card-sub">Mario Vargas Llosa · 秘鲁 · 2010 诺奖</div>
+              <div class="knowledge-card-work">《绿房子》《城市与狗》用多线并置的结构，把军校、妓院与丛林拼成一张社会剖面图。他也是爆炸一代里最积极参与政治的一位。</div>
             </div>
           </div>
 
           <div class="knowledge-card">
-            <div class="knowledge-card-img-placeholder">🫀</div>
+            <div class="knowledge-card-img-placeholder">🐈</div>
             <div class="knowledge-card-body">
-              <div class="knowledge-card-name">Bud Craig</div>
-              <div class="knowledge-card-sub">美国 · 神经解剖学家 · 内感受研究</div>
-              <div class="knowledge-card-work">他追踪到一条从身体内部直通大脑岛叶的神经通路，命名了"内感受"（interoception）——身体对自身状态的感知。疼痛、饥饿、心跳、呼吸紧迫感，都走这条路。他把"第六感"从玄学变成了解剖学。</div>
+              <div class="knowledge-card-name">胡利奥·科塔萨尔</div>
+              <div class="knowledge-card-sub">Julio Cortázar · 阿根廷 · 结构实验者</div>
+              <div class="knowledge-card-work">《跳房子》给了读者两种读法：按顺序读到第 56 章停下，或按作者给的路径跳着读完全书。他相信读者应该有权改写小说的形状。</div>
             </div>
           </div>
 
           <div class="knowledge-card">
-            <div class="knowledge-card-img-placeholder">📡</div>
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Carlos_Fuentes.jpg/440px-Carlos_Fuentes.jpg"
+              alt="卡洛斯·富恩特斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏙️</div>
             <div class="knowledge-card-body">
-              <div class="knowledge-card-name">Irene Tracey</div>
-              <div class="knowledge-card-sub">英国 · 牛津大学 · 疼痛神经影像</div>
-              <div class="knowledge-card-work">用 fMRI 拍下"疼痛在大脑里的样子"，证明疼痛强度与特定脑区活动相关，且可以被预期和注意力显著改变。她是"疼痛是大脑的产物，而非伤口的直接投影"这一观点最有力的实验推动者之一。</div>
+              <div class="knowledge-card-name">卡洛斯·富恩特斯</div>
+              <div class="knowledge-card-sub">Carlos Fuentes · 墨西哥 · 城市的书写者</div>
+              <div class="knowledge-card-work">《最明净的地区》把墨西哥城本身当成主角，让不同阶层的声音在同一页上抢话。他也是把这批作家推向英语世界的关键推手。</div>
             </div>
           </div>
 
           <div class="knowledge-card">
-            <div class="knowledge-card-img-placeholder">🛡️</div>
+            <div class="knowledge-card-img-placeholder">🧾</div>
             <div class="knowledge-card-body">
-              <div class="knowledge-card-name">Lorimer Moseley</div>
-              <div class="knowledge-card-sub">澳大利亚 · 疼痛科学家 · 疼痛教育</div>
-              <div class="knowledge-card-work">提出"疼痛是保护，不是伤害的度量"。他的科普被全球数百万慢性疼痛患者看过：痛感是大脑基于"这里危险吗"做出的判断，因此理解机制本身就能降低疼痛。他把"解释"变成了一种疗法。</div>
+              <div class="knowledge-card-name">罗贝托·波拉尼奥</div>
+              <div class="knowledge-card-sub">Roberto Bolaño · 智利 · 爆炸之后</div>
+              <div class="knowledge-card-work">《2666》用五条互不相交的线，绕着一座边境城市里持续发生的女性谋杀案转。他没有继承爆炸的荣耀，而是继承了它的良心。</div>
             </div>
           </div>
 
         </div>
 
         <div class="knowledge-coda">
-          这套方法论的迁移价值，恰好落在营销人每天做的事上。<strong>疼痛量表的三条经验，几乎可以照搬用来做"情绪价值"的测量：</strong>一是承认自我报告是金标准——用户说"值"就是值，别用行为数据去否认他的感受；二是必须多维——McGill 问卷不让患者只打一个分，而要描述质感；同理，"满意度 8 分"远不如"她具体在哪个瞬间觉得被照顾到"有用；三是解释即干预——把机制讲清楚，感受本身就会改变，这正是好内容比硬广更有效的原因。测量感受的终极目的不是打分，而是<strong>让人被准确地理解</strong>。
+          这批作家最值得借用的一点，不是"魔幻"，而是<strong>他们处理素材的胆量</strong>：把最不可信的现实，用最不容置疑的语气讲出来。马尔克斯写飞上天的美人，语气像在写天气预报。给品牌的启发是——一个故事的说服力，往往不取决于它多真实，而取决于讲述者有多不心虚。你越是不解释、不铺垫、不自我怀疑，读者越愿意跟你走进去。
         </div>
       </div>
     </section>
@@ -573,7 +534,7 @@
 </div>
 
 <footer class="site-footer">
-  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新 · 本期含上周末（10/17-10/18）补录
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
 </footer>
 
 
