@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/10/28</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .day-tag { font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">2026 · 10 · 28 · WED</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/10/28/index.html" class="active">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+      <li><a href="/daypulse/2026/10/19/index.html">2026 / 10 / 19</a></li>
+      <li><a href="/daypulse/2026/9/30/index.html">2026 / 9 / 30</a></li>
+      <li><a href="/daypulse/2026/9/29/index.html">2026 / 9 / 29</a></li>
+      <li><a href="/daypulse/2026/9/28/index.html">2026 / 9 / 28</a></li>
+      <li><a href="/daypulse/2026/9/25/index.html">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+      <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+      <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+      <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+      <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+      <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+      <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+      <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+      <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+      <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+      <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+      <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+      <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+      <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+      <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+      <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+      <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+      <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+      <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+      <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+      <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+      <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+      <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+      <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+      <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+      <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+      <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+      <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+      <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+      <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+      <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+      <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+      <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+      <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+      <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+      <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+      <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+      <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+      <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+      <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+      <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+      <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+      <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+      <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+      <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+      <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+      <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+      <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+      <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+      <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+      <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 10 · 28</div>
+      <div class="day-week">星期三</div>
+      <span class="day-tag">🛍️ 双11 进行时 · 预售尾款周</span>
+      <span class="day-tag">🍂 霜降之后 · 秋收冬藏</span>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">前三季度规上工业企业利润超6万亿元，同比增长15.5%</div>
+            <div class="news-item-desc">国家统计局数据显示，前三季度全国规模以上工业企业实现利润总额60337.4亿元，同比增长15.5%。工业经济高质量发展稳步推进，装备制造与高技术制造业仍是主要拉动项，企业盈利修复的可持续性成为四季度关键观察点。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_34347884" target="_blank">→ 经济日报财经早餐（澎湃）</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">长三角"三季报"出炉：GDP约占全国四分之一，继续扮演压舱石</div>
+            <div class="news-item-desc">沪苏浙皖前三季度GDP分别同比增长5.5%、5.2%、5.6%、5.3%，均高于全国平均水平，总量约占全国24.98%。"新旧换挡"的增长动能转换正逐步落到实处，长三角正迈入把产业增长转化为民生福祉的关键阶段。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_7857201856_1d45362c001908sq1m.html" target="_blank">→ 新浪财经·制造业热点</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Google DeepMind 发布世界模型 Genie 4：可实时操控、原生生成音频</div>
+            <div class="news-item-desc">Genie 4 相比 Genie 3 在照片级真实感与物理模拟上明显进步，用户可用 WASD 和双摇杆实时控制角色与镜头，运行中还能用自然语言改天气、加物体，环境音与人物对话同步实时生成。世界模型正在从"能看"走向"能玩、能听、能对话"。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/l74eacnb38ytvm5hm8om7h7cs" target="_blank">→ AIHOT·DeepMind 官宣</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic 冲刺 IPO：长期受益信托 + Founder LLC，为安全承诺装上"制度锁"</div>
+            <div class="news-item-desc">Anthropic 计划以特殊治理结构上市：信托的五名受托人可任命七名董事中的四席，七位创始人以 Founder LLC 掌握 50.1% 投票权，以抵御 IPO 后股东对安全投入的施压。同日其与美国总务管理局（GSA）扩大合作，政府机构购买 Claude 享四折优惠。AI 公司如何"带着承诺上市"，成为行业新命题。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/x9a9nhbuq2ncarw5i41jhryjc" target="_blank">→ AIHOT·The Verge</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">苹果发布 M6 版 MacBook Pro，端侧 AI 性能提升 25%，今日开启预购</div>
+            <div class="news-item-desc">新款 14 英寸 MacBook Pro 搭载 M6 芯片（12 核 CPU + 12 核 GPU），图形性能较 M5 最高快 30%，端侧 AI 工作负载最高快 25%，可本地运行大语言模型，续航最长 24 小时，10 月 28 日预购、11 月 6 日发售，起售价 1,999 美元。"端侧跑模型"正从旗舰演示变成消费级标配。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/o0okltd585bcx5lh6bkq53n59" target="_blank">→ AIHOT·Apple Newsroom</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">双11进入尾款周：京东 10/12 率先开卖，淘宝天猫 10/15 预售、10/20 付尾款，战线延至 11/13</div>
+            <div class="news-item-desc">2026 年双11节奏整体前移、周期拉长：京东 10 月 12 日晚 8 点开卖，淘宝天猫 10 月 15 日晚 8 点开启预售，10 月 20 日晚 8 点付尾款并转入现货销售，持续至 11 月 13 日。国补与平台券叠加、AI 购物助手导购，成为今年大促的两大新变量。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/jjxw/2026-10-08/doc-iniunmii7649971.shtml" target="_blank">→ 新浪财经·双11时间表</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">"你吃的烤肠可能是鸡脖子做的"上热搜，食品配料透明度再成焦点</div>
+            <div class="news-item-desc">一条关于烤肠配料的科普话题冲上热搜（25万+讨论），带动公众对肉制品"原切 vs 拼接"、配料表解读的关注。食品饮料行业的内容种草正在被"成分党"重塑——讲清楚"用什么做的"，比讲"多好吃"更能建立信任。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%BD%A0%E5%90%83%E7%9A%84%E7%83%A4%E8%82%A0%E5%8F%AF%E8%83%BD%E6%98%AF%E9%B8%A1%E8%84%96%E5%AD%90%E5%81%9A%E7%9A%84" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">"中国新晋女首富身家1270亿"刷屏，新消费与新产业造富叙事交替</div>
+            <div class="news-item-desc">新晋女首富话题以 131 万热度位居热搜第二，公众注意力从"首富是谁"延伸到"财富从哪个行业来"。每一次首富更替，都是一次产业结构变化的公开注脚——也是品牌讲述"行业向上"故事时可以借力的公共叙事。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%B8%AD%E5%9B%BD%E6%96%B0%E6%99%8B%E5%A5%B3%E9%A6%96%E5%AF%8C%E8%BA%AB%E5%AE%B61270%E4%BA%BF" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">《小城良方》高热播刷屏：肖战主演剧集连上多条热搜</div>
+            <div class="news-item-desc">"小城良方这就叫做专业"（22万）、"小城良方高开颠走"（19万）、"肖战小城良方怎么转抗战频道了"（19万）齐上热搜，剧集口碑与话题并存。抗战题材+小人物叙事的组合再次验证：主旋律内容只要"落在具体的人身上"，就能获得年轻观众的真讨论而非客串式点赞。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%8F%E5%9F%8E%E8%89%AF%E6%96%B9%E8%BF%99%E5%B0%B1%E5%8F%AB%E5%81%9A%E4%B8%93%E4%B8%9A" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">古装剧档期密集：《尚公主》开播、鞠婧祎"1部剧演了11部剧"话题出圈</div>
+            <div class="news-item-desc">李沁、张晚意主演的《尚公主》登上热搜（19万），"文弱书生亲起来那么猛"的桥段引发追剧讨论；鞠婧祎在 1 部剧里演了 11 个角色的话题（12万）则把"一人分饰多角"变成剧集营销的新梗。Q4 剧集档期进入密集投放期，古装内容仍是社交平台话题供给的主力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%9D%8E%E6%B2%81%E5%BC%A0%E6%99%9A%E6%84%8F%E5%BD%93%E4%B8%8A%E7%9A%87%E5%B8%9D%E7%9A%87%E5%90%8E%E4%BA%86" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">皇马中国行风波持续：姆巴佩事件从体育新闻升级为品牌危机样本</div>
+            <div class="news-item-desc">姆巴佩涉华不当言论事件连续多日占据热搜：法国访谈节目道歉（423万）、皇马称"姆巴佩仅代表个人"（87万）、中国足协与皇马俱乐部严正交涉（40万）、浙江宣传发文批评（15万）。对品牌而言，这是一堂公开课：邀请国际球星做代言与活动，其个人言论风险必须写进合约与预案——<strong>代言人危机的止损速度，就是品牌价值观的可信度</strong>。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%B3%95%E5%9B%BD%E8%AE%BF%E8%B0%88%E8%8A%82%E7%9B%AE%E5%B0%B1%E5%A7%86%E5%B7%B4%E4%BD%A9%E4%BA%8B%E4%BB%B6%E9%81%93%E6%AD%89" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">"小米员工房只卖给正式员工"引热议：雇主品牌也是内容品牌</div>
+            <div class="news-item-desc">话题登上热搜（19万），员工福利的边界与公平性引发讨论。在"人人都是内容源"的时代，雇主品牌不再只是 HR 的命题——员工待遇的任何细节都可能被放大为品牌叙事的一部分，福利设计的"可讲述性"正成为人才竞争的软实力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%8F%E7%B1%B3%E5%91%98%E5%B7%A5%E6%88%BF%E5%8F%AA%E5%8D%96%E7%BB%99%E6%AD%A3%E5%BC%8F%E5%91%98%E5%B7%A5" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">中欧贸易摩擦升温：欧盟拟减少自华进口，中方呼吁避免滥用贸易救济工具</div>
+            <div class="news-item-desc">外交部发言人郭嘉昆在例行记者会回应称，中方希望欧方尊重市场经济和公平竞争原则，避免滥用贸易救济工具，以实际行动推动中欧经贸关系稳定发展。欧盟市场对出口占比高的消费电子、新能源产业链影响值得关注。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-10-28/doc-iniwtpkh3441407.shtml" target="_blank">→ 新浪财经·操盘必读</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">市场博弈中东降温预期：美股连续反弹、油价回落，全球风险偏好回暖</div>
+            <div class="news-item-desc">美股连续第二个交易日反弹，AI 融资渠道重新打开——Meta 股票发行获约五倍认购、博通相关 630 亿美元融资取得进展，费城半导体指数涨约 3.4%；沙特、土耳其和巴基斯坦官员与伊朗方面持续接触，市场开始期待中东冲突通过谈判降温，油价进一步回落。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908spvy.html" target="_blank">→ 新浪财经·热点小时报</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#以后度假可以只带丝巾不带衣服了（热度47万+）</div>
+            <div class="trend-meta">旅行穿搭赛道 · 轻量化出行趋势</div>
+            <div class="trend-obs">💡 趋势观察：一条丝巾解决度假穿搭的话题热度极高，本质是"行李减法"与"造型加法"的交集。小红书正是这类"一物多用"旅行内容的主场——对服饰、配饰品牌而言，Q4 出行季的种草叙事可以从"买什么"转向"怎么搭配出N种可能"，教程式内容比单品展示更有收藏价值。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BB%A5%E5%90%8E%E5%BA%A6%E5%81%87%E5%8F%AF%E4%BB%A5%E5%8F%AA%E5%B8%A6%E4%B8%9D%E5%B7%BE%E4%B8%8D%E5%B8%A6%E8%A1%A3%E6%9C%8D%E4%BA%86" target="_blank">→ 微博热搜·丝巾度假穿搭</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#婚恋关系唯一重要的是你舒服（热度45万+）</div>
+            <div class="trend-meta">情感内容赛道 · 亲密关系叙事</div>
+            <div class="trend-obs">💡 趋势观察：这届年轻人对亲密关系的评价标准正在从"像不像该结婚的样子"转向"我在关系里舒不舒服"。小红书情感笔记的高互动公式也随之变化——不是给答案，而是给"确认感"。情感、家居、单人食、一人住等生活方式品类，都可以接住这股"自我舒展"的叙事红利。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A9%9A%E6%81%8B%E5%85%B3%E7%B3%BB%E5%94%AF%E4%B8%80%E9%87%8D%E8%A6%81%E7%9A%84%E6%98%AF%E4%BD%A0%E8%88%92%E6%9C%8D" target="_blank">→ 微博热搜·婚恋关系话题</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#北京动物园通报萌兰身体状态（热度44万+）</div>
+            <div class="trend-meta">萌宠 IP 赛道 · 熊猫经济</div>
+            <div class="trend-obs">💡 趋势观察："西直门三太子"萌兰的身体状况引发全网关心（"饲养员多次呼唤萌兰无响应"同榜，19万），说明顶流动物 IP 的每一次动态都是情感事件。文旅与文创品牌借势萌宠 IP 时要注意分寸感：公众对动物健康的关切是严肃情感，此时硬广式营销极易翻车，"陪伴式内容"才是正确姿势。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%8C%97%E4%BA%AC%E5%8A%A8%E7%89%A9%E5%9B%AD%E9%80%9A%E6%8A%A5%E8%90%8C%E5%85%B0%E8%BA%AB%E4%BD%93%E7%8A%B6%E6%80%81" target="_blank">→ 微博热搜·萌兰身体状态</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#小城良方这就叫做专业（热度22万+）</div>
+            <div class="trend-meta">剧集内容赛道 · 追剧二创</div>
+            <div class="trend-obs">💡 趋势观察：《小城良方》多条热搜并列在榜，剧集热度正在向小红书迁移——"专业细节考据""小城生活美学""同款取景地"是平台侧最易起量的三个二创切角。品牌做剧综营销时，与其抢正片话题，不如埋"考据型内容"：观众愿意为"剧里是真的"写长笔记，这是比流量更深的种草。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%B0%8F%E5%9F%8E%E8%89%AF%E6%96%B9%E8%BF%99%E5%B0%B1%E5%8F%AB%E5%81%9A%E4%B8%93%E4%B8%9A" target="_blank">→ 微博热搜·小城良方</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#建议秋冬多喝这种饮品 / #长期熬夜工作建议自查血糖（各19万+/18万+）</div>
+            <div class="trend-meta">健康养生赛道 · 秋冬场景</div>
+            <div class="trend-obs">💡 趋势观察：秋冬换季，"喝什么""怎么补""熬夜后怎么救"类健康内容进入年度流量高峰。小红书养生内容的信任链路是"素人真实体验 → 专业背景博主背书 → 品牌产品承接"，三级火箭缺一不可。健康食品、滋补饮品品牌在双11尾款周的投放，建议把素材重心从"折扣"切到"换季身体感受"，转化路径更短。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%BB%BA%E8%AE%AE%E7%A7%8B%E5%86%AC%E5%A4%9A%E5%96%9D%E8%BF%99%E7%A7%8D%E9%A5%AE%E5%93%81" target="_blank">→ 微博热搜·秋冬饮品</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 节点营销</div>
+        <div class="learning-title">双11为什么越拉越长？——大促节点的"时间稀释"与稀缺性重建</div>
+        <div class="learning-subtitle">当购物节从一天变成一个月，"节日感"去哪儿了</div>
+        <div class="learning-body">
+          <p>2009 年的第一届双11，是真正意义上的"一夜"：零点开抢、当天结束、销售额 5000 万。十七年过去，2026 年的双11从 10 月 12 日京东开卖算起，到 11 月 13 日收尾，前后整整 <strong>33 天</strong>。</p>
+          <p>为什么要拉长？平台端的逻辑很清楚：把一个高峰拆成一段高原，物流更平稳、商家备货更从容、直播间的日销更可控。但营销端出现了一个悖论——<strong>节点营销的价值，恰恰来自稀缺性</strong>。当"仅此一天"变成"天天都是"，紧迫感被稀释，用户的决策也从前半夜的冲动型，变成了长达一个月的比价型。</p>
+          <p>于是你会看到平台用三招重建稀缺性：<strong>结构化时间</strong>（预售-定金-尾款-现货，每一环都有截止时刻）；<strong>结构化身份</strong>（88VIP 券、Plus 券、国补资格——"谁能拿到"本身就是稀缺）；<strong>结构化内容</strong>（攻略、清单、比价笔记——让"研究怎么买"本身成为参与仪式）。双11 早已不是一个折扣事件，而是一个 <strong>持续一个月的参与式文化仪式</strong>：用户做攻略、蹲直播、比价、晒单，每一步都是内容。</p>
+          <p>对品牌与 IP 策划者而言，真正的启发是：<strong>一个节日的传播力不取决于它有多短，而取决于它有多少"可参与的仪式"</strong>。单日大促卖的是稀缺，33 天大促卖的是旅程。你的大事件也一样——与其担心"预热期太长大家会忘"，不如设计一条清晰的仪式链：让用户在每个阶段都有事可做、有内容可发、有身份可认领。</p>
+          <p>最后记一笔风险：战线拉长也意味着舆情暴露面变长。今年双11叠加了"烤肠配料""代言人权言"这类信任议题——大促期间的任何一次失误，都有 33 天的窗口被反复讨论。<strong>节点越大，克制越贵，也越值钱。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://finance.sina.com.cn/jjxw/2026-10-08/doc-iniunmii7649971.shtml" target="_blank">新浪财经《2026年双11时间表：红包口令、国补叠加优惠一次讲清》</a> ·
+          <a href="https://timeline.sohu.com/news/ODpQO3RI4v" target="_blank">搜狐《2026双11各平台开卖时间公布》</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2090925722328118277" target="_blank">知乎《2026年双11攻略：活动时间、优惠玩法、国补一次说清》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 双十一购物节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🛍️ 1️⃣1️⃣ ✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">现代人造节日</span>
+          <span class="festival-tag">中国·全球共振</span>
+          <span class="festival-tag">每年11月11日（战线下旬启动）</span>
+          <span class="festival-tag">全球最大购物节</span>
+        </div>
+        <div class="festival-name">双十一购物节</div>
+        <div class="festival-name-en">Double Eleven / "Double 11" Global Shopping Festival · 始于2009年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从宿舍自嘲到全球最大购物节</div>
+          <div class="festival-block-body">
+            <p>故事的开头和消费毫无关系。1990年代初，南京多所高校的男生宿舍里，"11月11日"——四根光溜溜的"1"——被自嘲为"<strong>光棍节</strong>"，一个属于单身青年的校园幽默。它在论坛时代漂流多年，成为一种亚文化暗号：单身的人在这一天请客、聚会、互相打趣。</p>
+            <p>转折发生在 2009 年。时任淘宝商城（天猫前身）总经理的张勇团队，需要一个秋冬之间的促销试验点，选中了 11 月 11 日——那一年，只有 27 个品牌参与，全天销售额约 <strong>5000 万元</strong>。没人料到，这个"光棍节清购物车"的梗，会长成此后十几年中国商业世界最大的年度事件。</p>
+            <p>此后的里程碑像一部加速史：2012 年天猫淘宝交易额突破 191 亿元；2015 年达到 912 亿元并首次引入晚会综艺；2019 年天猫成交 2684 亿元；2021 年起平台不再公布实时 GMV 数字——<strong>当节日的规模大到无法用一个数字概括，叙事就转向了体验与确定</strong>。节日名也从"光棍节"的单身自嘲，彻底演化为"双11"的消费共识。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一个 33 天的国家级消费仪式</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">2009→2026</div>
+                <div class="festival-stat-label">第18届双11</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">33 天</div>
+                <div class="festival-stat-label">2026年大促战线（10/12–11/13）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10/15</div>
+                <div class="festival-stat-label">淘宝天猫预售开启日</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10/20</div>
+                <div class="festival-stat-label">尾款支付&现货开卖</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">国补+平台券</div>
+                <div class="festival-stat-label">双重补贴叠加</div>
+              </div>
+            </div>
+            <p>今天的双11早已超出"一场促销"：它是<strong>电商平台的年度动员</strong>（京东、淘宝天猫、拼多多、抖音、快手全生态参战）、<strong>制造业的节奏器</strong>（商家提前数月备货、供应链按大促排产）、<strong>物流基础设施的极限测试</strong>（单日包裹峰值以十亿计），也是<strong>全球性的消费事件</strong>——东南亚、欧洲的电商节（如东南亚的 11.11 大促）都带有它的影子。</p>
+            <p>2026 年的双11有两个新变量：一是<strong>国补与平台补贴叠加</strong>，家电数码等耐消品类"政府补一点、平台补一点"成为主要叙事；二是 <strong>AI 全面介入消费链路</strong>——AI 购物助手帮你比价、生成攻略、蹲点提醒，"人找货"正在变成"Agent 找货"。购物节的内容生态也同步演化：从种草笔记到攻略直播，从晒单返图到"尾款人"的自嘲梗，双11 每年都在生产一整代互联网流行语。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】当折扣不再是主角，购物节卖什么</div>
+          <div class="festival-block-body">
+            <p>双11 的下一程，几乎写在所有平台的公开叙事里：<strong>从 GMV 崇拜转向体验与确定性</strong>——更简单的优惠规则、更快的履约（小时达、即时零售）、更可信的商品（成分透明、以旧换新）。AI 导购会让"比价"的痛苦消失，届时<strong>品牌真正竞争的将是"被 AI 推荐"与"被人惦记"的双重能力</strong>：既要能被机器读懂，也要能被人喜爱。</p>
+            <p>而对平台自造节这个品类来说，双11 依然是那个无法绕开的坐标。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>双11 的本质公式是「<strong>共识的日期 + 仪式的流程 + 让利的理由 + 全民的内容</strong>」。一个自造节日要成立，四者缺一不可：日期要简单到能成为口头禅（11/11），流程要让参与有节奏感（预售-尾款-爆发），让利要给用户一个"必须现在"的理由，最后要设计出让用户自发生产内容的钩子（晒单、攻略、比价笔记）。小红书做"市集"节点或平台大事件时，最该从双11偷师的不是折扣力度，而是这套<strong>把促销变成民俗的叙事工程</strong>——用户不是在消费，而是在过节。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://zh.wikipedia.org/zh-cn/%E5%85%89%E6%A3%8D%E8%8A%82" target="_blank">维基百科·光棍节/双十一</a> ·
+          <a href="https://finance.sina.com.cn/jjxw/2026-10-08/doc-iniunmii7649971.shtml" target="_blank">新浪财经·2026双11时间表</a> ·
+          <a href="https://timeline.sohu.com/news/ODpQO3RI4v" target="_blank">搜狐·2026双11各平台开卖时间</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/2092017205521266459" target="_blank">知乎·2026年双11活动时间表</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 消费文化</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🛒 主题策展 · 欲望的图谱</div>
+        <div class="knowledge-headline">谁塑造了我们"买买买"？——从炫耀性消费到直播间的一百年</div>
+        <div class="knowledge-tagline">「人们从来不消费物的本身（使用价值），人们总是把物当作能够突出你的符号。」——让·鲍德里亚</div>
+
+        <div class="knowledge-intro">
+          双11 不只是一个促销日，它是当代消费文化的 Extreme Edition。而消费文化本身，是一百多年来一群学者、艺术家、品牌缔造者共同塑造的成果——他们有的为消费辩护，有的冷眼旁观，有的干脆把"卖东西"做成了艺术。<br><br>
+          这张图谱从 1899 年的《有闲阶级论》出发，一路经过巴黎的成衣沙龙、纽约的丝网印刷车间、巴黎南郊的符号学书房，最后落在杭州的直播间。看清这条线，你会明白：今天凌晨付尾款的你，其实是历史的一部分。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Veblen3a.jpg/500px-Veblen3a.jpg"
+              alt="凡勃伦"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎩</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">凡勃伦</div>
+              <div class="knowledge-card-sub">Thorstein Veblen · 美国 · 经济学家</div>
+              <div class="knowledge-card-work">《有闲阶级论》（1899）提出"炫耀性消费"：越是买给被人看的，越贵越有市场。今天的奢侈品涨价逻辑，仍在按他的剧本上演。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Andy_Warhol_by_Jack_Mitchell.jpg/500px-Andy_Warhol_by_Jack_Mitchell.jpg"
+              alt="安迪·沃霍尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥫</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">安迪·沃霍尔</div>
+              <div class="knowledge-card-sub">Andy Warhol · 美国 · 波普艺术家</div>
+              <div class="knowledge-card-work">把 32 罐金宝汤印进美术馆，宣告"消费本身就是当代神话"。他还预言："未来，每个人都能当上 15 分钟的名人"——社交媒体时代的谶语。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/e/ef/WikipediaBaudrillard20040612-cropped.png"
+              alt="让·鲍德里亚"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🧠</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">让·鲍德里亚</div>
+              <div class="knowledge-card-sub">Jean Baudrillard · 法国 · 哲学家</div>
+              <div class="knowledge-card-work">《消费社会》（1970）指出我们消费的从来不是物，而是符号与身份。每一次"买它"的冲动里，都藏着一个想成为的自己。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Coco_Chanel.jpg/500px-Coco_Chanel.jpg"
+              alt="可可·香奈儿"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🖤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">可可·香奈儿</div>
+              <div class="knowledge-card-sub">Coco Chanel · 法国 · 品牌缔造者</div>
+              <div class="knowledge-card-work">用小黑裙和斜纹软呢解放了女装，也发明了现代品牌的基本法：卖的不是衣服，是一种女性可以自我定义的生活方式。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🧑‍💼</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">马云</div>
+              <div class="knowledge-card-sub">中国 · 电商时代筑路人</div>
+              <div class="knowledge-card-work">2009 年把"光棍节"改写成"双11"的那批人中的代表——证明了节日可以被人为发明：给一个日期赋予共识，再给共识装上交易系统。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">💄</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">李佳琦</div>
+              <div class="knowledge-card-sub">中国 · 直播间消费仪式代表</div>
+              <div class="knowledge-card-work">"所有女生！"——把叫卖变成陪伴，把折扣变成节拍。直播间重新发明了电视购物的情感结构：不是你需要才买，而是因为"在场"才买。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          从凡勃伦的"炫耀"、沃霍尔的"复制"、鲍德里亚的"符号"，到香奈儿的"生活方式"、双11的"共识"、直播间的"在场"——消费文化的每一次跃迁，都是把一种新的人类需求翻译成可购买的形式。做营销的人读懂这条线，就掌握了节日词典里所有故事的底层语法：节日不是被庆祝的，是被共同想象的。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
