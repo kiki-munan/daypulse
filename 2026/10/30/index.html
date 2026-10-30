@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/10/30</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/10/30/index.html" class="active">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/28/index.html">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+      <li><a href="/daypulse/2026/10/19/index.html">2026 / 10 / 19</a></li>
+      <li><a href="/daypulse/2026/9/30/index.html">2026 / 9 / 30</a></li>
+      <li><a href="/daypulse/2026/9/29/index.html">2026 / 9 / 29</a></li>
+      <li><a href="/daypulse/2026/9/28/index.html">2026 / 9 / 28</a></li>
+      <li><a href="/daypulse/2026/9/25/index.html">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+      <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+      <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+      <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+      <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+      <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+      <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+      <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+      <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+      <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+      <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+      <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+      <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+      <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+      <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+      <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+      <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+      <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+      <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+      <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+      <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+      <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+      <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+      <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+      <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+      <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+      <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+      <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+      <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+      <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+      <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+      <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+      <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+      <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+      <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+      <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+      <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+      <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+      <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+      <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+      <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+      <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+      <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+      <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+      <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+      <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+      <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+      <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+      <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+      <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+      <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 10 · 30</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">券商并购重组再进一步：东方证券合并上海证券获上交所审核通过</div>
+            <div class="news-item-desc">10月29日上交所并购重组审核委员会审核通过东方证券吸收合并上海证券事项，证券行业供给侧整合持续提速。头部券商用并购换规模与牌照协同，行业集中度抬升的信号愈发明确。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/y/2026-10-30/doc-iniwxzqf8397364.shtml" target="_blank">→ 新浪财经·四大证券报头版</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">欧盟拟将中欧混动车贸易谅解延伸至化工等领域，商务部：坚决反对滥用贸易防御工具</div>
+            <div class="news-item-desc">针对媒体报道欧盟正研究把中欧在混合动力汽车领域达成的贸易谅解安排扩展至化工等行业，商务部发言人表态反对保护主义。中欧经贸博弈进入"以议题换议题"的精细化阶段，汽车与化工产业链需持续关注规则变动。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-10-30/doc-iniwxzqa5651422.shtml" target="_blank">→ 新浪财经·操盘必读</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Google与Reddit同日股价重挫：AI搜索变现困境冲击开放网络，Alphabet单日蒸发约5000亿美元</div>
+            <div class="news-item-desc">Alphabet股价暴跌12.6%，创史上第二大单日市值缩水——高管承认AI Mode（月活约10亿）变现能力低于传统搜索，尽管搜索收入仍增长12%至633.5亿美元。Reddit同日宣布转向"登录制"体验以应对AI抓取，搜索流量平均每周减少超100万次引荐。当AI替用户搜索，内容网站的流量与广告逻辑正被改写。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/kzenjo9w2bfhpsr0ub1gr95xj" target="_blank">→ Platformer via AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">亚马逊财报：Andy Jassy称AWS将成"万亿美元营收业务"，2026年资本开支约2200亿美元</div>
+            <div class="news-item-desc">AWS当季营收同比增长39%、年化运行率达1840亿美元，Jassy预测2027-2028年增速均超40%，大部分资本开支投向AWS且2027年还将大幅增加。但财报后股价盘后仍跌约6%——市场已从奖励"军备竞赛"，转向追问投入效率与回报可见度。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/fxmexzrmo7pw52vc5j6ej17kl" target="_blank">→ TechCrunch via AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic S-1文件解读：Q2收入116亿美元、录得首个运营利润，拟纳斯达克上市</div>
+            <div class="news-item-desc">公开版S-1显示，Anthropic收入从Q1的47亿美元跃升至Q2的116亿美元并实现首个运营利润，现金储备仅次于Google与伯克希尔，IPO估值区间高达1.5-2万亿美元。AI公司的财务叙事正从"烧钱换规模"切换到"盈利可行性"的验证期。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/wb6emxuh5ob2wh96egtwawgfu" target="_blank">→ Understanding AI via AIHOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">星巴克全国推行"消费入座"，"不消费人群抵制"演变成全网围观的行为艺术</div>
+            <div class="news-item-desc">10月22日起星巴克中国门店正式施行"消费入座"并发布《第三空间倡议》，随即遭遇自称"不消费人群"的抵制号召，"损失几十万不消费人群"成热梗——但被"流失"的本就是长期占座不消费的群体。瑞幸、霸王茶姬顺势承接外溢客流，一场关于线下空间社会契约的重新谈判正在咖啡茶饮行业蔓延。</div>
+            <a class="news-item-link" href="https://news.pedaily.cn/202610/571070.shtml" target="_blank">→ 投资界</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">茉莉奶白×Chiikawa联名水杯爆裂致用户住院，联名周边的品控红灯亮起</div>
+            <div class="news-item-desc">有用户反映联名款高硼硅玻璃水杯清水冲洗时突然炸裂、血管破裂入院，品牌回应"高度重视、全面跟进"。IP联名是流量放大器，也是风险放大器——周边产品的安全标准与主体责任，正在成为新消费品牌的必修课。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_5953740931_v162dee083067043qcu.html" target="_blank">→ 新浪新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">GLP-1减重药半年全球卖出477亿美元，中国市场增速飙至62%</div>
+            <div class="news-item-desc">2026年上半年全球主要GLP-1药物销售额同比增长43%，全年预计突破千亿美元；替尔泊肽半年276.93亿美元（+88%）碾压司美格鲁肽的175亿美元（+6%）。国内三大终端2026年一季度销售额超40亿元、增速62%——减重经济从话题走向真正的产业赛道。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908sy8w.html" target="_blank">→ 每日经济新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">"X教授"帕特里克·斯图尔特逝世，享年86岁，《复联5：毁灭之日》成银幕遗作</div>
+            <div class="news-item-desc">10月28日，英国演员帕特里克·斯图尔特在洛杉矶家中去世。他同时承载着《X战警》X教授与《星际迷航》皮卡德舰长两段国民记忆，漫威发文缅怀这位"真正的绅士"。全球影迷的怀旧与致敬内容正在社交媒体持续刷屏。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_34365784" target="_blank">→ 澎湃新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">"红果红了"：红果短剧双话题屠榜热搜，免费短剧平台站上大众视野C位</div>
+            <div class="news-item-desc">"红果红了""红果短剧凭什么这么红"双话题同日登上微博热搜，免费+广告分账的短剧平台模式持续验证。短剧正在从"下沉娱乐"长成品牌投放与内容营销不可忽视的新场域。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%BA%A2%E6%9E%9C%E7%9F%AD%E5%89%A7%E5%87%AD%E4%BB%80%E4%B9%88%E8%BF%99%E4%B9%88%E7%BA%A2" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">第39届东京国际电影节进行中（10/26-11/4），音乐传记片《Sukiyaki》开幕</div>
+            <div class="news-item-desc">本届电影节移师日比谷·有乐町·银座片区，开幕片《Sukiyaki》讲述名曲《上を向いて歩こう》背后的故事——那首唯一登顶美国公告牌百强的日语歌。亚洲A类电影节与城市街区联动的模式，值得大事件策划者细看。</div>
+            <a class="news-item-link" href="https://en.wikipedia.org/wiki/39th_Tokyo_International_Film_Festival" target="_blank">→ Wikipedia</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">侯明昊×乐事薯脆"一咔即合"冲上热搜，明星代言+零食大单品仍是流量硬通货</div>
+            <div class="news-item-desc">话题热度51万+，借"咔"的产品声效做谐音记忆点，把代言人特质与产品体验绑进一个词。零食赛道竞争白热化下，"声效级卖点+顶流艺人"的组合依旧是快消品最顺手的破圈公式。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%BE%AF%E6%98%8E%E6%98%8A%E5%92%8C%E4%B9%90%E4%BA%8B%E8%96%AF%E8%84%86%E4%B8%80%E5%92%94%E5%8D%B3%E5%90%88" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《小城良方》云包场拿下爱奇艺史冠，粉丝经济为剧集营销再写新剧本</div>
+            <div class="news-item-desc">肖战主演的《小城良方》讨论度持续霸榜，"云包场"模式下粉丝购票助力刷新平台纪录，但"该不该被逐帧审判"的争议也随之而来。剧集营销的天花板与舆情风险，在同一部作品上同时显影。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%8F%E5%9F%8E%E8%89%AF%E6%96%B9%E4%BA%91%E5%8C%85%E5%9C%BA%E6%8B%BF%E4%B8%8B%E7%88%B1%E5%A5%87%E8%89%BA%E5%8F%B2%E5%86%A0" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">今日关注：日本央行公布利率决议，G20外长会议召开</div>
+            <div class="news-item-desc">日本央行今日公布利率决议与经济展望报告，行长植田和男随后召开发布会；同期美国国务卿鲁比奥主持G20外长会议。日元货币政策路径与全球外交日程，是今日宏观面的两条主线。</div>
+            <a class="news-item-link" href="https://shishixinwen.news/news/jin10/20261030065000001800" target="_blank">→ 财经日历</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《纽约时报》报道美情报机构指认英伟达CEO身边高管涉情报案，芯片地缘神经再被拨动</div>
+            <div class="news-item-desc">报道称美情报机构认为英伟达CEO黄仁勋身边一名高管（新加坡数据中心运营商Megaspeed的黄乐）为中国提供情报。在算力即权力的时代，围绕顶级芯片公司的地缘审查只会更紧，全球AI供应链的信任成本持续抬升。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/lq97h52ctxw2nkri4qqxj5lbx" target="_blank">→ The Decoder via AIHOT</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#星巴克遭不消费人群抵制 "消费入座"规则持续发酵</div>
+            <div class="trend-meta">线下空间 · 品牌规则型公关</div>
+            <div class="trend-obs">💡 趋势观察：星巴克"消费入座"新规引发的抵制，本质是一场关于"第三空间社会契约"的公共辩论。小红书上"自习室替代方案""咖啡店办公礼仪"类笔记正在同步上涨——品牌改规则时，用户要的不是让步，而是被尊重的沟通姿态。规则型公关的核心资产是"讲清楚的耐心"，这不是一次争议，而是一次空间消费习惯的再教育窗口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%98%9F%E5%B7%B4%E5%85%8B%E9%81%AD%E4%B8%8D%E6%B6%88%E8%B4%B9%E4%BA%BA%E7%BE%A4%E6%8A%B5%E5%88%B6" target="_blank">→ 微博热搜·星巴克遭不消费人群抵制</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#X教授演员去世 《复联5》成斯图尔特遗作</div>
+            <div class="trend-meta">影视情感 · 怀旧内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：斯图尔特的离世同时牵动X战警与星际迷航两个"宇宙"的粉丝，情怀内容的生命周期通常为3-7天。小红书上"重温片单""经典台词壁纸""老照片考古"是天然的二创方向——告别类内容的关键是"带用户回到第一次遇见角色的时刻"，品牌此时最忌讳的是硬蹭，最得体的是提供重温的入口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A4%8D%E8%81%945%E6%88%90%E6%96%AF%E5%9B%BE%E5%B0%94%E7%89%B9%E9%81%97%E4%BD%9C" target="_blank">→ 微博热搜·复联5成斯图尔特遗作</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#红果短剧凭什么这么红 免费短剧模式被全网讨论</div>
+            <div class="trend-meta">短剧生态 · 内容消费分层</div>
+            <div class="trend-obs">💡 趋势观察：红果短剧双话题屠榜，标志免费短剧从"下沉专属"进入大众讨论层。小红书用户对短剧的参与方式不同——不是刷剧，而是"吐槽剧情""二创名场面""扒穿搭同款"。短剧IP的小红书种草路径应该围绕"梗"而非"剧"来设计，梗才是穿越圈层的载体。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%BA%A2%E6%9E%9C%E7%9F%AD%E5%89%A7%E5%87%AD%E4%BB%80%E4%B9%88%E8%BF%99%E4%B9%88%E7%BA%A2" target="_blank">→ 微博热搜·红果短剧凭什么这么红</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#谷歌大跌超13% #英特尔暴跌超20% AI板块迎来重定价时刻</div>
+            <div class="trend-meta">财经科技 · AI叙事转向</div>
+            <div class="trend-obs">💡 趋势观察：谷歌蒸发5000亿美元市值、英特尔单日跌超20%——"AI概念=必涨"的时代结束，市场开始追问变现路径。小红书上AI理财、科技股解读类内容热度将随之走高；对科技品牌而言，叙事重心需要从"技术领先"转向"挣到钱的能力"，这也预示种草内容里"效率、回报、实用"关键词的权重上升。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%B0%B7%E6%AD%8C%E5%A4%A7%E8%B7%8C%E8%B6%8513%25" target="_blank">→ 微博热搜·谷歌大跌超13%</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#国足回应U17女足首进世界杯八强 少年队创造历史</div>
+            <div class="trend-meta">体育叙事 · 女性力量内容</div>
+            <div class="trend-obs">💡 趋势观察：U17女足历史性首进世界杯八强，"少年的胜利"天然携带希望感与低争议性，是体育话题里最适合做情感向二创的一类。小红书上女性体育叙事持续上行——从女足到网球到马拉松，"力量感女孩"内容既有情绪价值又有运动消费转化路径，是运动品牌值得长期经营的赛道。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%9B%BD%E8%B6%B3%E5%9B%9E%E5%BA%94U17%E5%A5%B3%E8%B6%B3%E9%A6%96%E8%BF%9B%E4%B8%96%E7%95%8C%E6%9D%AF%E5%85%AB%E5%BC%BA" target="_blank">→ 微博热搜·U17女足首进世界杯八强</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI与流量分配</div>
+        <div class="learning-title">当AI开始替人搜索：开放网络的变现危机，与内容平台的下一步</div>
+        <div class="learning-subtitle">谷歌蒸发5000亿美元、Reddit转向登录制——这一课对内容生态意味着什么？</div>
+        <div class="learning-body">
+          <p>10月29日的美股，给整个数字内容行业上了一堂昂贵的课。谷歌AI Mode月活已约10亿、搜索收入仍增长12%，但股价单日暴跌12.6%、蒸发约5000亿美元——原因是管理层亲口承认：<strong>AI搜索的变现能力低于传统搜索</strong>。同一天，Reddit宣布转向"登录制"体验，以保护数据不被AI抓取，因为其搜索引荐流量正在以每周超100万次的速度流失。</p>
+          <p>这两件事共同指向一个结构性变化：<strong>当AI替用户完成搜索与总结，用户与内容之间出现了"AI中间层"，而中间层并不天然继承原有的广告位逻辑</strong>。传统搜索的每一次点击都是一次广告机会；AI对话的每一次回答，却可能让用户停在原地、不再出发。开放网络三十年来"内容换流量、流量换广告"的循环，正在被从中间截断。</p>
+          <p>更有意思的是市场的两种回答。Reddit选择"筑墙"——把内容资产圈进登录制，用数据独占性换广告溢价；而AI公司则反向出价——Reddit靠数据授权，Q3收入同比大增53%。这揭示了一个新公式：<strong>优质内容的价值，正在从"吸引眼球"迁移为"训练与引用的稀缺供给"</strong>。</p>
+          <p>对内容平台和品牌方，这里有三个直接推论。<strong>其一，"内容即资产"的时代真正到来了</strong>——能被AI反复引用、被用户主动登录才能看的深度内容，比追逐算法的流量帖更保值。<strong>其二，决策入口前移</strong>——当AI接管"搜索-比较"环节，品牌必须把种草做进AI无法替代的部分：真实体验、情绪共鸣、信任关系，这些恰恰是社区内容的长项。<strong>其三，社区的护城河变深了</strong>——真实用户生产的经验与审美判断，正是AI最缺的原材料；越是AI泛滥，"真人真感受"的稀缺性溢价越高。</p>
+          <p>一句话总结这一课：<strong>流量会过时，但信任不会。当所有人都在为AI的答案焦虑时，答案的出处反而更值钱了。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://aihot.virxact.com/items/kzenjo9w2bfhpsr0ub1gr95xj" target="_blank">Platformer《Google与Reddit同日股价大跌》</a> ·
+          <a href="https://aihot.virxact.com/items/op2kjf327vilvhbxkjicxg5ec" target="_blank">TechCrunch《Reddit转向登录制》</a> ·
+          <a href="https://k.sina.cn/article_7857201856_1d45362c001908sz24.html" target="_blank">新浪财经《AI重新定价：从军备竞赛到回报可见度》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 东京国际电影节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎬🌃✨</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">电影盛会</span>
+          <span class="festival-tag">日本·东京</span>
+          <span class="festival-tag">每年10月底</span>
+          <span class="festival-tag">亚洲A类电影节</span>
+        </div>
+        <div class="festival-name">东京国际电影节</div>
+        <div class="festival-name-en">Tokyo International Film Festival · TIFF · 始于1985年 · 第39届进行中（10/26-11/4）</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从涩谷到银座，亚洲电影的东京客厅</div>
+          <div class="festival-block-body">
+            <p>1985年，东京。日本创办了亚洲第一个国际电影制作者联盟（FIAPF）认证的A类竞赛电影节——与戛纳、威尼斯、柏林同级，最高奖定为"<strong>东京樱花大奖</strong>"。彼时的亚洲电影正在等待一个属于自己的世界舞台，东京给了它一个客厅。</p>
+            <p>华语电影与东京电影节的缘分深厚：上世纪80年代末，《老井》在这里摘得大奖、张艺谋加冕影帝，随后一代代华语导演从东京走向世界。电影节长期深耕"亚洲未来"单元，把发掘亚洲新导演写进基因——黑泽明晚年担任主席的形象，至今仍是它的精神图腾。</p>
+            <p>四十年间它的场址几经迁徙：从涩谷到六本木，再到2024年起落户<strong>日比谷·有乐町·丸之内·银座</strong>片区——东京"电影之城"的历史腹地。电影节不再守着一个巨型场馆，而是把整个街区变成会场。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】城市即会场，十天的银幕马拉松</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">1985</div>
+                <div class="festival-stat-label">创办年份</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">第39届</div>
+                <div class="festival-stat-label">2026年10/26-11/4</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">10天</div>
+                <div class="festival-stat-label">展映周期</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">4大片区</div>
+                <div class="festival-stat-label">日比谷·有乐町·丸之内·银座</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">A类认证</div>
+                <div class="festival-stat-label">亚洲最早的FIAPF竞赛电影节之一</div>
+              </div>
+            </div>
+            <p>本届开幕片《<strong>Sukiyaki</strong>》是一个绝妙的选片样本：它讲述昭和歌姬坂本九名曲《上を向いて歩こう》（海外发行名"Sukiyaki"）背后的故事——那是唯一登顶美国公告牌百强单曲榜的日语歌。用一代人的共同旋律做情感钩子，电影还没开画，记忆已经先抵达。</p>
+            <p>东京电影节的商业运作同样值得细看：电影节期间，日比谷至银座沿线的影院、酒店、商场全部卷入展映与快闪——影票即消费券，会场即商圈，<strong>观影动线与城市消费动线完全重叠</strong>。这也是它区别于"封闭式"电影节的最大特征：影展长在城市里，而不是把城市围起来办影展。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】对小红书平台大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>下届看点：</strong>TIFF正在强化"亚洲首发"与流媒体时代的差异化定位——当线上观影成为默认选项，电影节卖的就是"只能在现场发生的十分钟"：首映礼的呼吸声、红毯的偶然性、散场后与陌生人的争论。这是所有线下IP活动共同的未来命题。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>东京电影节最值得抄的作业是"<strong>城市即会场</strong>"——不建一个巨型主场馆，而是用十几个点状场址串成一条可漫步的动线，每个点都是一个可拍摄、可传播的内容单元。小红书的大事件完全可以复用这套逻辑：把活动散布在城市里，让用户在"赶场"中自然生成攻略型内容。其次是用"国民记忆"做开幕选片——用一代人的共同旋律、共同剧集、共同符号做情感钩子，活动未开，情绪先至。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://2026.tiff-jp.net/ja/" target="_blank">第39届东京国际电影节官网</a> ·
+          <a href="https://en.wikipedia.org/wiki/39th_Tokyo_International_Film_Festival" target="_blank">Wikipedia·39th TIFF</a> ·
+          <a href="https://en.wikipedia.org/wiki/Tokyo_International_Film_Festival" target="_blank">Wikipedia·Tokyo International Film Festival</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 科幻银河的面孔</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🛸 主题策展 · 两个宇宙，一群绅士</div>
+        <div class="knowledge-headline">从皮卡德舰长到X教授：科幻银河的六张面孔</div>
+        <div class="knowledge-tagline">「Live long and prosper. 生生不息，繁荣昌盛。」</div>
+
+        <div class="knowledge-intro">
+          帕特里克·斯图尔特的离开，同时熄灭了两个宇宙的灯：一边是《星际迷航》的进取号，一边是《X战警》的泽维尔学校。很少有演员能像他一样，在两个最伟大的科幻宇宙里都扮演"文明的守护者"——不靠肌肉，靠智慧、克制与同理心。<br><br>
+          这不是一篇讣告，而是一张图谱：这些面孔共同回答了一个问题——<strong>科幻真正的主角从来不是飞船和超能力，而是身处未来依然选择体面做人的人</strong>。理解这张图谱，就理解了为什么这些IP能经营六十年而热度不减。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Patrick_Stewart_by_Gage_Skidmore_2.jpg/440px-Patrick_Stewart_by_Gage_Skidmore_2.jpg"
+              alt="帕特里克·斯图尔特"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">帕特里克·斯图尔特</div>
+              <div class="knowledge-card-sub">Patrick Stewart · 英国 · 1940-2026</div>
+              <div class="knowledge-card-work">皮卡德舰长与X教授的双重化身。莎士比亚出身的他，让"讲道理的人"成为科幻世界最有魅力的角色——温和，却是所有星舰与变种人的道德坐标。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Ian_McKellen_by_Gage_Skidmore.jpg/440px-Ian_McKellen_by_Gage_Skidmore.jpg"
+              alt="伊恩·麦克莱恩"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🧲</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">伊恩·麦克莱恩</div>
+              <div class="knowledge-card-sub">Ian McKellen · 英国 · 万磁王</div>
+              <div class="knowledge-card-work">把"反派"演成了另一种正义——为变种人的生存权而战的激进派。戏外他与斯图尔特是四十年的挚友，两位老戏骨的同框自拍曾是互联网最温柔的名场面。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/William_Shatner_by_Gage_Skidmore_2.jpg/440px-William_Shatner_by_Gage_Skidmore_2.jpg"
+              alt="威廉·夏特纳"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🚀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">威廉·夏特纳</div>
+              <div class="knowledge-card-sub">William Shatner · 加拿大 · 柯克舰长</div>
+              <div class="knowledge-card-work">初代进取号的灵魂。1966年《星际迷航》开播时无人预料它会成为跨世纪的文化宗教——"大胆地前往无人到达之处"至今仍是人类探索精神的通用文案。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Leonard_Nimoy_1975.jpg/440px-Leonard_Nimoy_1975.jpg"
+              alt="伦纳德·尼莫伊"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🖖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">伦纳德·尼莫伊</div>
+              <div class="knowledge-card-sub">Leonard Nimoy · 美国 · 史波克</div>
+              <div class="knowledge-card-work">半人半瓦肯、理性与血性的永恒拉扯。他发明的"瓦肯举手礼"与那句"Live long and prosper"，是流行文化史上被引用最多的告别语之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Hugh_Jackman_by_Gage_Skidmore.jpg/440px-Hugh_Jackman_by_Gage_Skidmore.jpg"
+              alt="休·杰克曼"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐺</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">休·杰克曼</div>
+              <div class="knowledge-card-sub">Hugh Jackman · 澳大利亚 · 金刚狼</div>
+              <div class="knowledge-card-work">一个角色演了25年、9部电影——从33岁演到年过半百。他用《金刚狼3》证明：超级英雄电影的终点可以是诗意与告别，而非爆炸。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Sigourney_Weaver_by_Gage_Skidmore_2.jpg/440px-Sigourney_Weaver_by_Gage_Skidmore_2.jpg"
+              alt="西格妮·韦弗"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">👽</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">西格妮·韦弗</div>
+              <div class="knowledge-card-sub">Sigourney Weaver · 美国 · 雷普利</div>
+              <div class="knowledge-card-work">《异形》的雷普利是影史第一位真正意义上的动作女主角——1979年她改写了"科幻片主角必须是男性"的行业默认值，此后所有硬核女角色都走在她开出的路上。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🚀</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">刘慈欣</div>
+              <div class="knowledge-card-sub">中国 · 《三体》作者</div>
+              <div class="knowledge-card-work">用《三体》把中国科幻推入世界语境，雨果奖之后"黑暗森林""降维打击"成为全球科技圈的通用隐喻。他证明了：科幻的国籍可以是任何一个仰望星空的地方。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这张图谱给IP营销者的启示是"复利思维"：星际迷航经营了60年，X战警经营了25年，斯图尔特本人经营皮卡德这个角色近40年——<strong>伟大的IP不靠爆款续命，靠的是一代一代人把"角色"当成真实的人去对待</strong>。当你策划一个大事件IP时，不妨问自己：十年后，用户还会记得这个活动里的"人物"吗？角色有寿命，人设才有故事。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
