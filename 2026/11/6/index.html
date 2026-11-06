@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/6</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/6/index.html" class="active">2026 / 11 / 6</a></li>
+      <li><a href="/daypulse/2026/11/4/index.html">2026 / 11 / 4</a></li>
+      <li><a href="/daypulse/2026/11/3/index.html">2026 / 11 / 3</a></li>
+      <li><a href="/daypulse/2026/11/2/index.html">2026 / 11 / 2</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/28/index.html">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+      <li><a href="/daypulse/2026/10/19/index.html">2026 / 10 / 19</a></li>
+      <li><a href="/daypulse/2026/9/30/index.html">2026 / 9 / 30</a></li>
+      <li><a href="/daypulse/2026/9/29/index.html">2026 / 9 / 29</a></li>
+      <li><a href="/daypulse/2026/9/28/index.html">2026 / 9 / 28</a></li>
+      <li><a href="/daypulse/2026/9/25/index.html">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+      <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+      <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+      <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+      <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+      <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+      <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+      <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+      <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+      <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+      <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+      <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+      <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+      <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+      <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+      <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+      <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+      <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+      <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+      <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+      <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+      <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+      <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+      <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+      <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+      <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+      <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+      <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+      <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+      <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+      <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+      <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+      <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+      <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+      <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+      <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+      <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+      <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+      <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+      <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+      <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+      <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+      <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+      <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+      <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+      <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+      <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+      <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+      <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+      <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+      <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 06</div>
+      <div class="day-week">星期五</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美股 AI 产业链遭遇"中期选举重挫"：纳指100单日跌6.5%，费城半导体指数暴跌12%</div>
+            <div class="news-item-desc">美国中期选举民主党拿下参众两院，多场竞选以"问责AI公司"为主题：44项地方数据中心暂停提案中43项通过，NBC民调显示76%选民反对在社区建数据中心。英伟达跌9.18%市值蒸发4470亿美元，特斯拉跌超10%，存储、光通信板块全线重挫。AI叙事第一次同时接受"民意+市值"的双重检验。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-11-06/doc-inixtxmh8969222.shtml" target="_blank">→ 新浪财经·操盘必读</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">今晚重磅非农登场：美联储哈玛克放鹰，称通胀"仍处不可接受的高位"</div>
+            <div class="news-item-desc">克利夫兰联储主席哈玛克表示，利率需要进一步进入限制性区间，倾向于"更频繁、小幅度"的调整方式。今晚21:30美国10月非农、失业率与平均时薪数据将同步公布，11月密歇根消费者信心初值随后出炉——在AI股巨震的当口，这份就业报告将直接决定年末的风险偏好走向。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908tsb4.html" target="_blank">→ 新浪·美联储热点</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI：AI 管线单次运行修补 948 个 Linux 内核提权漏洞</div>
+            <div class="news-item-desc">OpenAI 披露其 AI 流水线在一次运行中修补了 948 个 Linux 内核提权漏洞，配合 GPT-6 Cyber 网络安全模型发布——在 ExploitGym 评估中，未加部署安全指令时越权利用率仅 0.07%。AI 把"从漏洞到可用攻击"的成本从数周压缩到数小时，安全攻防进入机器对机器的节奏。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/story/4ff5060c-160a-4d65-bf28-706c0d53ec34" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">腾讯混元 Hy4 正式发布：首次增加视觉理解与电脑操作能力</div>
+            <div class="news-item-desc">混元新一代模型补齐了多模态与"Agent 执行"两块短板，能看懂屏幕、操作电脑。国产大模型在 Agent 落地路径上的竞争升温，"会操作电脑的模型"正从演示走向产品化。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/story/491d220c-9d57-4295-af9f-e4382561b3f7" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Google 发布 Gemini Omni 1.2 Flash：视频生成提至 15 秒，价格直降 30%</div>
+            <div class="news-item-desc">新模型在 Gemini API 与企业版全面开放，原生支持最长 15 秒视频生成，支持多轮对话编辑与更强参考图一致性，720p 价格降至 $0.07/秒。AI 视频生成进入"内容生产工具"的价格区间，内容行业的成本结构正在被重写。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/story/e765b639-baae-42e1-8cb8-b76d31655219" target="_blank">→ AIHOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">消费品牌年度图鉴：运动户外领涨、美妆"高端提质"、黄金珠宝告别普涨、奢侈品分层加剧</div>
+            <div class="news-item-desc">最新行业盘点显示：运动服饰户外专业品类持续领涨，大众运动陷入存量价格博弈；美妆功效与精简护肤成主流；黄金珠宝从婚嫁刚需转向"投资保值+悦己"双主线；奢侈品硬奢抗周期、软奢轻奢承压，品牌收缩大众化布局、聚焦高净值客群。消费行业整体从"规模扩张"转向"价值深耕"。</div>
+            <a class="news-item-link" href="https://www.guandian.cn/article/20261104/621814.html" target="_blank">→ 观点网·消费品牌：提质之路</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Loro Piana 用节日装置点亮首尔清潭洞，"纤维大师"展览同步落地</div>
+            <div class="news-item-desc">10月30日至12月底，Loro Piana 以节日装置装点首尔 Galleria 百货外立面，并在清潭洞旗舰店举办"Master of Fibres"展览。在奢侈品普遍承压的周期里，头部品牌选择用"工艺叙事+城市地标"强化高端心智——慢周期里的品牌动作，反而更值得复盘。</div>
+            <a class="news-item-link" href="https://luxe.co/" target="_blank">→ 华丽志</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">C罗回应退出葡萄牙国家队，众球星集体致敬，葡萄牙总理发声挽留</div>
+            <div class="news-item-desc">一代人的足球记忆走到告别时刻：C罗正面回应退出国家队传闻，全球球星刷屏致敬，葡萄牙总理公开表示"C罗应继续代表葡萄牙"。体育偶像的谢幕叙事正在成为本周最大的全球情感话题场。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=C%E7%BD%97%E5%9B%9E%E5%BA%94%E9%80%80%E5%87%BA%E8%91%A1%E8%90%84%E7%89%99%E5%9B%BD%E5%AE%B6%E9%98%9F" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">《何以中国》对话红山文化，文博考古内容再度出圈</div>
+            <div class="news-item-desc">"何以中国对话红山"登上热搜前位——红山文化玉龙、祭坛与"中华文明探源"叙事再次点燃公众对考古的热情。文博内容从纪录片、综艺到短视频的跨媒介生命力，持续验证"文明叙事"的大众吸引力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E4%BD%95%E4%BB%A5%E4%B8%AD%E5%9B%BD%E5%AF%B9%E8%AF%9D%E7%BA%A2%E5%B1%B1" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">普京签署法令：接管日本烟草在俄资产</div>
+            <div class="news-item-desc">俄罗斯总统普京签署法令，将日本烟草（JT）在俄资产收归国有管理，外资企业在俄经营的"退出成本"再添案例。地缘政治对跨国公司资产安全的持续重塑，是全球化品牌必须纳入风险模型的常量。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%99%AE%E4%BA%AC%E7%AD%BE%E7%BD%B2%E6%B3%95%E4%BB%A4%E6%8E%A5%E7%AE%A1%E6%97%A5%E6%9C%AC%E7%83%9F%E8%8D%89%E5%9C%A8%E4%BF%84%E8%B5%84%E4%BA%A7" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#美股AI硬件股大跌 财经焦虑内容迎来流量窗口</div>
+            <div class="trend-meta">财经内容赛道 · 风险情绪叙事</div>
+            <div class="trend-obs">💡 趋势观察："美股"高居热搜第1，纳指、英伟达、存储板块接连霸榜。AI 泡沫辩论从科技圈进入大众舆论场，小红书上"普通人要不要卖基金""AI泡沫与我有什么关系"类内容将迎来高互动期。财经焦虑是天然的科普与理财内容入口，但合规红线（荐股、收益承诺）需前置审查。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%BE%8E%E8%82%A1AI%E7%A1%AC%E4%BB%B6%E8%82%A1%E5%A4%A7%E8%B7%8C" target="_blank">→ 微博热搜·美股AI硬件股大跌</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#端午中秋各1天假 放假安排引发拼假攻略热潮</div>
+            <div class="trend-meta">假期规划赛道 · 攻略型内容</div>
+            <div class="trend-obs">💡 趋势观察：法定节假日安排话题冲上热搜，"端午中秋各只放1天"引发大规模拼假讨论。每逢放假安排公布，小红书的"拼假攻略""错峰旅行""年假规划"内容都会迎来确定性流量峰值——这是内容日历上可以提前两周备稿的固定选题，旅行、酒店、出行类品牌值得锁定。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%AB%AF%E5%8D%88%E4%B8%AD%E7%A7%8B%E5%90%841%E5%A4%A9%E5%81%87" target="_blank">→ 微博热搜·端午中秋各1天假</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#黄渤因阿尔兹海默遗传风险恐惧多年 健康科普情感化出圈</div>
+            <div class="trend-meta">健康科普赛道 · 家庭情感叙事</div>
+            <div class="trend-obs">💡 趋势观察：黄渤自述对阿尔兹海默遗传风险的恐惧登上热搜，"遗传概率6到8成"等科普话题同步走热。明星个人叙事+硬核医学知识的组合，是小红书健康内容的最优结构——"真实的人+可信的信息"。适老关怀、脑健康、家庭体检类内容与品牌可关注这波注意力窗口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%BB%84%E6%B8%A4%E5%9B%A0%E9%98%BF%E5%B0%94%E5%85%B9%E6%B5%B7%E9%BB%98%E9%81%97%E4%BC%A0%E9%A3%8E%E9%99%A9%E6%81%90%E6%83%A7%E5%A4%9A%E5%B9%B4" target="_blank">→ 微博热搜·黄渤谈阿尔兹海默</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#何以中国对话红山 文博考古内容持续升温</div>
+            <div class="trend-meta">文化科普赛道 · 国潮文明叙事</div>
+            <div class="trend-obs">💡 趋势观察：《何以中国》对谈红山文化登上热搜，玉龙、祭坛、文明探源话题引发全民讨论。文博内容在小红书的消费方式已经从"看展打卡"升级为"知识型二创"——玉器纹样、文物配色、考古盲盒都是可拆解的内容颗粒。博物馆、文旅、文创品牌可将"文明叙事"纳入 Q4 内容日历。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BD%95%E4%BB%A5%E4%B8%AD%E5%9B%BD%E5%AF%B9%E8%AF%9D%E7%BA%A2%E5%B1%B1" target="_blank">→ 微博热搜·何以中国对话红山</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#C罗回应退出葡萄牙国家队 偶像谢幕叙事刷屏</div>
+            <div class="trend-meta">体育情感赛道 · 男性用户内容</div>
+            <div class="trend-obs">💡 趋势观察：C罗国家队去留话题霸榜，众球星致敬、总理发声接连发酵。偶像谢幕是罕见的全球同步情感事件，小红书上"青春结束了"式集体记忆内容具备极强的共鸣势能。运动、男性消费、情怀向品牌可借"一代人谢幕"的叙事做情感向内容，注意避免过度商业化稀释情绪。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=C%E7%BD%97%E5%9B%9E%E5%BA%94%E9%80%80%E5%87%BA%E8%91%A1%E8%90%84%E7%89%99%E5%9B%BD%E5%AE%B6%E9%98%9F" target="_blank">→ 微博热搜·C罗回应退出国家队</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 叙事与预期管理</div>
+        <div class="learning-title">叙事的偿还：当 AI 股灾撞上"宏大承诺"，品牌营销该学什么</div>
+        <div class="learning-subtitle">一夜蒸发数万亿美元之后——所有依靠叙事撑起的预期，最终都要用兑现来偿还</div>
+        <div class="learning-body">
+          <p>昨夜美股给整个商业世界上了昂贵的一课：纳指100单日跌6.5%，费城半导体指数暴跌12%，AI产业链全线重挫。导火索不是财报，而是<strong>叙事与现实的错位</strong>——中期选举让"数据中心该不该建"从技术问题变成民意问题，76%的选民说不，市场瞬间重估了整个AI扩张故事的落地成本。</p>
+          <p>这一幕对营销人并不陌生。<strong>品牌叙事的本质是一张"预期支票"</strong>：你讲的故事越宏大，用户和市场对未来兑现的要求就越高。故事可以让人提前买单，但账迟早要还——还得上，叫品牌资产；还不上，叫叙事反噬。</p>
+          <p>消费行业今年的分化给出了正面样本：运动户外品类靠"专业功能可验证"持续领涨，黄金珠宝靠"保值+悦己"双主线穿越周期，而讲"轻奢生活方式"故事的软奢品牌集体承压。<strong>越是具体、越可验证的叙事，越抗跌；越是情绪化、越宏大的叙事，越需要小心管理预期。</strong></p>
+          <p>落到日常营销工作，有三条可操作的纪律：<strong>第一</strong>，宣传卖点只承诺产品能稳定兑现的下限，而非实验室的上限；<strong>第二</strong>，给每一条"宏大叙事"配一个可验证的"证据链动作"（测评、实测、用户证言），让故事有脚；<strong>第三</strong>，在情绪高点（融资、爆红、刷屏）主动降温，把预期锚定在可持续的水平——市场惩罚的从来不是慢，而是失信。</p>
+          <p>AI如此，品牌亦然：<strong>叙事负责让人靠近，兑现负责让人留下。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://finance.sina.com.cn/stock/cpbd/2026-11-06/doc-inixtxmh8969222.shtml" target="_blank">新浪财经《操盘必读：11月6日》</a> ·
+          <a href="https://aihot.virxact.com/items/vkfrtci1ufbtbydsqersys6lx" target="_blank">The Verge《中期选举蓝潮冲击AI行业》</a> ·
+          <a href="https://www.guandian.cn/article/20261104/621814.html" target="_blank">观点网《消费品牌：提质之路》</a> ·
+          <a href="https://m.cbndata.com/information/295770" target="_blank">CBNData《2026半年度消费新潜力白皮书》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · IDFA 阿姆斯特丹国际纪录片节</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🎥🇳🇱🌾</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">纪录片电影</span>
+          <span class="festival-tag">荷兰·阿姆斯特丹</span>
+          <span class="festival-tag">每年11月</span>
+          <span class="festival-tag">全球最大纪录片节</span>
+        </div>
+        <div class="festival-name">阿姆斯特丹国际纪录片节</div>
+        <div class="festival-name-en">IDFA · International Documentary Film Festival Amsterdam · 始于1988年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】给"真实"建一座殿堂</div>
+          <div class="festival-block-body">
+            <p>1988年，阿姆斯特丹。在故事片电影节的光环之下，纪录片长期只是边缘的陪衬——没有人愿意为一群拍"真实"的人专门办一个节。荷兰人偏要办。第一届 IDFA 开幕时，没人想到它会长成全球纪录影像的最高殿堂。</p>
+            <p>此后三十年，IDFA 一步步把"纪录片"从电影节的附属品做成了独立产业：1991年起设立的 <strong>IDFA Forum</strong> 成为全球最大的纪录片联合制作市场——导演带着一个提案来，走的时候可能带着来自欧洲各电视台与基金会的合制约；2007年创立的 <strong>DocLab</strong> 专注交互式与沉浸式纪录叙事，比"VR叙事"成为热词早了近十年。</p>
+            <p>历年的获奖名单，几乎就是一部全球社会议题的编年史：战争与流离、阶层与劳动、性别与身体、环境与消逝……IDFA 最重要的奖项"长片竞赛评委会大奖"，多年后回看，往往是那个时代最诚实的证词。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】全球真实影像的年度坐标</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">1988</div>
+                <div class="festival-stat-label">创办年份·阿姆斯特丹</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">300+</div>
+                <div class="festival-stat-label">年度展映影片数</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">20万+</div>
+                <div class="festival-stat-label">年度观影人次</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">全球最大</div>
+                <div class="festival-stat-label">纪录片节与提案市场</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">11月中下旬</div>
+                <div class="festival-stat-label">每年固定档期·为期11天</div>
+              </div>
+            </div>
+            <p>每年11月，阿姆斯特丹全城变成纪录片的城市：影院、博物馆、甚至教堂都在放映。IDFA 不只是一个影展，而是一个<strong>完整的产业生态</strong>——展映（观众）、Forum（资金与发行）、IDFAcademy（新人教育）、DocLab（未来形态）四位一体。一部纪录片从"想法"到"全球发行"的完整路径，都可以在这11天里走完。</p>
+            <p>它最独特的气质，是对"真实"近乎固执的坚持：在人人都追逐流量的年代，IDFA 坚持给慢工细活的作者电影留出主竞赛席位，也给实验性、个人化的私影像留出位置。真实本身就是它的奢侈品类。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】AI 时代，"真实"成为最稀缺的资产</div>
+          <div class="festival-block-body">
+            <p><strong>2026届看点：</strong>AI 生成内容全面普及之后，"这是真的吗"第一次成为整个影像行业的基础焦虑。本届 IDFA 预计将大量出现"关于AI的纪录片"与"用AI辅助创作的纪录片"——纪录片不再是记录现实，而是开始<strong>审视现实与虚构的边界本身</strong>。恰恰是 AI 的泛滥，让"由真人真实拍摄的素材"获得了前所未有的稀缺溢价。</p>
+            <p>此外，交互式纪录叙事（DocLab 方向）与流媒体纪录片的融合在加速：纪录片的观众正在从"影院里的旁观者"变成"可以走进故事内部的参与者"。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>IDFA 的底层逻辑对内容平台极其适用——<strong>越是在生成内容泛滥的时代，"真实感"越是最高级的内容形态</strong>。小红书种草内容的壁垒从来不是精致，而是"一个真实的人，真实地用过，真实地讲了"。大事件策划中，与其追求完美的官方物料，不如设计让真实参与者"留下证词"的机制：素人视角、过程记录、不完美的现场，恰恰是 AI 时代最不可复制的内容资产。另一个可借鉴的模型是 IDFA Forum——"提案+资源匹配"的内容共创孵化机制，完全可以移植为平台级的内容共创IP：先公开征集提案，再撮合品牌、创作者与资源，让好内容在被拍出来之前就获得支持。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.idfa.nl/en" target="_blank">IDFA 官网</a> ·
+          <a href="https://zh.wikipedia.org/wiki/%E9%98%BF%E5%A7%86%E6%96%AF%E7%89%B9%E4%B8%B9%E5%9B%BD%E9%99%85%E7%BA%AA%E5%BD%95%E7%89%87%E8%8A%82" target="_blank">维基百科·阿姆斯特丹国际纪录片节</a> ·
+          <a href="https://www.idfa.nl/en/info/idfa-forum" target="_blank">IDFA Forum 官方介绍</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 纪录片大师</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎥 主题策展 · 纪录片大师图谱</div>
+        <div class="knowledge-headline">用镜头诚实的人：五位大师与一部"真实简史"</div>
+        <div class="knowledge-tagline">「纪录片不是现实的一面镜子，而是『制作者对现实的思考』——约翰·格里尔逊」</div>
+
+        <div class="knowledge-intro">
+          在 AI 可以生成任何画面的今天，回望那些用几十年时间"笨拙地拍摄真实"的人，会发现一种近乎奢侈的品质。<strong>纪录片大师们的共同点，不是拍到了什么，而是他们和拍摄对象相处的方式</strong>——有人跟拍一个家庭数十年，有人和灰熊同住，有人让证人隔着银幕互相"对质"。理解他们的方法论，对内容创作者来说是理解"真实感如何被制造"的最佳教材。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/David_Attenborough_in_2025.jpg/440px-David_Attenborough_in_2025.jpg"
+              alt="大卫·爱登堡"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🌍</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">大卫·爱登堡</div>
+              <div class="knowledge-card-sub">David Attenborough · 英国 · 自然纪录片之父</div>
+              <div class="knowledge-card-work">《蓝色星球》《地球脉动》背后的声音。70年职业生涯把自然纪录片做成了全球共同语言，也把"气候叙事"推入大众心智——99岁仍在为地球发声。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Agn%C3%A8s_Varda_%28Berlinale_2019%29_%28cropped%29.jpg/440px-Agn%C3%A8s_Varda_%28Berlinale_2019%29_%28cropped%29.jpg"
+              alt="阿涅斯·瓦尔达"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🍂</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">阿涅斯·瓦尔达</div>
+              <div class="knowledge-card-sub">Agnès Varda · 法国/比利时 · 新浪潮教母</div>
+              <div class="knowledge-card-work">《拾穗者》《脸庞，村庄》——用一台数码DV和一辆小卡车，把"捡拾"拍成哲学。她证明纪录片的最高技术是好奇心，不是设备。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Werner_Herzog-9290.jpg/440px-Werner_Herzog-9290.jpg"
+              alt="沃纳·赫尔佐格"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐻</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">沃纳·赫尔佐格</div>
+              <div class="knowledge-card-sub">Werner Herzog · 德国 · "狂热"的化身</div>
+              <div class="knowledge-card-work">《灰熊人》《在世界尽头相遇》——他把纪录片拍成了存在主义探险。他的信条：拍摄者必须先被现实灼伤，镜头里才可能有真东西。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Errol_Morris_by_Bridget_Laudien.jpg/440px-Errol_Morris_by_Bridget_Laudien.jpg"
+              alt="埃罗尔·莫里斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">埃罗尔·莫里斯</div>
+              <div class="knowledge-card-sub">Errol Morris · 美国 · 调查纪录片宗师</div>
+              <div class="knowledge-card-work">《细细的蓝线》用"重现镜头"翻转了一桩冤案，直接让当事人无罪释放——纪录片第一次证明自己可以改变司法现实。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Frederick_Wiseman.jpg/440px-Frederick_Wiseman.jpg"
+              alt="弗雷德里克·怀斯曼"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏛️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">弗雷德里克·怀斯曼</div>
+              <div class="knowledge-card-sub">Frederick Wiseman · 美国 · 制度观察者</div>
+              <div class="knowledge-card-work">60多部作品全部拍"机构"：高中、医院、监狱、图书馆。零解说、零配乐、几百小时素材剪一部片——耐心本身就是他的作者签名。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎞️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王兵</div>
+              <div class="knowledge-card-sub">中国 · 独立纪录片导演</div>
+              <div class="knowledge-card-work">《铁西区》用9小时凝视一座衰亡的工厂区，被影史视为中国独立纪录片的里程碑。他用镜头保存了转型时代里"沉默的大多数"的尊严。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这些大师留给内容创作者的启示高度一致：<strong>真实感来自"时间"和"在场"，而不是"技术"和"话术"</strong>。怀斯曼用几百小时等待一个瞬间，瓦尔达用好奇心代替昂贵设备，爱登堡用70年只做一件事。当AI让"生成漂亮内容"的成本趋近于零，愿意花时间"在场"的内容——一条真实的测评、一段真实的经历、一次真实的翻车——反而成了最贵的货币。这也是种草内容的本质：真实，是唯一无法被批量生成的东西。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
