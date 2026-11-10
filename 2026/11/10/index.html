@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/10</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/10/index.html" class="active">2026 / 11 / 10</a></li>
+      <li><a href="/daypulse/2026/11/9/index.html">2026 / 11 / 9</a></li>
+      <li><a href="/daypulse/2026/11/6/index.html">2026 / 11 / 6</a></li>
+      <li><a href="/daypulse/2026/11/4/index.html">2026 / 11 / 4</a></li>
+      <li><a href="/daypulse/2026/11/3/index.html">2026 / 11 / 3</a></li>
+      <li><a href="/daypulse/2026/11/2/index.html">2026 / 11 / 2</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/28/index.html">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+      <li><a href="/daypulse/2026/10/19/index.html">2026 / 10 / 19</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 10</div>
+      <div class="day-week">星期二 · 立冬第三日</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美股三大股指涨超2%，道指暴涨1100点，费城半导体指数涨6.85%、AMD涨超13%</div>
+            <div class="news-item-desc">隔夜美股科技股强势反弹，芯片股领涨全场。谷歌发布两款新TPU芯片加码挑战英伟达，TPU 8tx 采用AMD第五代EPYC处理器；日本芯片股今日盘中一度涨12%。AI叙事短暂压制住黄仁勋风波带来的恐慌，资金在"算力信仰"与"人事风险"之间选择了前者。</div>
+            <a class="news-item-link" href="https://shishixinwen.news/news/jin10/20261110084345245800" target="_blank">→ 金十数据·隔日全球股市回顾</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">A股窄幅震荡，上证指数收涨0.32%报3660.79点；10月PPI创52个月新高</div>
+            <div class="news-item-desc">市场成交1.49万亿元、缩量1770亿元，题材轮动后兑现压力上升。10月PPI创52个月新高，"反内卷"涨价逻辑向中游传导；"星云星座计划"发布，商业航天成为新增题材方向。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/money/fund/jjh/2026-11-10/doc-iniyfech2780709.shtml" target="_blank">→ 新浪财经·11.10盘前哨</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic 发布 Claude Fable 5.2 与 Claude Mythos 5.2：一次直出视频、3D网页，甚至完整硬件原型</div>
+            <div class="news-item-desc">双模型同一底层：Mythos 需通过安全验证计划申请访问。实测显示 Fable 5.2 可一次直出视频动效与 Three.js 3D 场景；Anthropic 还与 Diode Computers 合作，让它从提示词出发完成三种电子设备的 PCB 布局、CAD 建模与固件编写，原型经数周使用仍正常工作。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/va9trgwaw3r4por6vdqbjxrhd" target="_blank">→ AIHOT·官方发布</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic 拟感恩节前 IPO：募资800–1000亿美元，估值1.25–1.75万亿美元</div>
+            <div class="news-item-desc">据FT援引投资者消息，Anthropic 接受低于乐观预期的估值，但远高于当前9650亿美元二级市场估值。AI一级市场降温之际，头部公司选择用确定性换时间表——感恩节前的窗口期选择本身，就是一场对投资者情绪的精准计算。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/okhx4jjwucd647299qwzsl6ua" target="_blank">→ AIHOT·FT报道</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">1000个 Claude 智能体沙箱内复现费马大定理形式化证明：28.7小时，token仅原版三分之一</div>
+            <div class="news-item-desc">Anthropic 玩具实验中，千个智能体在无研究者指导下自组织完成了9月人类团队的形式化证明，证明长度缩短至七分之一。多智能体协作的安全边界设计，比结果本身更值得关注。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/y0m3p1gin2dlfm4ns7gsrkvr8" target="_blank">→ AIHOT·开发者博客</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">第18个双11新信号：美妆、服饰、运动户外、3C数码热卖Top1全是新品</div>
+            <div class="news-item-desc">天猫榜单显示，3C数码热卖榜前15里新品占10席，服饰、运动户外、家电家装前10里新品占比过半。新品不再是大促的"点缀"，而是直接承担成交与增长。品牌竞争的轴心正从"低价与流量"转向"新鲜感与产品力"。</div>
+            <a class="news-item-link" href="https://original.ifeng.com/c/8xuoFrcSk5y" target="_blank">→ 凤凰网·第18个双11</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美妆双11策略转向："买正送正"替代小样，预算从直播投流迁回货架</div>
+            <div class="news-item-desc">品牌普遍以"买正装送正装"承接复购与利润，同时降低直播投入、加码旗舰店等货架渠道。防晒、户外等细分品类仍保持增长——大促之后能否"留下消费者"，成为新的竞争焦点。</div>
+            <a class="news-item-link" href="https://www.huxiu.com/article/4898692.html" target="_blank">→ 虎嗅·消费新秩序前夜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">山姆20元一包泡面引热议：会员制零售的价格锚点之争</div>
+            <div class="news-item-desc">"贵价泡面"冲上热搜，折射会员制商超的双面性：极致选品带来信任，也带来价格敏感点。当折扣零售全线上场，山姆的溢价故事还能讲多久，取决于会员对"值不值"的持续投票。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B1%B1%E5%A7%86%E7%8E%B020%E5%85%83%E4%B8%80%E5%8C%85%E6%B3%A1%E9%9D%A2" target="_blank">→ 微博热搜·山姆泡面</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">王传君坦言《爱情公寓》"只是份工作"：演员与角色的关系再引讨论</div>
+            <div class="news-item-desc">话题登上热搜。从喜剧符号到文艺片常客，王传君的转型路径一直被视为"去角色化"样本——但大众记忆往往不放手。IP的长尾效应与演员的自我重塑之间，始终存在张力。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%8E%8B%E4%BC%A0%E5%90%9B%E5%9D%A6%E8%A8%80%E7%88%B1%E6%83%85%E5%85%AC%E5%AF%93%E5%8F%AA%E6%98%AF%E4%BB%BD%E5%B7%A5%E4%BD%9C" target="_blank">→ 微博热搜·王传君</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">W盛典红毯"神级镜头"刷屏，张凌赫"真升咖了"——内娱年末盛典季开幕</div>
+            <div class="news-item-desc">杨幂给倪妮整理裙摆、辛芷蕾内场图出圈：年末红毯的"名场面"逻辑依然是碎片化传播的最优解。盛典不再只是一场晚会，而是一条为热搜定制的内容流水线。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=W%E7%9B%9B%E5%85%B8%E7%BA%A2%E6%AF%AF%E7%A5%9E%E7%BA%A7%E9%95%9C%E5%A4%B4%E5%87%BA%E7%8E%B0%E4%BA%86" target="_blank">→ 微博热搜·W盛典红毯</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">黄仁勋风波发酵：曝提前1年聘请危机公关，英伟达市值一夜蒸发1.29万亿元</div>
+            <div class="news-item-desc">据Bloomberg，黄仁勋在全员备忘录中承认婚外关系，董事会启动独立调查；耶鲁教授估计其去留概率约五五开。个人声誉与公司治理边界、丑闻与出口管制议程的纠缠，正成为全球市值第一公司的最大不确定性。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%9B%9D%E9%BB%84%E4%BB%81%E5%8B%8B%E6%8F%90%E5%89%8D1%E5%B9%B4%E8%81%98%E8%AF%B7%E5%8D%B1%E6%9C%BA%E5%85%AC%E5%85%B3" target="_blank">→ 微博热搜·黄仁勋危机公关</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">天猫双11"疯狂好六夜"上热搜：第18年，大促晚会重新成为品牌秀场</div>
+            <div class="news-item-desc">双11晚会热度回归，与大促收官期形成"内容+成交"共振。当低价不再是唯一叙事，晚会承担的正是"消费情绪放大器"的角色——把货架上的折扣，翻译成值得围观的仪式。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%A9%E7%8C%AB%E5%8F%8C11%E7%96%AF%E7%8B%82%E5%A5%BD%E5%85%AD%E5%A4%9C" target="_blank">→ 微博热搜·疯狂好六夜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">日本担心高市早苗在APEC被"冷落"，中日关系走向牵动亚太议程</div>
+            <div class="news-item-desc">APEC会议周开启，日媒关注首相在国际多边场合的站位与互动安排。外交礼仪的冷热，往往是双边关系温度计——东北亚的每一次"排位"都值得观察。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%97%A5%E6%9C%AC%E6%8B%85%E5%BF%83%E9%AB%98%E5%B8%82%E6%97%A9%E8%8B%97%E5%9C%A8APEC%E8%A2%AB%E5%86%B7%E8%90%BD" target="_blank">→ 微博热搜·高市早苗APEC</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">比亚迪荷兰办公室遭突击搜查：中国车企出海进入"合规深水区"</div>
+            <div class="news-item-desc">欧盟反补贴调查余波未平，欧洲市场对中企的审查强度持续升级。出海竞争的上半场拼价格与产品，下半场拼的是本地化合规体系——这是所有出海品牌的必修课。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%AF%94%E4%BA%9A%E8%BF%AA%E8%8D%B7%E5%85%B0%E5%8A%9E%E5%85%AC%E5%AE%A4%E9%81%AD%E7%AA%81%E5%87%BB%E6%90%9C%E6%9F%A5" target="_blank">→ 微博热搜·比亚迪荷兰</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#天猫双11疯狂好六夜 大促收官热度持续</div>
+            <div class="trend-meta">大促节点 · 消费情绪内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：双11进入收官周，"晚会名场面+战报榜单+开箱晒单"三层内容在小红书同步发酵。今年榜单的特殊信号是"新品含量"——Top1几乎全是新品，种草内容的重心正从"折扣信息"转向"新品体验第一现场"。品牌在收官期的内容预算，应向"新品开箱+真实测评"倾斜，而非重复的促销信息。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A4%A9%E7%8C%AB%E5%8F%8C11%E7%96%AF%E7%8B%82%E5%A5%BD%E5%85%AD%E5%A4%9C" target="_blank">→ 微博热搜·天猫双11疯狂好六夜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#立冬后要改一下睡觉时间 节气养生内容升温</div>
+            <div class="trend-meta">节气生活 · 健康养生赛道</div>
+            <div class="trend-obs">💡 趋势观察：立冬后"早卧晚起"话题热度走高，节气养生是小红书每年冬天最稳定的流量节律之一。这类内容的商业出口非常清晰：床品、香薰、暖宫贴、养生茶饮、进补食材。节气前3天是品牌种草的最佳窗口——内容可借"改一下睡觉时间"这类低门槛行动指令，把养生共识转化为具体SKU的购买理由。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%AB%8B%E5%86%AC%E5%90%8E%E8%A6%81%E6%94%B9%E4%B8%80%E4%B8%8B%E7%9D%A1%E8%A7%89%E6%97%B6%E9%97%B4" target="_blank">→ 微博热搜·立冬后改睡觉时间</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#用空气炸锅烤奶茶太香了 冬季厨房DIY回潮</div>
+            <div class="trend-meta">美食DIY · 小家电内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：天气转冷，"家用设备复刻街头饮品"类内容进入爆发期。空气炸锅、迷你破壁机、养生壶是小红书冬季食谱内容的"道具三件套"——食谱的传播力一半来自菜谱本身，一半来自"我家也有这个锅"的代入感。小家电品牌冬季营销的核心，是持续供给"一锅多吃"的新玩法。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%94%A8%E7%A9%BA%E6%B0%94%E7%82%B8%E9%94%85%E7%83%A4%E5%A5%B6%E8%8C%B6%E5%A4%AA%E9%A6%99%E4%BA%86" target="_blank">→ 微博热搜·空气炸锅烤奶茶</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#从洗洁精就能看出来设计师的重要性 日常设计话题出圈</div>
+            <div class="trend-meta">设计审美 · 生活方式内容</div>
+            <div class="trend-obs">💡 趋势观察："日常物件的设计分析"类内容持续有稳定的互动率——它把专业话语翻译成"原来如此"的顿悟感。对品牌而言，这类内容是产品细节叙事的天然模板：与其自夸工艺，不如让设计师/工厂流博主拆解"为什么这个瓶口倒出不挂壁"。细节故事化，是耐消与日化品类种草的高信任度路径。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%BB%8E%E6%B4%97%E6%B4%81%E7%B2%BE%E5%B0%B1%E8%83%BD%E7%9C%8B%E5%87%BA%E6%9D%A5%E8%AE%BE%E8%AE%A1%E5%B8%88%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7" target="_blank">→ 微博热搜·洗洁精与设计师</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#大型SUV第一名是小米澎程N90 耐用品决策话题走热</div>
+            <div class="trend-meta">汽车耐消 · 家庭消费决策</div>
+            <div class="trend-obs">💡 趋势观察：小米澎程N90登顶大型SUV榜首，"榜单第一"本身成为最强种草素材。家庭大件消费的决策链路里，小红书扮演的是"真实车主生活流"的验证环节——续航、空间、带娃场景的日常记录，比参数测评更能推动决策。汽车品牌在社区的内容资产，应重点沉淀"家庭真实使用场景"而非发布会物料。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%A4%A7%E5%9E%8BSUV%E7%AC%AC%E4%B8%80%E5%90%8D%E6%98%AF%E5%B0%8F%E7%B1%B3%E6%BE%8E%E7%A8%8BN90" target="_blank">→ 微博热搜·小米澎程N90</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 大促方法论</div>
+        <div class="learning-title">第18个双11的新品逻辑：大促正在从"流量场"变回"产品场"</div>
+        <div class="learning-subtitle">当热卖榜Top1全是新品，价格战的叙事失效了</div>
+        <div class="learning-body">
+          <p>第18个双11，最值得记下来的不是战报数字，而是榜单结构的变化：<strong>美妆、服饰、运动户外、3C数码的热卖Top1全部是新品</strong>——3C数码热卖榜前15里新品占10席。新品第一次不是大促的"引流配角"，而是直接承担成交的主角。</p>
+          <p>这背后的逻辑迁移值得细品。过去十年，大促的核心方法论是<strong>价格换流量</strong>：用极致折扣换取爆发式成交，品牌以此清库存、冲排名。但今年的信号是"买正送正"替代小样轰炸、预算从直播投流迁回货架旗舰店——品牌开始为<strong>利润和复购</strong>而设计大促，而不是为GMV排名。</p>
+          <p>为什么新品反而成了增长主线？因为当所有人都打折时，价格失去了区分度；而<strong>"新"永远是稀缺的</strong>。消费者对"第18次双11"的边际兴奋感在递减，但对"第一次拥有某个新东西"的兴奋感没有。新品给用户提供了一个"我现在下单"的理由，这个理由比"便宜了200块"更接近内容种草的本质。</p>
+          <p>对内容营销的启示有三层：<strong>其一</strong>，种草的重心要从"促销信息"转向"新品体验第一现场"——开箱、首测、真实使用日志的价值在上升；<strong>其二</strong>，大促内容的时间轴要前置，新品蓄水期（种草）与爆发期（收割）之间的间隔，就是用户从"心动"到"下单"的心理旅程；<strong>其三</strong>，"买正送正"的流行说明用户变聪明了——小样逻辑失效意味着，种草内容里"赠送策略"的表达也需要升级为"正装价值感"的表达。</p>
+          <p>一句话总结：<strong>大促的尽头不是低价，是新品；种草的尽头不是曝光，是"第一次拥有"的想象。</strong></p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://original.ifeng.com/c/8xuoFrcSk5y" target="_blank">凤凰网《第18个双11：新品与新品类成增长主线》</a> ·
+          <a href="https://www.huxiu.com/article/4898692.html" target="_blank">虎嗅《消费新秩序前夜，品牌在双11寻找新出路》</a> ·
+          <a href="https://news.pedaily.cn/202611/571562.shtml" target="_blank">投资界《中国消费的新鲜感回来了》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 感恩节与梅西百货大游行</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🦃🎈🎄</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">现代节庆</span>
+          <span class="festival-tag">美国·全国</span>
+          <span class="festival-tag">每年11月第四个星期四</span>
+          <span class="festival-tag">2026/11/26</span>
+          <span class="festival-tag">全球最大购物季开幕式</span>
+        </div>
+        <div class="festival-name">感恩节与梅西百货大游行</div>
+        <div class="festival-name-en">Thanksgiving Day &amp; Macy's Thanksgiving Day Parade · 游行始于1924年</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从丰收晚宴到购物季的开幕式</div>
+          <div class="festival-block-body">
+            <p>1621年冬天，普利茅斯殖民地的清教徒与万帕诺亚格人共享了一次丰收晚宴——这被后世追认为感恩节的原点。1789年华盛顿总统倡议全国感恩日，1863年林肯在内战最深处把它定为全国性节日：在最撕裂的年代，一个"感谢"的仪式被用来缝合国家。1941年罗斯福签署法案，把日期固定在11月第四个星期四——有趣的是，此前日期之争（史称"Franksgiving"）正是由零售商推动的：日期早一周，圣诞购物季就长一周。<strong>这个节日从诞生起，就一半是家庭餐桌，一半是商业日历。</strong></p>
+            <p>1924年，梅西百货员工走上纽约街头，把动物园的动物借来游行——第一届大游行的主角不是气球，是真的大象和老虎。1927年，菲利斯公司（Goodyear）制作的第一只巨型气球"菲利克斯猫"升空，从此"巨大气球漂浮在摩天楼之间"成为美国感恩节的标志性画面。1941年法案立法、1947年《34街奇缘》把游行搬上银幕、1989年老布什将"火鸡赦免"仪式正式化——节日的每一个记忆点，都被仪式反复加固。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一座城市为一台节目而运转</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">350万+</div>
+                <div class="festival-stat-label">纽约现场观众</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2000万+</div>
+                <div class="festival-stat-label">NBC电视直播收视</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">4600万只</div>
+                <div class="festival-stat-label">感恩节全美火鸡消耗</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2.5英里</div>
+                <div class="festival-stat-label">曼哈顿游行路线</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">8000万+</div>
+                <div class="festival-stat-label">感恩节周末出行人次</div>
+              </div>
+            </div>
+            <p>今天的梅西大游行是<strong>全球规模最大的游行演出之一</strong>：十几只巨型气球、花车、行进乐队与百老汇剧组，沿曼哈顿中央公园西侧行进2.5英里。它的运作模式更值得研究——巨型气球由品牌赞助定制（从花生酱到宝可梦皮卡丘），气球本身就是"品牌定制的城市级内容装置"；数千名志愿者牵引气球，围观家庭凌晨占位，仪式感由全民共同生产。</p>
+            <p>而感恩节真正的商业意义在于：<strong>它是美国购物季的开幕式</strong>。感恩节次日是"黑色星期五"，随后是"网络星期一"，整个购物季贡献美国零售业全年最大比重。2026年，Anthropic 也把 IPO 窗口选在感恩节之前——资本市场同样懂得：节点之前的确定性，比节点之后的等待更值钱。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】第二个百年，和对小红书大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p>走过百年，梅西大游行正进入第二个世纪的调整期：加入更多元的街区文化表演、更环保的氦气替代方案、线上直播与短视频切片的二次传播。它的未来竞争力不在"更大"，而在<strong>"年度仪式的不可替代性"</strong>——你可以错过任何晚会，但你很难错过一个全家一起看了一百年的气球。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件业务的启发：</strong>梅西大游行给出了大事件的四个黄金公式——①<strong>固定日期</strong>：仪式感来自确定性，"每年感恩节上午9点"比"某月某日盛大举行"更有期待复利；②<strong>城市级内容现场</strong>：把大事件本身设计成"可被拍摄、可被转发的巨型装置"，气球就是1927年的"打卡装置"；③<strong>品牌共创位</strong>：不是让品牌赞助活动，而是让品牌拥有自己的内容资产（一只属于它的气球）；④<strong>家庭场景</strong>：感恩节把消费嵌入家庭团聚的情感时刻——双11之后，"感谢"或许正是中国人消费叙事里下一个待开采的情绪。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.macys.com/s/parade/" target="_blank">Macy's Parade 官网</a> ·
+          <a href="https://zh.wikipedia.org/zh-cn/%E6%84%9F%E6%81%A9%E8%8A%82" target="_blank">维基百科·感恩节</a> ·
+          <a href="https://en.wikipedia.org/wiki/Macy%27s_Thanksgiving_Day_Parade" target="_blank">Wikipedia·Macy's Thanksgiving Day Parade</a> ·
+          <a href="https://www.history.com/topics/thanksgiving/history-of-thanksgiving" target="_blank">History.com·Thanksgiving History</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 美国消费文化</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🇺🇸 主题策展 · 美国消费文化的六位缔造者</div>
+        <div class="knowledge-headline">从一只火鸡到一只气球：谁教会了美国人"买买买"？</div>
+        <div class="knowledge-tagline">「买东西比思考，更具有美国精神。」——安迪·沃霍尔</div>
+
+        <div class="knowledge-intro">
+          感恩节的餐桌，是美国消费文化的缩影：一只火鸡背后，是插画师定义的理想家庭、公关之父设计的饮食习惯、工业设计师塑造的日常器物、广告人讲述的品牌故事、艺术家对消费本身的凝视，以及一位女企业家发明的"试用"魔法。<br><br>
+          这六个人构成了一个完整的链条：<strong>图像 → 观念 → 设计 → 广告 → 艺术 → 零售</strong>。今天中国消费市场正在经历的"从流量到产品力"的转向，美国人一百年前走过一遍——他们的遗产，就是我们的镜鉴。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Norman_Rockwell_1.jpg/440px-Norman_Rockwell_1.jpg"
+              alt="诺曼·洛克威尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🦃</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">诺曼·洛克威尔</div>
+              <div class="knowledge-card-sub">Norman Rockwell · 美国 · 插画大师</div>
+              <div class="knowledge-card-work">《自由之欲》里那张祖母端火鸡的全家福，定义了美国人心中"团圆晚餐"的视觉原型。感恩节的情感模板，是他画的。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Edward_Bernays_cropped.png/440px-Edward_Bernays_cropped.png"
+              alt="爱德华·伯内斯"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📰</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">爱德华·伯内斯</div>
+              <div class="knowledge-card-sub">Edward Bernays · 美国 · 公关之父</div>
+              <div class="knowledge-card-work">弗洛伊德的外甥。请医生背书让"培根煎蛋"成为美式早餐，用"自由火炬"卖香烟给女性。他证明：观念可以被工程化地植入。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Raymond_Loewy_circa_1956.jpg/440px-Raymond_Loewy_circa_1956.jpg"
+              alt="雷蒙德·罗维"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">雷蒙德·罗维</div>
+              <div class="knowledge-card-sub">Raymond Loewy · 法国/美国 · 工业设计之父</div>
+              <div class="knowledge-card-work">从可口可乐弧形瓶到壳牌标志再到空军一号涂装，"从口红到火车头"。他把"好卖"变成了设计的职业伦理。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/David_ogilvy.jpg/440px-David_ogilvy.jpg"
+              alt="大卫·奥格威"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">✒️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">大卫·奥格威</div>
+              <div class="knowledge-card-sub">David Ogilvy · 英国/美国 · 广告教父</div>
+              <div class="knowledge-card-work">「消费者不是白痴，她是你的妻子。」品牌形象论的奠基人——广告从叫卖升维为长期人格资产的起点。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Andy_Warhol_1977.jpg/440px-Andy_Warhol_1977.jpg"
+              alt="安迪·沃霍尔"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥫</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">安迪·沃霍尔</div>
+              <div class="knowledge-card-sub">Andy Warhol · 美国 · 波普艺术</div>
+              <div class="knowledge-card-work">把32罐金宝汤罐头搬进美术馆，让超市货架成为圣像画。他不说消费主义好坏，只是盯着它看——直到它不好意思。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Estee_Lauder_NYWTS.jpg/440px-Estee_Lauder_NYWTS.jpg"
+              alt="雅诗·兰黛"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">💄</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">雅诗·兰黛</div>
+              <div class="knowledge-card-sub">Estée Lauder · 美国 · 美妆帝国缔造者</div>
+              <div class="knowledge-card-work">在美容院亲手涂抹演示，发明"小样试用"并首创购物赠礼（GWP）。今年双11"买正送正"的祖师奶奶，就是她。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这条链路最动人的地方在于：<strong>消费文化从来不是"生意"单方面写成的，而是图像、心理学、设计、文案与艺术共同创作的长篇叙事。</strong>洛克威尔给了它情感，伯内斯给了它方法，罗维给了它形态，奥格威给了它人格，沃霍尔给了它自省，兰黛给了它触达。双11之后的第18年，中国品牌正在补的课，恰恰是这条链路的中段——产品力与品牌人格。而"感恩"这个几乎未被开采的情绪节点，也许正是下一个叙事的开端。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
