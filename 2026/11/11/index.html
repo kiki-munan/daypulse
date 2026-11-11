@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/11</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/11/index.html" class="active">2026 / 11 / 11</a></li>
+      <li><a href="/daypulse/2026/11/10/index.html">2026 / 11 / 10</a></li>
+      <li><a href="/daypulse/2026/11/9/index.html">2026 / 11 / 9</a></li>
+      <li><a href="/daypulse/2026/11/6/index.html">2026 / 11 / 6</a></li>
+      <li><a href="/daypulse/2026/11/5/index.html">2026 / 11 / 5</a></li>
+      <li><a href="/daypulse/2026/11/4/index.html">2026 / 11 / 4</a></li>
+      <li><a href="/daypulse/2026/11/3/index.html">2026 / 11 / 3</a></li>
+      <li><a href="/daypulse/2026/11/2/index.html">2026 / 11 / 2</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/29/index.html">2026 / 10 / 29</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 11</div>
+      <div class="day-week">星期三</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">10月出口同比增长35.2%，进口大增41.6%，外贸跑出年内新高</div>
+            <div class="news-item-desc">海关总署数据显示，10月进出口两旺：AI产业链支撑下，自动数据处理设备与集成电路进口大增，对美出口同比增长32.9%、对欧盟出口增长24.3%。民生银行首席经济学家概括三大支撑：AI投资带动的全球制造业景气、出口价格高位、对美欧出口回暖。前10月机电产品出口增长25.2%。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20261110/herald/8dd7cc138da02ccedebf1e3c86086587.html" target="_blank">→ 21经济网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">中美贸易战"休战"延期谈判进行中，关税水平较上年大幅下调</div>
+            <div class="news-item-desc">当前中美正就"休战"延期展开谈判，美方对华关税较上年同期显著回落，是10月对美出口维持高增的重要背景。贸易环境的边际缓和，正在成为Q4出口数据超预期的底层变量。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20261110/herald/94faefb94fb4dd953a06065cf536eae2.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic IPO 定价上调：发行区间 $70-78，估值冲向 $1.5 万亿，代码"ANT"</div>
+            <div class="news-item-desc">因投资者需求旺盛，Anthropic 承销商计划上调 IPO 定价，把目标估值拉回 1.5 万亿美元或更高。发行区间对应估值 1.26T-1.41T，若定价超出区间募资将超 1000 亿美元，其中 Google、Nvidia、Microsoft 将按 IPO 价格投资 260 亿美元。几乎全部资金流入公司而非早期股东退出。预计最早下周四在纳斯达克挂牌，估值仍高于 OpenAI 上周 1.25 万亿美元的私募估值。（AIHOT）</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">阿里官宣分拆平头哥赴港上市：9月已秘密递表，估值或达300亿美元</div>
+            <div class="news-item-desc">阿里巴巴宣布拟分拆全资芯片子公司平头哥在香港联交所主板独立上市，机构估值 200 亿-300 亿美元，拟募资 20 亿-30 亿美元。从倚天 710 到玄铁系列 RISC-V 芯片，阿里的算力底座正式走向独立资本化——中国自研芯片的资本叙事又添一极。话题已冲上微博热搜。</div>
+            <a class="news-item-link" href="https://m.21jingji.com/article/20261110/herald/f318c8db18c47e096c7cac546092a424.html" target="_blank">→ 21财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">双十一阶段性战报：综合电商10月7日-31日成交10263亿，同比增2.4%</div>
+            <div class="news-item-desc">艾瑞数据显示综合电商平台成交破万亿，家电和手机数码仍是主力。今年最大变化是"买算力、买服务"成为新品类——AI从噱头变成基础设施，中央第四批2500亿消费资金恰好赶在双十一前落地。</div>
+            <a class="news-item-link" href="https://k.sina.cn/article_1827021883_6ce6243b00102l7oc.html" target="_blank">→ 新浪新闻</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美妆双十一从"冲规模"到"保利润"，黑马Fan Beauty冲进国货榜第3</div>
+            <div class="news-item-desc">2026年双11美妆品牌普遍采用"买赠正装"策略，转向利润、渠道优化与细分赛道。从直播第一转型天猫货架的Fan Beauty凭借海葡萄面膜跻身天猫美妆综合榜第16、国货榜第3，增速位列亿元级品牌第三——"内容平台种草+旗舰店成交"已成成熟链路。</div>
+            <a class="news-item-link" href="https://news.pedaily.cn/202611/571597.shtml" target="_blank">→ 投资界</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">第39届金鸡奖厦门揭晓：梁家辉首夺影帝，高叶凭《南京照相馆》封后</div>
+            <div class="news-item-desc">11月10日晚，金鸡奖颁奖典礼暨金鸡百花电影节闭幕式在厦门海峡大剧院举行。梁家辉凭《捕风追影》获奖——从影40多年第一次拿到金鸡奖；高叶凭《南京照相馆》获最佳女主角，"从业二十年，现在是我的圆梦时刻"。梁家辉拒绝工作人员帮忙拿奖杯、影史第二位"三金影帝"等话题持续刷屏微博热搜。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_34447516" target="_blank">→ 澎湃新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">AI对消费决策影响力达43.7%，首次超过传统媒体广告的42.6%</div>
+            <div class="news-item-desc">《2026年二季度中国消费者消费意愿调查报告》显示，消费者购物前会"先问AI"——AI第一次在决策影响力上超越传统广告。京东Aidol创造营第二季超200个团队报名，双11联合品牌上线超300款AI商品。当"问AI"取代"看广告"，品牌内容的分发逻辑必须重写。</div>
+            <a class="news-item-link" href="https://t.cj.sina.com.cn/articles/view/1770735827/698b48d300101bjus" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">高丝正式转型控股公司体制："超越美妆"的集团定义被改写</div>
+            <div class="news-item-desc">进博会上，高丝宣布全面推进"Beauty Consortium"全球战略——融合美容、健康、医美、生活方式，不再做传统化妆品公司。澎湃统计10位跨国美妆集团总裁的判断：美妆正在超越"美妆"，行业边界的重新定义已经开始。</div>
+            <a class="news-item-link" href="https://www.thepaper.cn/newsDetail_forward_34445414" target="_blank">→ 澎湃新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">法国最新涉华表态引发关注，中欧经贸谈判进入敏感窗口期</div>
+            <div class="news-item-desc">法国最新涉华表态登上微博热搜。在中欧经贸谈判背景下，10月对欧出口存在一定"抢出口"现象，欧洲市场的政策不确定性正在成为外贸企业Q4排产的核心变量。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%B3%95%E5%9B%BD%E6%9C%80%E6%96%B0%E6%B6%89%E5%8D%8E%E8%A1%A8%E6%80%81" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#金鸡奖获奖名单 热度87万+，影帝影后话题霸榜</div>
+            <div class="trend-meta">影视颁奖季 · 电影内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：金鸡奖颁奖礼后，红毯造型、获奖感言、电影解说三类内容构成小红书的内容三波峰。高叶"从业二十年圆梦"的叙事天然适配平台的"真实成长"语感，预计其妆容、穿搭、角色分析将带动《南京照相馆》的长尾种草——颁奖礼是电影二创内容的黄金48小时。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%87%91%E9%B8%A1%E5%A5%96%E8%8E%B7%E5%A5%96%E5%90%8D%E5%8D%95" target="_blank">→ 微博热搜·金鸡奖获奖名单</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#羊城晚报评王楚钦反思长文 热度306万+，登顶热搜</div>
+            <div class="trend-meta">体育明星 · 舆论反思赛道</div>
+            <div class="trend-obs">💡 趋势观察：主流媒体对运动员的"反思式评论"登顶热搜，说明公众对体育明星的讨论正从成绩叙事转向成长叙事。小红书上运动员同款、训练日常类内容的讨论温度也在同步上升——体育营销的窗口正从"夺冠瞬间"扩展到"人的成长弧光"。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%BE%8A%E5%9F%8E%E6%99%9A%E6%8A%A5%E8%AF%84%E7%8E%8B%E6%A5%9A%E9%92%A6%E5%8F%8D%E6%80%9D%E9%95%BF%E6%96%87" target="_blank">→ 微博热搜·王楚钦反思长文</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#阿里宣布平头哥赴港上市 热度10万+</div>
+            <div class="trend-meta">科技资本 · 芯片赛道</div>
+            <div class="trend-obs">💡 趋势观察：自研芯片公司独立上市登上大众热搜，说明"中国算力叙事"已经出圈到普通用户层。对科技类博主而言，"平头哥是什么、为什么值300亿美元"的科普型内容正处流量窗口；对品牌而言，"国产自研"情绪是Q4科技营销可以借力的公共情绪资产。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%98%BF%E9%87%8C%E5%AE%A3%E5%B8%83%E5%B9%B3%E5%A4%B4%E5%93%A5%E8%B5%B4%E6%B8%AF%E4%B8%8A%E5%B8%82" target="_blank">→ 微博热搜·平头哥赴港上市</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#拼多多送货上门新规11月13日生效</div>
+            <div class="trend-meta">电商服务 · 履约体验赛道</div>
+            <div class="trend-obs">💡 趋势观察：双十一尾声，平台竞争重心从价格转向履约体验，"送货上门"成为新的服务型卖点。小红书上"双十一开箱/踩雷"内容进入高峰期——服务类体验内容（物流、售后、退换）的种草权重正在上升，品牌的服务口碑将成为大促后期的口碑变量。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%8B%BC%E5%A4%9A%E5%A4%9A%E9%80%81%E8%B4%A7%E4%B8%8A%E9%97%A8%E6%96%B0%E8%A7%8411%E6%9C%8813%E6%97%A5%E7%94%9F%E6%95%88" target="_blank">→ 微博热搜·拼多多送货上门新规</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#景德镇陶瓷盘穿上了流苏裙 热度16万+</div>
+            <div class="trend-meta">非遗手作 · 东方美学赛道</div>
+            <div class="trend-obs">💡 趋势观察："陶瓷+流苏"的手作改造内容持续升温，是"新中式"赛道的典型样本——传统工艺的当代表达最容易被小红书放大。对文创、家居、服饰品牌而言，与景德镇等地非遗手艺人的联名内容，仍是大促季差异化内容的优质供给。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%99%AF%E5%BE%B7%E9%95%87%E9%99%B6%E7%93%B7%E7%9B%98%E7%A9%BF%E4%B8%8A%E4%BA%86%E6%B5%81%E8%8B%8F%E8%A3%99" target="_blank">→ 微博热搜·陶瓷盘流苏裙</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · AI与决策链路</div>
+        <div class="learning-title">当"问AI"第一次赢过"看广告"：43.7%意味着什么？</div>
+        <div class="learning-subtitle">一个安静的交叉点，可能比任何一次大促战报都更重要</div>
+        <div class="learning-body">
+          <p>2026年二季度，中国消费者的消费意愿调查里出现了一个安静的交叉点：<strong>AI 对消费决策的影响力达到 43.7%，第一次超过传统媒体广告的 42.6%</strong>。没有发布会，没有刷屏，但这个数字的分量，可能超过今年所有双十一战报的总和。</p>
+          <p>过去二十年的营销史，本质上是一部"注意力拦截史"：先是在电视上拦截，后来在信息流里拦截，再后来在小红书的搜索框里拦截。但"问AI"是另一种行为——<strong>用户不再等着被种草，而是主动发起对话</strong>。当答案是AI生成的，品牌的每一次曝光，都取决于AI是否"记得你、相信你、愿意推荐你"。</p>
+          <p>这对内容行业有三个具体影响：第一，<strong>结构化、可被引用的内容更值钱</strong>——AI引用的是有明确结论、清晰口径的信息，而不是情绪化的形容词堆砌；第二，<strong>真实口碑的数据资产成为护城河</strong>——京东为Aidol上线300款AI商品、天猫"种草+货架"链路成熟化，本质都是在为AI时代储备"可信语料"；第三，<strong>品牌的"可被检索性"要作为资产来运营</strong>，就像十年前运营官网SEO一样运营"AI答案里的你"。</p>
+          <p>对做内容的人，一句话概括：过去我们写给人看的种草文，现在还要写给机器读的"信任状"。<strong>当用户开口问AI"XX值不值得买"的那一刻，你的内容是否已经在答案里？</strong>这是接下来三年最重要的营销命题。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://t.cj.sina.com.cn/articles/view/1770735827/698b48d300101bjus" target="_blank">新浪财经《双十一首轮战报出炉，这个新品类意外爆了》</a> ·
+          <a href="https://k.sina.cn/article_1827021883_6ce6243b00102l7oc.html" target="_blank">新浪新闻《今年双十一还有哪些新变化》</a> ·
+          <a href="https://www.163.com/dy/article/LBDE44990534A4SC.html" target="_blank">网易《这个双11，品牌的生意逻辑变了》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 中国电影金鸡奖</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🐓🏆🎬</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">电影颁奖</span>
+          <span class="festival-tag">中国·厦门</span>
+          <span class="festival-tag">每年11月</span>
+          <span class="festival-tag">华语电影专家奖最高殿堂</span>
+        </div>
+        <div class="festival-name">中国电影金鸡奖</div>
+        <div class="festival-name-en">Golden Rooster Awards · 始于1981年（农历鸡年）</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从"金鸡啼晓"到专家奖的最高殿堂</div>
+          <div class="festival-block-body">
+            <p>1981年，农历鸡年。中国电影家协会创办了这个奖项，命名为"金鸡"——取"金鸡啼晓"之意，寓意激励电影工作者闻鸡起舞、振翅奋进。奖杯的造型，正是一只昂首啼鸣的金鸡。<strong>一只公鸡打鸣唤来黎明</strong>，这个意象成了中国电影45年来最温暖的隐喻：每一年的金鸡奖，都在为下一年的中国电影报晓。</p>
+            <p>金鸡奖从诞生起就带着鲜明的"专家奖"基因：由电影界专业人士组成评委会评选，与代表观众投票的"百花奖"并称"金鸡百花"，一个代表专业判断，一个代表大众口碑——<strong>双奖并立，是中国电影评价体系独有的双轨设计</strong>。1992年起，两个奖合办为"中国金鸡百花电影节"，从此在每年秋天如约而至。</p>
+            <p>2019年，金鸡奖宣布长期落户厦门，从流动的颁奖礼变成一座城市的固定节日。背靠金鸡湖……不对，背靠鹭岛的海风，"金鸡"与"厦门"从此绑定，电影节成了这座旅游城市的又一张家名片。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】专业判断与城市经济的双轮</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">45年</div>
+                <div class="festival-stat-label">创办至今（1981-2026）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">第39届</div>
+                <div class="festival-stat-label">本届（2026，厦门）</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">20+</div>
+                <div class="festival-stat-label">奖项类别</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">2019</div>
+                <div class="festival-stat-label">起长期落户厦门</div>
+              </div>
+            </div>
+            <p>金鸡奖设立最佳故事片、导演、编剧、男/女主角、男/女配角等20余个奖项，是中国电影<b>唯一由专家实名投票产生</b>的国家级奖项，评委会主席与评委名单每年都引发行业讨论。它与华表奖（政府奖）、百花奖（观众奖）构成中国电影三大奖体系，而金鸡被普遍视为其中专业含金量的最高者。</p>
+            <p>今年的第39届颁奖礼再次证明了这个奖项的记忆点制造能力：<strong>梁家辉从影40多年第一次拿到金鸡影帝</strong>，领奖后拒绝工作人员帮忙、坚持自己捧着奖杯；<strong>高叶凭《南京照相馆》封后</strong>，说出"从业二十年，现在是我的圆梦时刻"。一夜之间，"大器晚成"成了全网最动人的关键词。</p>
+            <p>对厦门而言，金鸡百花电影节早已超越一场颁奖礼：明星红毯拉动文旅消费、电影产业论坛吸引项目落地、展映单元培养本地观影文化——<strong>一个颁奖礼如何长成一座城市的"节事经济"，金鸡是国内的教科书案例</strong>。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】颁奖季的下一幕，与对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>趋势一：颁奖礼正在变成"内容矿"。</strong>获奖名单只是第一波，感言切片、红毯造型、角色解读、冷门佳作安利……颁奖季内容的长尾消费在小红书上可持续2-3周。高叶、梁家辉的"圆梦叙事"是天然的二创母题。</p>
+            <p><strong>趋势二：专家奖与大众口碑的双向奔赴。</strong>今年评审对《南京照相馆》的肯定与大众票房口碑完全共振——当专业判断与大众情绪对齐时，奖项的传播势能会被放大数倍。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件的启发：</strong>金鸡奖最值得学的是它的"叙事资产"思维——45年来它持续沉淀"金鸡啼晓"这个统一的隐喻，让每一届颁奖礼都成为同一个故事的续集，而不是每年从零开始的孤立事件。IP大事件同样需要这样一个可以年复一年续写母题：用户记住的不是第N届活动，而是那个每年都会回来的"标志性瞬间"。另外，"高叶式圆梦时刻"提醒我们：大事件最好的嘉宾故事，不是最红的脸，而是最有弧光的人——<strong>成长的证据，永远比流量的证明更动人</strong>。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.thepaper.cn/newsDetail_forward_34447516" target="_blank">澎湃新闻·第39届金鸡奖获奖名单</a> ·
+          <a href="https://k.sina.cn/article_5044281310_v12ca99fde02002luag.html" target="_blank">新浪新闻·高叶获最佳女主角</a> ·
+          <a href="https://zh.wikipedia.org/wiki/%E9%87%91%E9%B8%A1%E5%A5%96" target="_blank">维基百科·金鸡奖</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 电影与演员</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🎬 主题策展 · 影史的"二次绽放"图谱</div>
+        <div class="knowledge-headline">从梁家辉到布兰登·费舍：那些"等了半生才被看见"的演员</div>
+        <div class="knowledge-tagline">「聚光灯迟到，但从没缺席。」</div>
+
+        <div class="knowledge-intro">
+          金鸡奖之夜，最动人的从来不是奖杯，而是<strong>时间的弧光</strong>：梁家辉等了40多年，高叶等了20年。这不是孤例——影史上有一串响亮的名字，都走过了漫长的"被低估期"，然后在某个夜晚被世界重新看见。理解这条"二次绽放"的谱系，就像拿到了一份关于坚持的隐秘名单。<br><br>
+          对做内容和营销的人来说，这个图谱还有另一层意义：<strong>最好的品牌故事结构，往往就是"被低估者的胜利"</strong>——它比"天才横空出世"更可信，也更打动人。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎭</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">梁家辉</div>
+              <div class="knowledge-card-sub">中国香港 · 第39届金鸡影帝</div>
+              <div class="knowledge-card-work">26岁凭《垂帘听政》成金像奖最年轻影帝，戏路千面、四度封帝，却在从影40多年后才第一次拿到金鸡奖。领奖后坚持自己捧着奖杯："这是我自己拿的。"</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌟</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">高叶</div>
+              <div class="knowledge-card-sub">中国 · 第39届金鸡影后</div>
+              <div class="knowledge-card-work">跑了二十年龙套和配角，凭《狂飙》大嫂陈书婷出圈，再以《南京照相馆》封后。"从业二十年，现在是我的圆梦时刻"——本届金鸡奖最重的一句话。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Ke_Huy_Quan_by_Gage_Skidmore.jpg/440px-Ke_Huy_Quan_by_Gage_Skidmore.jpg"
+              alt="关继威"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🥋</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">关继威</div>
+              <div class="knowledge-card-sub">Ke Huy Quan · 越南华裔 · 奥斯卡男配</div>
+              <div class="knowledge-card-work">童年是《夺宝奇兵》里的短笛，长大后无戏可演，转行做了多年武术指导。40年后凭《瞬息全宇宙》横扫颁奖季，捧起奥斯卡——好莱坞最著名的"归来者"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Brendan_Fraser_in_2022.jpg/440px-Brendan_Fraser_in_2022.jpg"
+              alt="布兰登·费舍"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📖</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">布兰登·费舍</div>
+              <div class="knowledge-card-sub">Brendan Fraser · 美国 · 奥斯卡影帝</div>
+              <div class="knowledge-card-work">90年代《木乃伊》系列的全民偶像，因伤病与人生低谷消失十余年。2022年以《鲸》中的极致表演重返银幕，从"过气动作明星"到奥斯卡影帝，被影迷称为"Brenaissance（布兰登复兴）"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎬</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">王传君</div>
+              <div class="knowledge-card-sub">中国 · 金鸡奖话题人物</div>
+              <div class="knowledge-card-work">《爱情公寓》关谷神奇一度框定他的戏路，他主动减重、沉默数年，以《我不是药神》完成蜕变。今年金鸡奖之夜，"爱情公寓拿到王传君的大结果了"冲上热搜——观众用八年时间为他的选择补上掌声。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Michelle_Yeoh_%2840130999542%29_%28cropped%29.jpg/440px-Michelle_Yeoh_%2840130999542%29_%28cropped%29.jpg"
+              alt="杨紫琼"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🐉</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">杨紫琼</div>
+              <div class="knowledge-card-sub">Michelle Yeoh · 马来西亚 · 奥斯卡影后</div>
+              <div class="knowledge-card-work">从香港动作片时代的"打女"，到60岁成为奥斯卡百年历史上首位亚裔影后。她的领奖词："女士们，别让任何人告诉你，你的黄金期已经过去了。"</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这张名单的共同结构是：<strong>漫长蛰伏 → 一次被看见 → 重新定义自己</strong>。金鸡奖的"金鸡啼晓"说的也是同一件事——黎明之前的黑暗最长，但公鸡总会打鸣。做内容的人应该记住这个叙事结构的威力：梁家辉捧着奖杯的那句话、高叶的"圆梦时刻"，之所以刷屏，是因为每个人都曾在自己的行当里等过一次迟到的聚光灯。<strong>好的故事从不说"他们成功了"，它只说"他们等到了"。</strong>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
