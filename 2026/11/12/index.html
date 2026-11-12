@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/12</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/12/index.html" class="active">2026 / 11 / 12</a></li>
+      <li><a href="/daypulse/2026/11/11/index.html">2026 / 11 / 11</a></li>
+      <li><a href="/daypulse/2026/11/10/index.html">2026 / 11 / 10</a></li>
+      <li><a href="/daypulse/2026/11/9/index.html">2026 / 11 / 9</a></li>
+      <li><a href="/daypulse/2026/11/6/index.html">2026 / 11 / 6</a></li>
+      <li><a href="/daypulse/2026/11/4/index.html">2026 / 11 / 4</a></li>
+      <li><a href="/daypulse/2026/11/3/index.html">2026 / 11 / 3</a></li>
+      <li><a href="/daypulse/2026/11/2/index.html">2026 / 11 / 2</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 12</div>
+      <div class="day-week">星期四 · 农历十月初四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">央行发布三季度货币政策执行报告：加力支持资本市场，维护股债汇平稳运行</div>
+            <div class="news-item-desc">报告提出加大逆周期调节力度，加力实施支持资本市场的两项货币政策工具，用好债市非银大额赎回互换便利，构建覆盖全面的宏观审慎管理体系，努力完成全年经济社会发展目标。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/y/2026-11-12/doc-iniymmzp1906314.shtml" target="_blank">来源：新浪财经 · 四大证券报头版</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">美联储理事沃勒放鹰：支持12月加息，不排除50个基点</div>
+            <div class="news-item-desc">沃勒表示至少收回此前三次预防性降息，实际利率必须上升。市场对12月会议定价重估，英镑兑美元回吐涨幅。全球利率路径重新变得敏感，新兴市场资金面面临再平衡压力。</div>
+            <a class="news-item-link" href="https://shishixinwen.news/news/jin10/20261112065000001800" target="_blank">来源：NewsNow 财经资讯</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic IPO 认购火爆，承销商拟上调定价，估值或重回 1.5 万亿美元</div>
+            <div class="news-item-desc">发行区间 70–78 美元/股，募资或超 1000 亿美元创史上最大 IPO，Google、Nvidia、Microsoft 将按发行价合计投资 260 亿美元；此前还披露与 Microsoft、Google 超百亿美元不可撤销的算力采购承诺。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">来源：AIHOT 聚合</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Google 发布 Gemini Decisions API 与 Decision 1 模型：150–250ms 完成封闭式多模态决策</div>
+            <div class="news-item-desc">可一次性评估最多 1000 个是/否、多选与评分题，支持文本、图像、音视频及 256K token 的 PDF，瞄准替代自训分类器的"决策即服务"市场。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">来源：AIHOT · Google Blog</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达董事会调查黄仁勋风波，接近决定是否罢免创始人 CEO</div>
+            <div class="news-item-desc">WSJ/纽时披露董事会正进行独立调查，涉个人行为与公司治理双重议题，AI 芯片龙头首次面临创始人去留的公开考验，产业链与资本市场高度关注。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">来源：AIHOT 聚合</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">双11消费转向：从"全网最低价"到"看品质、选服务"</div>
+            <div class="news-item-desc">商务部等7部门双11前夕部署品质电商"五优"行动，纠治"先涨后降""凑单套路"。消费者"可以买贵的，但不能买贵了"，追求质价比与心价并行。平台规则全面简化，竞争重心从卷价格转向拼品质、服务与技术。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20261111/herald/dfaab56664b4e184a402bf1f730cda1f.html" target="_blank">来源：21经济网</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">山姆 399 元高充绒羽绒服断货登顶热搜，奔驰 CEO 称"在中国车要大得惊人"</div>
+            <div class="news-item-desc">300 克充绒量的实用型爆品折射理性消费；奔驰宣布 3 年内推出或更新 40 款车型，外资品牌加速本地化定制。10 月新能源汽车新车销量占比达 64.3%，渗透率再创新高。</div>
+            <a class="news-item-link" href="https://tophub.today/n/KqndgxeLl9" target="_blank">来源：微博热搜 / 新浪早报</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">"曝熊大被写死了"登顶热搜：国民动画IP的大事件营销时刻</div>
+            <div class="news-item-desc">《熊出没》相关剧情"写死"熊大引发全网讨论，正午阳光新剧、霍启刚郭晶晶世纪婚礼等同期霸榜。经典IP的情节转折能在一天内制造数百万讨论量，是情绪共鸣驱动传播的典型样本。</div>
+            <a class="news-item-link" href="https://tophub.today/n/KqndgxeLl9" target="_blank">来源：微博热搜榜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">赵丽颖起诉红果短剧、红果公告"严打短剧多人撞脸"</div>
+            <div class="news-item-desc">头部艺人诉短剧平台侵权，与平台治理公告同日出现，短剧行业的版权与内容规范化进入深水区。</div>
+            <a class="news-item-link" href="https://tophub.today/n/KqndgxeLl9" target="_blank">来源：微博热搜榜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">俄美乌三方会谈成果公布；日本宜得利至多 3762 万条个人信息面临泄露风险</div>
+            <div class="news-item-desc">三方会谈成果文件公布后市场观望情绪浓；日本再爆大规模数据泄露，跨境数据安全议题升温。APEC 峰会下周召开，中日领导人会晤安排受关注。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-11-12/doc-iniymmzq8688199.shtml" target="_blank">来源：新浪财经 · 操盘必读</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#双11理性消费图鉴：可以买贵的，不能买贵了</div>
+            <div class="trend-meta">大促收官期 · 消费心智类内容集中爆发</div>
+            <div class="trend-obs">双11收官后进入"复盘周"，站内"值不值""后悔清单""不踩雷"类笔记热度高企，质价比叙事取代低价清单。品牌可借"省后的满足感"做长效内容资产。</div>
+            <div class="trend-source"><a href="https://www.21jingji.com/article/20261111/herald/dfaab56664b4e184a402bf1f730cda1f.html" target="_blank">趋势来源：21经济网双11消费转向报道</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#羽绒服选购实录：充绒量300克成搜索新词</div>
+            <div class="trend-meta">山姆399元羽绒服断货 · 御寒装备季开启</div>
+            <div class="trend-obs">"充绒量""蓬松度"等专业参数词搜索量随寒潮攀升，实用型测评笔记转化强。服饰类品牌应把硬核参数翻译成场景语言："零下十度通勤不冻手"。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9" target="_blank">趋势来源：微博热搜·山姆羽绒服断货</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#熊出没写了什么：国民动画IP的"剧情地震"</div>
+            <div class="trend-meta">"曝熊大被写死了"182万热度登顶</div>
+            <div class="trend-obs">童年IP的叙事转折在小红书引发"童年滤镜"二创潮，怀旧+震惊的复合情绪极易破圈。衍生品、联名与影视宣发可借势切入情绪浓度窗口。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9" target="_blank">趋势来源：微博热搜榜</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#AI笔记工具实测潮：Agent 正成为新流量入口</div>
+            <div class="trend-meta">Gemini Decisions、ERNIE 5.5 等密集发布</div>
+            <div class="trend-obs">大模型"决策能力"上新带动站内 AI 工具测评、效率工作流笔记增长，"AI+职场""AI+带娃"等生活化场景是种草蓝海。a16z 提出的 B2A 经济正在向下渗透为内容选题。</div>
+            <div class="trend-source"><a href="https://aihot.virxact.com/" target="_blank">趋势来源：AIHOT 今日热点</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#秋冬徒步与城市漫游：寒潮下的"暖系出行"</div>
+            <div class="trend-meta">万千里雪山姆代购、装备党内容升温</div>
+            <div class="trend-obs">降温驱动"温泉、围炉、Citywalk 暖线"内容回暖，户外品类从冲锋衣向发热内衣、保暖配饰延展。场景迁移比单品更值得押注。</div>
+            <div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9" target="_blank">趋势来源：热搜榜综合</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">营销 · 商业 · 感性脉络</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">本周研读</div>
+        <div class="learning-title">当"种草"长成生意：从营销手段到经营主场</div>
+        <div class="learning-subtitle">读小红书 2026 生活服务行业大会有感</div>
+        <div class="learning-body">
+          <p><strong>第一个转变：从"种草"到"种生意"。</strong>2026 生活服务行业大会把主题定为"生意向上，自有种草"——语序本身就是宣言：先有经营的基本盘，种草才不是一次性的烟花。内容不再只是获客的漏斗口，而是经营主场的第一现场。</p>
+          <p><strong>第二个转变：从"爆款逻辑"到"好内容逻辑"。</strong>今年被反复引用的案例是一个人背着装备在暴雨山野里艰难前行的视频——它不精致，但真实。环境的残酷反而放大了种草效应，大量用户涌入平台搜索同款背包与冲锋衣。这提醒我们：<strong>可信度是新的溢价</strong>，精修图正在让位于"有代价的体验"。</p>
+          <p><strong>第三个转变：从"泛流量"到"精准场景"。</strong>旅游赛道不再讲大众景点攻略，而是聚焦"一个人旅行""城市徒步路线"——抓住一类人的具体痛点，关键词搜索占比与转化同时提升。搜索正在成为种草的第二增长曲线：日均 6 亿次搜索意味着，用户已经习惯把小红书当"生活搜索引擎"用。</p>
+          <p>合起来看，三个转变指向同一件事：<strong>种草的终点不是曝光，而是被信任后自然而然发生的交易。</strong>这或许是 2027 年之前所有内容生意最值得抄写的一句话。</p>
+        </div>
+        <div class="learning-source">
+          参考：
+          <a href="https://www.jzl.com/industry-news/xhshydh" target="_blank">小红书 2026 生活服务行业大会报道（聚舟）</a> ·
+          <a href="https://news.qq.com/rain/a/20260407A04RQL00" target="_blank">从种草到变现，如何做出"好内容"（腾讯新闻）</a> ·
+          <a href="https://zhuanlan.zhihu.com/p/1991105890716247188" target="_blank">2026 小红书八大趋势（知乎）</a> ·
+          <a href="https://traveldaily.cn/article/189197/" target="_blank">2026 文旅种草下半场（环球旅讯）</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日节日 · 每日一个</span>
+      </div>
+      <div class="festival-banner-placeholder">🌐</div>
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">世界互联网大会</span>
+          <span class="festival-tag">乌镇峰会</span>
+          <span class="festival-tag">科技盛事</span>
+          <span class="festival-tag">中国 · 浙江</span>
+        </div>
+        <div class="festival-name">世界互联网大会乌镇峰会</div>
+        <div class="festival-name-en">World Internet Conference Wuzhen Summit · 2026 主题「智能时代 同球共济」</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从水乡的一次邀约，到全球的一张桌子</div>
+          <div class="festival-block-body">
+            <p>2014 年 11 月，第一届乌镇峰会在江南水乡的小桥流水间开幕。彼时很多人疑惑：为什么把最未来的话题，放进最古老的小镇？答案后来被反复验证——<strong>互联网需要的正是这样的隐喻：水网连着千家万户，正如光缆连着世界。</strong></p>
+            <p>此后每年深秋，乌镇准时"变身"：摇橹船停航，青石板铺上光纤，千年古镇成为中国向世界提交的一份互联网答卷。"乌镇时间"由此成为一个专属名词——每年全球数字治理的关键议题，都习惯在这里先行对话。历年主题从"互联互通、共享共治"，到"数字赋能、共创未来"，再到拥抱人工智能，几乎是一部压缩版的中国互联网观念史。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】数字坐标上的水乡</div>
+          <div class="festival-block-body">
+            <p>乌镇峰会已举办至第 13 届，由政府与国际组织共同主办，是全球互联网领域规格最高的年度会议之一。与会嘉宾覆盖上百个国家和地区，"世界互联网领先科技成果发布"每年遴选十项左右全球顶尖成果——从 5G 到大模型，乌镇的讲台几乎见证了每一代技术的首次亮相。</p>
+            <div class="festival-stats">
+              <div class="festival-stat"><div class="festival-stat-num">13届</div><div class="festival-stat-label">连续举办（2014–2026）</div></div>
+              <div class="festival-stat"><div class="festival-stat-num">100+</div><div class="festival-stat-label">参会国家和地区</div></div>
+              <div class="festival-stat"><div class="festival-stat-num">7×24h</div><div class="festival-stat-label">峰会期间"乌镇时间"全网直播</div></div>
+            </div>
+            <p>它的运作模式也自成一格：乌镇作为"永久会址"，以一座小镇承接全球议题，政府引导、企业主办、水乡做舞台——会议本身成了"数字中国"的文旅体验入口。乌镇峰会还是《世界互联网发展报告》《中国互联网发展报告》双蓝皮书的发布地，为全球数字治理提供年度坐标系。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】智能时代的"同球共济"</div>
+          <div class="festival-block-body">
+            <p>本届峰会将人工智能置于舞台中央，议题从"AI 安全与治理"延伸到"智能向善"。当 Anthropic 以万亿美元估值叩门资本市场、当决策模型把延迟压进 200 毫秒（见今日新闻拼盘），全球治理者的聚会比任何时候都更必要——技术狂奔的时代，对话本身就是基础设施。</p>
+            <div class="festival-insight"><strong>对小红书大事件业务的启发：</strong>乌镇峰会证明了"一座小镇 + 一个固定时点 = 一个世界级 IP"的公式。大事件业务同样可以打造"永久会址型"活动——固定的场景、固定的时间、可预期的仪式感，让用户每年都"回来"。把严肃议题翻译成生活方式语言（如 AI 治理 → "智能生活节"），正是内容平台最擅长的事。</div>
+          </div>
+        </div>
+
+        <div class="learning-source">
+          来源：
+          <a href="https://www.wicinternet.org/" target="_blank">世界互联网大会官网</a> ·
+          <a href="https://baike.baidu.com/item/%E4%B8%96%E7%95%8C%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E4%BC%9A" target="_blank">百度百科·世界互联网大会</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">策展 · 人物图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">主题 · 互联网的奠基者们</div>
+        <div class="knowledge-headline">把世界连成一张网的人</div>
+        <div class="knowledge-tagline">— 值乌镇峰会之际，认识五位让"连接"成为可能的工程师与思想者</div>
+        <div class="knowledge-intro">我们每天刷信息流、搜索、分享时，脚下踩着的其实是一张由几个人在半个世纪前织好的网。今天这条时间线：从"阿帕网的第一声应答"到"万维网的免费馈赠"，五个人，五种连接世界的想象。</div>
+
+        <div class="knowledge-cards">
+          <div class="knowledge-card">
+            <img class="knowledge-card-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Leonard_Kleinrock_2007.jpg/480px-Leonard_Kleinrock_2007.jpg" alt="Leonard Kleinrock" onerror="this.outerHTML='<div class=knowledge-card-img-placeholder>📡</div>'" />
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">伦纳德·克莱因罗克</div>
+              <div class="knowledge-card-sub">美国 · 分组交换之父（1934– ）</div>
+              <div class="knowledge-card-work">1969 年，他所在的 UCLA 实验室发出互联网史上第一条消息"LO"——本想打 LOGIN，系统当场崩溃。半句话，成了整个互联网的啼哭声。</div>
+            </div>
+          </div>
+          <div class="knowledge-card">
+            <img class="knowledge-card-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Vint_Cerf_2012.jpg/480px-Vint_Cerf_2012.jpg" alt="Vint Cerf" onerror="this.outerHTML='<div class=knowledge-card-img-placeholder>🌐</div>'" />
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">文顿·瑟夫</div>
+              <div class="knowledge-card-sub">美国 · "互联网之父"（1943– ）</div>
+              <div class="knowledge-card-work">与鲍勃·卡恩共同设计 TCP/IP 协议——让不同网络之间能听懂彼此的语言。这套 1974 年的"通用语法"至今仍是互联网的地基。</div>
+            </div>
+          </div>
+          <div class="knowledge-card">
+            <img class="knowledge-card-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Tim_Berners-LeeCloseup.jpg/480px-Tim_Berners-LeeCloseup.jpg" alt="Tim Berners-Lee" onerror="this.outerHTML='<div class=knowledge-card-img-placeholder>🕸️</div>'" />
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">蒂姆·伯纳斯-李</div>
+              <div class="knowledge-card-sub">英国 · 万维网发明者（1955– ）</div>
+              <div class="knowledge-card-work">1989 年在 CERN 发明 WWW，并做了一个惊人的决定：<strong>放弃专利，免费开放。</strong>没有这个决定，就没有今天你手指间的整个世界。</div>
+            </div>
+          </div>
+          <div class="knowledge-card">
+            <img class="knowledge-card-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Elizabeth_Feinler_%282013%29.jpg/480px-Elizabeth_Feinler_%282013%29.jpg" alt="Elizabeth Feinler" onerror="this.outerHTML='<div class=knowledge-card-img-placeholder>📖</div>'" />
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">伊丽莎白·范勒</div>
+              <div class="knowledge-card-sub">美国 · 域名体系之母（1931– ）</div>
+              <div class="knowledge-card-work">她带领的团队编制了最早的互联网"电话簿"，并设计了 .com、.edu、.gov 的分组逻辑——你每次输入的域名，都是她的遗产。</div>
+            </div>
+          </div>
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🧠</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">钱天白</div>
+              <div class="knowledge-card-sub">中国 · 中国上网第一人（1945–1998）</div>
+              <div class="knowledge-card-work">1987 年发出中国第一封电子邮件"越过长城，走向世界"，并注册了中国顶级域名 .CN——中国互联网故事的第一个字符。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="knowledge-coda">从"LO"两个字母，到每天 6 亿次搜索，连接从来不只是技术，而是一代代人对"让世界彼此听见"的固执。乌镇的水网与光纤，说的其实是同一句话。</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">DayPulse 🌱 · 每个工作日 09:45 · 由 Ki 为木南策展</footer>
+
+<script>
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    sb.classList.toggle('collapsed');
+    btn.textContent = sb.classList.contains('collapsed') ? '▶' : '◀';
+  }
+</script>
+</body>
+</html>
