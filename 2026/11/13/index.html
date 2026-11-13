@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>DayPulse 🌱 · 2026/11/13</title><style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style></head><body>
+<header class="site-header"><div class="site-title">DayPulse <span>🌱</span></div><div class="header-date">每个工作日 09:45 更新</div></header>
+<div class="layout"><aside class="sidebar" id="sidebar"><button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button><div class="sidebar-inner"><div class="sidebar-label">归档日期</div><ul class="date-list">
+<li><a href="/daypulse/2026/11/13/index.html" class="active">2026 / 11 / 13</a></li>
+      <li><a href="/daypulse/2026/11/12/index.html">2026 / 11 / 12</a></li>
+      <li><a href="/daypulse/2026/11/11/index.html">2026 / 11 / 11</a></li>
+      <li><a href="/daypulse/2026/11/10/index.html">2026 / 11 / 10</a></li>
+      <li><a href="/daypulse/2026/11/9/index.html">2026 / 11 / 9</a></li>
+      <li><a href="/daypulse/2026/11/6/index.html">2026 / 11 / 6</a></li>
+      <li><a href="/daypulse/2026/11/4/index.html">2026 / 11 / 4</a></li>
+      <li><a href="/daypulse/2026/11/3/index.html">2026 / 11 / 3</a></li>
+      <li><a href="/daypulse/2026/11/2/index.html">2026 / 11 / 2</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/28/index.html">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+      <li><a href="/daypulse/2026/10/19/index.html">2026 / 10 / 19</a></li>
+      <li><a href="/daypulse/2026/9/30/index.html">2026 / 9 / 30</a></li>
+      <li><a href="/daypulse/2026/9/29/index.html">2026 / 9 / 29</a></li>
+      <li><a href="/daypulse/2026/9/28/index.html">2026 / 9 / 28</a></li>
+      <li><a href="/daypulse/2026/9/25/index.html">2026 / 9 / 25</a></li>
+      <li><a href="/daypulse/2026/9/24/index.html">2026 / 9 / 24</a></li>
+      <li><a href="/daypulse/2026/9/22/index.html">2026 / 9 / 22</a></li>
+      <li><a href="/daypulse/2026/9/18/index.html">2026 / 9 / 18</a></li>
+      <li><a href="/daypulse/2026/9/17/index.html">2026 / 9 / 17</a></li>
+      <li><a href="/daypulse/2026/9/15/index.html">2026 / 9 / 15</a></li>
+      <li><a href="/daypulse/2026/9/11/index.html">2026 / 9 / 11</a></li>
+      <li><a href="/daypulse/2026/9/10/index.html">2026 / 9 / 10</a></li>
+      <li><a href="/daypulse/2026/9/9/index.html">2026 / 9 / 9</a></li>
+      <li><a href="/daypulse/2026/9/8/index.html">2026 / 9 / 8</a></li>
+      <li><a href="/daypulse/2026/9/7/index.html">2026 / 9 / 7</a></li>
+      <li><a href="/daypulse/2026/9/3/index.html">2026 / 9 / 3</a></li>
+      <li><a href="/daypulse/2026/9/2/index.html">2026 / 9 / 2</a></li>
+      <li><a href="/daypulse/2026/9/1/index.html">2026 / 9 / 1</a></li>
+      <li><a href="/daypulse/2026/8/31/index.html">2026 / 8 / 31</a></li>
+      <li><a href="/daypulse/2026/8/28/index.html">2026 / 8 / 28</a></li>
+      <li><a href="/daypulse/2026/8/27/index.html">2026 / 8 / 27</a></li>
+      <li><a href="/daypulse/2026/8/26/index.html">2026 / 8 / 26</a></li>
+      <li><a href="/daypulse/2026/8/25/index.html">2026 / 8 / 25</a></li>
+      <li><a href="/daypulse/2026/8/24/index.html">2026 / 8 / 24</a></li>
+      <li><a href="/daypulse/2026/8/21/index.html">2026 / 8 / 21</a></li>
+      <li><a href="/daypulse/2026/8/20/index.html">2026 / 8 / 20</a></li>
+      <li><a href="/daypulse/2026/8/19/index.html">2026 / 8 / 19</a></li>
+      <li><a href="/daypulse/2026/8/18/index.html">2026 / 8 / 18</a></li>
+      <li><a href="/daypulse/2026/8/17/index.html">2026 / 8 / 17</a></li>
+      <li><a href="/daypulse/2026/8/13/index.html">2026 / 8 / 13</a></li>
+      <li><a href="/daypulse/2026/8/12/index.html">2026 / 8 / 12</a></li>
+      <li><a href="/daypulse/2026/8/11/index.html">2026 / 8 / 11</a></li>
+      <li><a href="/daypulse/2026/8/10/index.html">2026 / 8 / 10</a></li>
+      <li><a href="/daypulse/2026/8/8/index.html">2026 / 8 / 8</a></li>
+      <li><a href="/daypulse/2026/8/7/index.html">2026 / 8 / 7</a></li>
+      <li><a href="/daypulse/2026/8/6/index.html">2026 / 8 / 6</a></li>
+      <li><a href="/daypulse/2026/8/5/index.html">2026 / 8 / 5</a></li>
+      <li><a href="/daypulse/2026/8/4/index.html">2026 / 8 / 4</a></li>
+      <li><a href="/daypulse/2026/8/3/index.html">2026 / 8 / 3</a></li>
+      <li><a href="/daypulse/2026/8/1/index.html">2026 / 8 / 1</a></li>
+      <li><a href="/daypulse/2026/7/31/index.html">2026 / 7 / 31</a></li>
+      <li><a href="/daypulse/2026/7/30/index.html">2026 / 7 / 30</a></li>
+      <li><a href="/daypulse/2026/7/29/index.html">2026 / 7 / 29</a></li>
+      <li><a href="/daypulse/2026/7/28/index.html">2026 / 7 / 28</a></li>
+      <li><a href="/daypulse/2026/7/27/index.html">2026 / 7 / 27</a></li>
+      <li><a href="/daypulse/2026/7/24/index.html">2026 / 7 / 24</a></li>
+      <li><a href="/daypulse/2026/7/23/index.html">2026 / 7 / 23</a></li>
+      <li><a href="/daypulse/2026/7/22/index.html">2026 / 7 / 22</a></li>
+      <li><a href="/daypulse/2026/7/21/index.html">2026 / 7 / 21</a></li>
+      <li><a href="/daypulse/2026/7/20/index.html">2026 / 7 / 20</a></li>
+      <li><a href="/daypulse/2026/7/17/index.html">2026 / 7 / 17</a></li>
+      <li><a href="/daypulse/2026/7/16/index.html">2026 / 7 / 16</a></li>
+      <li><a href="/daypulse/2026/7/15/index.html">2026 / 7 / 15</a></li>
+      <li><a href="/daypulse/2026/7/14/index.html">2026 / 7 / 14</a></li>
+      <li><a href="/daypulse/2026/7/13/index.html">2026 / 7 / 13</a></li>
+      <li><a href="/daypulse/2026/7/10/index.html">2026 / 7 / 10</a></li>
+      <li><a href="/daypulse/2026/7/9/index.html">2026 / 7 / 9</a></li>
+      <li><a href="/daypulse/2026/7/8/index.html">2026 / 7 / 8</a></li>
+      <li><a href="/daypulse/2026/7/7/index.html">2026 / 7 / 7</a></li>
+      <li><a href="/daypulse/2026/7/6/index.html">2026 / 7 / 6</a></li>
+      <li><a href="/daypulse/2026/7/3/index.html">2026 / 7 / 3</a></li>
+      <li><a href="/daypulse/2026/7/2/index.html">2026 / 7 / 2</a></li>
+      <li><a href="/daypulse/2026/7/1/index.html">2026 / 7 / 1</a></li>
+      <li><a href="/daypulse/2026/6/30/index.html">2026 / 6 / 30</a></li>
+      <li><a href="/daypulse/2026/6/29/index.html">2026 / 6 / 29</a></li>
+      <li><a href="/daypulse/2026/6/26/index.html">2026 / 6 / 26</a></li>
+      <li><a href="/daypulse/2026/6/25/index.html">2026 / 6 / 25</a></li>
+      <li><a href="/daypulse/2026/6/24/index.html">2026 / 6 / 24</a></li>
+      <li><a href="/daypulse/2026/6/23/index.html">2026 / 6 / 23</a></li>
+      <li><a href="/daypulse/2026/6/22/index.html">2026 / 6 / 22</a></li>
+      <li><a href="/daypulse/2026/6/19/index.html">2026 / 6 / 19</a></li>
+      <li><a href="/daypulse/2026/6/18/index.html">2026 / 6 / 18</a></li>
+      <li><a href="/daypulse/2026/6/17/index.html">2026 / 6 / 17</a></li>
+      <li><a href="/daypulse/2026/6/16/index.html">2026 / 6 / 16</a></li>
+      <li><a href="/daypulse/2026/6/15/index.html">2026 / 6 / 15</a></li>
+      <li><a href="/daypulse/2026/6/12/index.html">2026 / 6 / 12</a></li>
+      <li><a href="/daypulse/2026/6/11/index.html">2026 / 6 / 11</a></li>
+      <li><a href="/daypulse/2026/6/10/index.html">2026 / 6 / 10</a></li>
+      <li><a href="/daypulse/2026/6/9/index.html">2026 / 6 / 9</a></li>
+      <li><a href="/daypulse/2026/6/5/index.html">2026 / 6 / 5</a></li>
+      <li><a href="/daypulse/2026/6/4/index.html">2026 / 6 / 4</a></li>
+      <li><a href="/daypulse/2026/6/3/index.html">2026 / 6 / 3</a></li>
+      <li><a href="/daypulse/2026/6/2/index.html">2026 / 6 / 2</a></li>
+      <li><a href="/daypulse/2026/6/1/index.html">2026 / 6 / 1</a></li>
+      <li><a href="/daypulse/2026/5/29/index.html">2026 / 5 / 29</a></li>
+      <li><a href="/daypulse/2026/5/28/index.html">2026 / 5 / 28</a></li>
+      <li><a href="/daypulse/2026/5/27/index.html">2026 / 5 / 27</a></li>
+      <li><a href="/daypulse/2026/5/26/index.html">2026 / 5 / 26</a></li>
+      <li><a href="/daypulse/2026/5/25/index.html">2026 / 5 / 25</a></li>
+      <li><a href="/daypulse/2026/5/22/index.html">2026 / 5 / 22</a></li>
+      <li><a href="/daypulse/2026/5/21/index.html">2026 / 5 / 21</a></li>
+      <li><a href="/daypulse/2026/5/20/index.html">2026 / 5 / 20</a></li>
+      <li><a href="/daypulse/2026/5/19/index.html">2026 / 5 / 19</a></li>
+      <li><a href="/daypulse/2026/5/18/index.html">2026 / 5 / 18</a></li>
+      <li><a href="/daypulse/2026/5/15/index.html">2026 / 5 / 15</a></li>
+      <li><a href="/daypulse/2026/5/14/index.html">2026 / 5 / 14</a></li>
+      <li><a href="/daypulse/2026/5/13/index.html">2026 / 5 / 13</a></li>
+      <li><a href="/daypulse/2026/5/12/index.html">2026 / 5 / 12</a></li>
+      <li><a href="/daypulse/2026/5/11/index.html">2026 / 5 / 11</a></li>
+      <li><a href="/daypulse/2026/5/9/index.html">2026 / 5 / 9</a></li>
+      <li><a href="/daypulse/2026/5/8/index.html">2026 / 5 / 8</a></li>
+      <li><a href="/daypulse/2026/5/7/index.html">2026 / 5 / 7</a></li>
+      <li><a href="/daypulse/2026/5/6/index.html">2026 / 5 / 6</a></li>
+      <li><a href="/daypulse/2026/5/5/index.html">2026 / 5 / 5</a></li>
+    </ul></div></aside>
+<main class="main-content"><div class="day-header"><div class="day-date">2026 · 11 · 13</div><div class="day-week">星期五 · 09:45 信息截点</div></div>
+<section class="section"><div class="section-header"><span>🗞</span><span class="section-title">新闻拼盘</span><span class="section-subtitle">五个方向 · 近24小时与近期预告</span></div><div class="section-body">
+<div class="news-panel"><div class="news-panel-title">宏观 · 经济</div><div class="news-item"><div class="news-item-title">美股AI交易迎来领导层变动冲击</div><div class="news-item-desc">新浪财经今日报道黄仁勋离任后AI交易出现分化。观察重点是算力企业、客户与融资安排之间的联动，而非把单家公司波动等同于整个AI产业退潮。</div><a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-11-13/doc-iniypqyr3780252.shtml" target="_blank">→ 新浪财经 · 11月13日</a></div><div class="news-item"><div class="news-item-title">欧洲央行接班报道出现官方否认</div><div class="news-item-desc">新浪外盘头条称，德国政府否认法媒关于法德已就de Cos接任欧洲央行行长达成一致的报道。人事猜测不是政策事实，不据此推演确定的利率路径。</div><a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-11-13/doc-iniypqyi1011235.shtml" target="_blank">→ 新浪财经 · 外盘头条</a></div></div>
+<div class="news-panel"><div class="news-panel-title">科技 · AI</div><div class="news-item"><div class="news-item-title">AIHOT聚焦英伟达人事讨论，财经报道提供补充核验</div><div class="news-item-desc">本次抓取AIHOT仅提取到Lex Fridman谈论黄仁勋离任的社交文字，未获得完整当日新闻列表。新浪报道董事会宣布黄仁勋辞职、CFO科莱特·克雷斯临时接任；此处依据媒体报道，不采信聚合文本中的私人动机猜测。</div><a class="news-item-link" href="https://aihot.virxact.com/" target="_blank">→ AIHOT · 抓取线索</a> · <a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-11-13/doc-iniypqyi1011235.shtml" target="_blank">新浪报道</a></div><div class="news-item"><div class="news-item-title">微软多项服务故障：效率工具也需要备份链路</div><div class="news-item-desc">新浪援引Downdetector称，11月12日Outlook相关异常报告超过13万起，Microsoft 365超过4.6万起。这是用户报告次数，并非独立受影响用户数；品牌直播与活动执行应保留离线资料和备用通讯。</div><a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-11-13/doc-iniypqyi1011235.shtml" target="_blank">→ 新浪财经</a></div></div>
+<div class="news-panel"><div class="news-panel-title">行业 · 消费</div><div class="news-item"><div class="news-item-title">双11美妆比价交给AI，品牌竞争进入「算得明白」阶段</div><div class="news-item-desc">21经济网11月12日报道消费者将面霜优惠规则交给AI拆解，个案中两平台实付价为2731元与2686元。个案不代表普遍价格，但揭示复杂促销规则的解释权开始外移。</div><a class="news-item-link" href="https://www.21jingji.com/article/20261112/herald/acbbca30a7a03f0d97bc569e15d86717.html" target="_blank">→ 21经济网</a></div><div class="news-item"><div class="news-item-title">服务消费的AI应用从导购走向履约与体验</div><div class="news-item-desc">新浪今日转载的行业文章梳理酒店能耗调节、行程规划、照护陪伴和沉浸式空间。技术价值不只在「卖得更多」，也在减少等待、降低验证成本与稳定服务质量。</div><a class="news-item-link" href="https://finance.sina.com.cn/tech/roll/2026-11-13/doc-iniypvhp3737296.shtml" target="_blank">→ 新浪科技 · 行业观察</a></div></div>
+<div class="news-panel"><div class="news-panel-title">娱乐 · 文化</div><div class="news-item"><div class="news-item-title">微博榜出现《给阿嬷的情书》相关讨论</div><div class="news-item-desc">今日热榜抓取快照列出「给阿嬷的情书获奖反应冷淡」。此处仅确认话题进入榜单，不把话题措辞视为获奖现场事实。内容机会在于讨论地方叙事与普通人的情感记忆。</div><a class="news-item-link" href="https://s.weibo.com/weibo?q=给阿嬷的情书" target="_blank">→ 微博话题检索</a></div><div class="news-item"><div class="news-item-title">里昂灯光节公布27件装置，AI与流行文化进入城市夜景</div><div class="news-item-desc">里昂旅游局11月12日更新页面：2026届于12月5—8日举行，作品涵盖气候、新技术及流行文化，包括向日葵、激光与PAC-MAN。艺术事件不再只在展馆，而成为整座城市的散步理由。</div><a class="news-item-link" href="https://en.visiterlyon.com/out-and-about/what-s-on/festivals/festival-of-lights" target="_blank">→ 里昂旅游局 · 近期预告</a></div></div>
+<div class="news-panel"><div class="news-panel-title">国际 · 地缘</div><div class="news-item"><div class="news-item-title">伊朗称锡里克遭军事袭击，实施方仍未明确</div><div class="news-item-desc">新浪11月13日外盘报道援引伊朗消息人士称霍尔木兹海峡附近发生袭击，消息后原油期货上涨。报道未明确实施方、具体目标和伤亡；保留不确定性，关注能源和物流成本传导。</div><a class="news-item-link" href="https://finance.sina.com.cn/stock/usstock/c/2026-11-13/doc-iniypqyi1011235.shtml" target="_blank">→ 新浪财经</a></div></div>
+</div></section>
+<section class="section"><div class="section-header"><span>📊</span><span class="section-title">站内要闻</span><span class="section-subtitle">五条内容线索 · 非站内热榜</span></div><div class="section-body"><p class="news-item-desc">数据说明：未取得可核验的小红书当日热榜、笔记链接及热度数据。以下为外部已观察信号与小红书内容机会的编辑推断；编号不代表站内排名，检索链接也不代表已验证的热门笔记。</p>
+<div class="trend-item"><div class="trend-rank">1</div><div class="trend-content"><div class="trend-title">AI购物复盘：从优惠计算到「为什么不买」</div><div class="trend-meta">21经济网 · 11月12日</div><div class="trend-obs">趋势观察：对比表之外，解释预算、使用频率和替代方案，更有助于让购买经验成为可收藏的决策资料。建议测试「买前预期—实际使用—最终结论」笔记结构。</div><div class="trend-source"><a href="https://www.21jingji.com/article/20261112/herald/acbbca30a7a03f0d97bc569e15d86717.html">来源报道</a> · <a href="https://www.xiaohongshu.com/search_result?keyword=AI购物">站内检索</a></div></div></div>
+<div class="trend-item"><div class="trend-rank">2</div><div class="trend-content"><div class="trend-title">羽绒服比价：用户想知道价格差在哪里</div><div class="trend-meta">今日热榜快照 · 山姆羽绒服相关话题</div><div class="trend-obs">趋势观察：可做充绒量、面料、售后和试穿的可核验比较；不凭「同代工」就断言产品完全相同，也不以外部热搜冒充站内爆款。</div><div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9">热榜来源</a> · <a href="https://www.xiaohongshu.com/search_result?keyword=羽绒服测评">站内检索</a></div></div></div>
+<div class="trend-item"><div class="trend-rank">3</div><div class="trend-content"><div class="trend-title">空气炸锅苹果烤蛋奶：冬日食谱的轻量入口</div><div class="trend-meta">微博热榜生活信号</div><div class="trend-obs">趋势观察：小家电内容适合从可复刻的温度、时间与失败案例切入。产品展示退后一步，让「今天能做出来」成为传播理由。</div><div class="trend-source"><a href="https://s.weibo.com/weibo?q=用空气炸锅做苹果烤蛋奶">话题来源</a> · <a href="https://www.xiaohongshu.com/search_result?keyword=苹果烤蛋奶">站内检索</a></div></div></div>
+<div class="trend-item"><div class="trend-rank">4</div><div class="trend-content"><div class="trend-title">地方电影与家庭记忆：把影评写成自己的故事</div><div class="trend-meta">《给阿嬷的情书》外部讨论线索</div><div class="trend-obs">趋势观察：方言、旧信和长辈故事可以成为用户表达入口；品牌合作需尊重个人经历，不把亲情当统一煽情脚本。</div><div class="trend-source"><a href="https://tophub.today/n/KqndgxeLl9">热榜来源</a> · <a href="https://www.xiaohongshu.com/search_result?keyword=给阿嬷的情书">站内检索</a></div></div></div>
+<div class="trend-item"><div class="trend-rank">5</div><div class="trend-content"><div class="trend-title">冬季夜游：灯光节可以是城市路线，不只是打卡点</div><div class="trend-meta">里昂2026灯光节官方预告</div><div class="trend-obs">趋势观察：把拍摄、步行、餐饮、保暖与无障碍信息放进一张路线图，能让艺术事件转为有用的旅行内容；站内表现有待实际检索验证。</div><div class="trend-source"><a href="https://en.visiterlyon.com/out-and-about/what-s-on/festivals/festival-of-lights">官方来源</a> · <a href="https://www.xiaohongshu.com/search_result?keyword=里昂灯光节">站内检索</a></div></div></div>
+</div></section>
+<section class="section"><div class="section-header"><span>📚</span><span class="section-title">行业学习</span><span class="section-subtitle">营销 · 消费决策</span></div><div class="section-body"><div class="learning-label">今日主题 · 可验证的种草</div><div class="learning-title">当AI替用户算账，品牌还应该讲什么？</div><div class="learning-subtitle">让工具回答「哪件划算」，让真实的人回答「哪件适合我」。</div><div class="learning-body"><p>双11最熟悉的画面，曾是人在优惠规则里来回凑单。现在，一部分消费者把规则贴进对话框，也把迟疑一起交给AI：我真的需要它吗？21经济网的采访提醒我们，这不仅是计算效率提升，也是购买冲动被重新审视。</p><p><strong>第一层是信息清晰。</strong>规格、适用场景、到手价、售后与限制条件，是品牌可以主动建设的「证据底座」。如果内容只有形容词，面对比较就很脆弱。把一个优点讲透，比堆十个卖点更有用。</p><p><strong>第二层是经验可信。</strong>报道中的TTD受访者指出，被AI呈现不等于被选择，用户还会二次验证。这是小红书真实体验内容的机会：不是和AI争夺最会总结的角色，而是提供可追问的使用记录、条件与反例。要避免把这点误读为未经验证的「AI引用优化」保证。</p><p><strong>第三层是发现未被说出的需求。</strong>访谈提出，人负责定义什么值得做，AI负责执行与验证。比如夜游活动里，用户未必缺一面更亮的墙，可能缺一个能放心带父母同行、能坐下来等朋友的地方。洞察不是数据表里已命名的欲望，它常藏在不便和犹豫里。</p><p>给大事件策划的一张小清单：预热交付可核验的路线与规则；现场留下可参与的动作；复盘收集「为什么喜欢，也为什么不适合」。<strong>真正好的种草，不是替人结束思考，而是让人更容易做出自己的选择。</strong></p></div><div class="learning-source">参考与方法边界：<a href="https://www.21jingji.com/article/20261112/herald/acbbca30a7a03f0d97bc569e15d86717.html">21经济网 · 消费者与商家的AI对决</a> · <a href="https://finance.sina.com.cn/tech/roll/2026-11-13/doc-iniypvhp3737296.shtml">新浪科技 · 服务消费观察</a>。三层框架为编辑归纳，不是来源的原文模型。</div></div></section>
+<section class="section"><div class="section-header"><span>🎪</span><span class="section-title">节日词典</span><span class="section-subtitle">里昂灯光节</span></div><div class="festival-banner-placeholder">🕯️ ✨ 🌃</div><div class="section-body"><div class="festival-meta"><span class="festival-tag highlight">城市光艺术</span><span class="festival-tag">法国 · 里昂</span><span class="festival-tag">公众免费</span></div><div class="festival-name">里昂灯光节</div><div class="festival-name-en">Fête des Lumières · 从窗台上的烛火，到一座城的共同作品</div>
+<div class="festival-block"><div class="festival-block-title">【过去】一场被天气打断的庆典，留下了最温柔的仪式</div><div class="festival-block-body"><p>1852年，富维耶山圣母金像的落成仪式先因洪水推迟，12月8日又遇暴雨。当夜天气转晴，居民自发在窗台点起小烛灯——lumignons。城市不是先有宏伟方案再邀请居民，而是<strong>居民先做了一个很小的动作，才有了集体记忆</strong>。</p><p>1999年，现代四日光艺术节的形态诞生。建筑立面、广场与公园成为艺术家的画布。它保留12月8日的点灯传统，却把媒介扩展为投影、激光、互动装置，让历史遗产被重新观看。</p><p>不强行杜撰「历年统一主题」：官网展示的2025作品有Nouvelle Vague、Les Malles Persanes、Lumina，以及纪念里昂滑板文化的作品；2026节目则关注气候、新技术与流行文化。它的连续性在于多元作品与城市的关系，而非每年只有一句口号。</p></div></div>
+<div class="festival-block"><div class="festival-block-title">【现在】把整座城市变成一个可以步行的展场</div><div class="festival-stats"><div class="festival-stat"><div class="festival-stat-num">27件</div><div class="festival-stat-label">2026艺术装置 · 官方公布</div></div><div class="festival-stat"><div class="festival-stat-num">14种</div><div class="festival-stat-label">参与创作团队的国籍</div></div><div class="festival-stat"><div class="festival-stat-num">10组</div><div class="festival-stat-label">里昂本地团队</div></div><div class="festival-stat"><div class="festival-stat-num">4晚</div><div class="festival-stat-label">12月5—8日</div></div></div><div class="festival-block-body"><p>由里昂市组织的免费公共节庆，以公开项目征集、艺术策展、城市交通及游客服务共同运转。官网2月发布征集，11月公布节目，体现出一条长周期生产链。旅游局配套节目地图、公共交通、餐饮与无障碍服务；商业转化因此不是只有门票，而是沿途消费与目的地吸引力。</p><p>2026作品包括激光装置Harp、向梵高致意的巨型发光向日葵，以及PAC-MAN相关Level Up。文化记忆、流行IP和新技术共享一座城，但每件作品仍需要一个能被人感知的入口。</p><p>截至本次读取，所查官方页面未给出2026实际到访量、总预算或经济收益。上面的规模是节目数据，不能换算成客流，更不以往年估算冒充当届成绩。</p></div></div>
+<div class="festival-block"><div class="festival-block-title">【未来】下一届已在眼前，启发不在「更大的投影」</div><div class="festival-block-body"><p>从今日11月13日看，下一次举办就是<strong>2026年12月5—8日</strong>，节目已经公开。旅游局表示部分作品涉及AI，具体技术用途需以作品说明为准；2027规划本次未获确认，不虚构新主题或XR计划。</p></div><div class="festival-insight"><strong>对小红书大事件的启发：</strong>设计「一个人可以做的小动作」与「很多人共享的大景观」两层参与机制。线上可以是一盏灯、一段记忆；线下是一条串联商户与装置的路线。提前提供保暖、等候、无障碍与避峰指南，把拍照欲望变成舒适体验。AI负责让制作更高效，人的到场、点灯与同行，负责让节日成为记忆。</div></div><div class="learning-source">来源：<a href="https://www.fetedeslumieres.lyon.fr/en">里昂市 · 官方主页与2025作品回顾</a> · <a href="https://en.visiterlyon.com/out-and-about/what-s-on/festivals/festival-of-lights">里昂旅游局 · 起源与2026实用信息</a> · <a href="https://www.fetedeslumieres.lyon.fr/en/edition/2026-program">2026节目入口</a></div></div></section>
+<section class="section"><div class="section-header"><span>🌐</span><span class="section-title">知识增长</span><span class="section-subtitle">策展 · 光、舞台与观看</span></div><div class="section-body"><div class="knowledge-theme">光如何从照明变成叙事</div><div class="knowledge-headline">一束光的五种语言：画面、舞台、城市、声音、山水</div><div class="knowledge-tagline">光的意义，不只是让东西可见，也在改变我们观看的方式。</div><div class="knowledge-intro">里昂把城市交给光；今天用五组作品搭一条理解路径。先看图像如何抓住目光，再看现场如何组织身体，最后看声音与文字如何让空间留下余韵。这是编辑策展，不是今日新品清单。</div><div class="knowledge-cards">
+<div class="knowledge-card"><img class="knowledge-card-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Vincent_van_Gogh_-_Google_Art_Project.jpg/400px-Vincent_van_Gogh_-_Google_Art_Project.jpg" alt="梵高自画像" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="knowledge-card-img-placeholder" style="display:none">🌻</div><div class="knowledge-card-body"><div class="knowledge-card-name">文森特·梵高</div><div class="knowledge-card-sub">画面 · 《星月夜》《向日葵》</div><div class="knowledge-card-work">旋转的夜空与浓烈的黄色，不是对光的机械复制，而是情绪的形状。观看问题：同一个夜景，什么色彩让它成为记忆？</div></div></div>
+<div class="knowledge-card"><div class="knowledge-card-img-placeholder">💃</div><div class="knowledge-card-body"><div class="knowledge-card-name">洛伊·富勒的蛇形舞</div><div class="knowledge-card-sub">舞台 · Serpentine Dance</div><div class="knowledge-card-work">织物、身体和舞台灯光共同形成流动形象。把她作为媒介关系的参照：舞台视觉不是背景，光也可以是表演者。</div></div></div>
+<div class="knowledge-card"><div class="knowledge-card-img-placeholder">🌌</div><div class="knowledge-card-body"><div class="knowledge-card-name">teamLab</div><div class="knowledge-card-sub">空间 · Borderless</div><div class="knowledge-card-work">投影、传感与实时计算使观众的移动影响作品。核心不是「屏幕更多」，而是人在场之后，画面与他发生关系。</div></div></div>
+<div class="knowledge-card"><div class="knowledge-card-img-placeholder">🎹</div><div class="knowledge-card-body"><div class="knowledge-card-name">坂本龙一</div><div class="knowledge-card-sub">声音 · 《async》《Merry Christmas Mr. Lawrence》</div><div class="knowledge-card-work">从旋律到环境声，把听觉也变成一种观察。给光艺术的提醒：安静、停顿与细微声响同样能组织注意力。</div></div></div>
+<div class="knowledge-card"><div class="knowledge-card-img-placeholder">🏞️</div><div class="knowledge-card-body"><div class="knowledge-card-name">王维</div><div class="knowledge-card-sub">文字 · 《鹿柴》《山居秋暝》</div><div class="knowledge-card-work">「返景入深林，复照青苔上。」不是把山林全部照亮，而是让一道余光引出幽深。空间策划也需要留白，让观众自己补全故事。</div></div></div>
+</div><div class="knowledge-coda">策展图谱：梵高给光以情绪，富勒给光以身体，teamLab给光以反馈，坂本龙一给空间以听觉，王维给观看以留白。大事件不必把五者拼成装饰，先选一种真正服务故事的语言。</div><div class="learning-source">延伸阅读：<a href="https://www.moma.org/artists/2206">MoMA · 梵高</a> · <a href="https://en.wikipedia.org/wiki/Loie_Fuller">富勒 · 生平与作品</a> · <a href="https://www.teamlab.art/e/tokyo/">teamLab Borderless</a> · <a href="https://www.sitesakamoto.com/">坂本龙一作品入口</a>。延伸链接供继续阅读，未全部逐页核验；人物图像来自Wikimedia Commons，失败时降级为emoji。</div></div></section>
+</main></div><footer class="site-footer">DayPulse 🌱 · Ki 编辑生成 · 新闻按来源时间标注，趋势为编辑观察</footer>
+<script>function toggleSidebar(){const s=document.getElementById('sidebar'),b=document.getElementById('sidebarToggle'),c=s.classList.toggle('collapsed');b.textContent=c?'▶':'◀';b.title=c?'展开日期栏':'收起日期栏';try{localStorage.setItem('daypulse-sidebar',c?'1':'0')}catch(e){}}try{if(localStorage.getItem('daypulse-sidebar')==='1'){document.getElementById('sidebar').classList.add('collapsed');document.getElementById('sidebarToggle').textContent='▶'}}catch(e){}</script></body></html>
