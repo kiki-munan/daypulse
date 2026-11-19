@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/19</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/19/index.html" class="active">2026 / 11 / 19</a></li>
+      <li><a href="/daypulse/2026/11/18/index.html">2026 / 11 / 18</a></li>
+      <li><a href="/daypulse/2026/11/17/index.html">2026 / 11 / 17</a></li>
+      <li><a href="/daypulse/2026/11/16/index.html">2026 / 11 / 16</a></li>
+      <li><a href="/daypulse/2026/11/13/index.html">2026 / 11 / 13</a></li>
+      <li><a href="/daypulse/2026/11/12/index.html">2026 / 11 / 12</a></li>
+      <li><a href="/daypulse/2026/11/11/index.html">2026 / 11 / 11</a></li>
+      <li><a href="/daypulse/2026/11/10/index.html">2026 / 11 / 10</a></li>
+      <li><a href="/daypulse/2026/11/9/index.html">2026 / 11 / 9</a></li>
+      <li><a href="/daypulse/2026/11/6/index.html">2026 / 11 / 6</a></li>
+      <li><a href="/daypulse/2026/11/4/index.html">2026 / 11 / 4</a></li>
+      <li><a href="/daypulse/2026/11/3/index.html">2026 / 11 / 3</a></li>
+      <li><a href="/daypulse/2026/11/2/index.html">2026 / 11 / 2</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/28/index.html">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 19</div>
+      <div class="day-week">星期四</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 5 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">APEC 深圳峰会进入高潮：欢迎宴会大合影刷屏，「深圳倡议」发布，特朗普体验深圳市民热情</div>
+            <div class="news-item-desc">本届 APEC 会议在深圳举办，来宾欢迎宴会大合影冲上微博热搜第一（52万热度），「深圳倡议」同步发布。特朗普团队抵达深圳下榻酒店，马斯克现身随行大巴车，普京与特朗普互动握手话题持续发酵。主场外交+城市形象营销的双重窗口，正在被深圳全满兑现。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=APEC%E4%BC%9A%E8%AE%AE%E6%9D%A5%E5%AE%BE%E6%AC%A2%E8%BF%8E%E5%AE%B4%E4%BC%9A%E5%A4%A7%E5%90%88%E5%BD%B1" target="_blank">→ 微博热搜·APEC大合影</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">新一轮国资国企改革全面实施，国资委：防止「救助型」并购</div>
+            <div class="news-item-desc">11月18日，国务院国资委明确新一轮国资国企改革进入全面实施阶段，各地各央企均已完成工作台账编制。改革强调以创新能力强的企业为主体开展整合，明确防止以并购之名行救助之实。资本市场的国有板块整合预期升温。</div>
+            <a class="news-item-link" href="https://www.21jingji.com/article/20261119/herald/b34c3e3c16886a5a26e306cda2b100e1.html" target="_blank">→ 21经济网</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">Anthropic IPO 定价每股 $83，今日以代码 ANT 登陆纳斯达克</div>
+            <div class="news-item-desc">Anthropic, PBC 官宣 IPO 定价 83 美元/股，共发行 9.8 亿股 Class A 普通股，其中约 9.56 亿股由公司出售。作为 OpenAI 最强挑战者的公开发首秀，AI 基础模型公司的资本估值体系将迎来新的锚点。AI 竞赛正式从私募叙事进入公开市场定价时代。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/o0z8uukw36ic6txpxi29o96ep" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">黄仁勋卸任英伟达 CEO 后首个财报电话会：新 CEO 收紧 neocloud 兜底，马斯克等 20 万人请愿盼其回归</div>
+            <div class="news-item-desc">任职 33 年的黄仁勋上周突然卸任，临时 CEO Colette Kress 主持财报会并明确「暂无让黄仁勋回归的计划」。Palmer Luckey 在 DealBook Summit 呼吁恢复其职位，联署已超 20 万人。新财报条款显示 neocloud 只有在融资落地且数据中心建成后才能获得采购兜底——英伟达的支持意愿正在划界。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/gpvt9y9d89gd5nkw92bwhyw6s" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">纳德拉解释向 6 万员工提供买断：转型「AI 优先组织」而非裁员；OpenAI 研究加速报告：智能体完成近半数长时任务</div>
+            <div class="news-item-desc">纳德拉在 DealBook 峰会称买断是给员工转型选择权——让所有人都用 AI 工作、转向管理 AI 智能体。同期 OpenAI 发布第二份研究加速报告：2-4 小时人工任务的智能体自主成功率从 3 月的 23% 升至 46%，但推理与服务栈编码仅 25%。「AI 优先」正在从口号变成组织设计。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/g47lsydtqfsi16e0z920ghe2y" target="_blank">→ AIHOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">第 18 个双11复盘：品牌不再卷低价和流量，天猫「词元」成新品类、首日成交环比暴涨 450%</div>
+            <div class="news-item-desc">2026 双11的核心变化是经营逻辑从「耗规模」转向「创新增量」：开卖前一个月天猫首发新品商家数同比增长 64%，5 万款超级单品包揽热卖榜；智谱、MiniMax、阿里云、千问等大模型厂商集体入驻，「算力像话费一样买」。新场景替代折扣，成为中国消费的新鲜感来源。</div>
+            <a class="news-item-link" href="https://m.21jingji.com/article/20261112/herald/c9fee05cb6442db6a729309d40bea407.html" target="_blank">→ 21财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">奢侈品告别普涨时代：硬奢提价强化稀缺、软奢降价挽回中产，黄金珠宝进入结构性洗牌</div>
+            <div class="news-item-desc">2026 年奢侈品行业最大趋势是「涨价退潮与品牌分化同时发生」：超高净值人群偏好可保值的硬奢，中产对 Logo 皮具购买意愿下降。黄金珠宝行业同样告别普涨，需求从婚嫁刚需切换为「投资保值+悦己佩戴」双主线，产品向按克计价与高端工艺奢侈品化并行。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7879922984_1d5ae152806802ekcm.html" target="_blank">→ 新浪新闻</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">「哪家AI能画对13个鸡蛋」冲上热搜：豆包反复翻车，全民围观 AI 的「数数盲区」</div>
+            <div class="news-item-desc">「哪家AI能画对13个鸡蛋」「豆包被十三个鸡蛋难倒」多个关联话题同时霸榜，累计热度超20万。公众用最朴素的常识检验最强模型，这种「低门槛高共鸣」的AI娱乐化叙事，正在成为大模型品牌最意想不到的大众传播场。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%93%AA%E5%AE%B6AI%E8%83%BD%E7%94%BB%E5%AF%B913%E4%B8%AA%E9%B8%A1%E8%9B%8B" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">GTA6 再登热搜，「2026豆瓣8分以上的剧」引发年度片单盘点潮</div>
+            <div class="news-item-desc">GTA6 相关话题再上热搜第19位，玩家社区对发售节奏的讨论持续高热。剧集侧，《小城良方》豆瓣评分逆势上涨，年度口碑剧盘点成为社交平台的内容富矿。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=2026%E8%B1%86%E7%93%A38%E5%88%86%E4%BB%A5%E4%B8%8A%E7%9A%84%E5%89%A7" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销 × 国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">宗馥莉再掀娃哈哈人事风暴，继任者的品牌重塑仍在阵痛期</div>
+            <div class="news-item-desc">宗馥莉的又一轮人事调整登上热搜。老国民品牌交接班后的组织重组与品牌焕新，每一步都被公众放大检验。经典品牌如何在不失去「情怀资产」的前提下完成代际切换，是2026年品牌界最典型的命题之一。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%AE%97%E9%A6%A5%E8%8E%89%E5%86%8D%E6%8E%80%E4%BA%BA%E4%BA%8B%E9%A3%8E%E6%9A%B4" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普深圳行：从欢迎宴会到「老外被中国刷手机丝滑到了」，APEC 的城市叙事输出</div>
+            <div class="news-item-desc">外国政要在深圳的行程细节（打卡地点、移动支付体验）成为中国科技与城市形象的天然叙事素材，「外国政要来深圳都打卡了哪」等话题热度持续走高。重大外交事件中的「细节化传播」，正在替代宏大叙事成为国际传播的主战场。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%A4%96%E5%9B%BD%E6%94%BF%E8%A6%81%E6%9D%A5%E6%B7%B1%E5%9C%B3%E9%83%BD%E6%89%93%E5%8D%A1%E4%BA%86%E5%93%AA" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#APEC会议来宾欢迎宴会大合影 热度52万</div>
+            <div class="trend-meta">主场外交 · 城市形象内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：大合影+欢迎宴会的视觉素材是「国家叙事的平民化切口」——用户会自发用它做对比、做穿搭解读、做城市攻略二次创作。小红书创作者可关注「深圳同款打卡路线」「APEC 同款礼服」等衍生选题，品牌借势则宜走城市质感而非政治叙事。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=APEC%E4%BC%9A%E8%AE%AE%E6%9D%A5%E5%AE%BE%E6%AC%A2%E8%BF%8E%E5%AE%B4%E4%BC%9A%E5%A4%A7%E5%90%88%E5%BD%B1" target="_blank">→ 微博热搜·APEC大合影</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#哪家AI能画对13个鸡蛋 豆包连环翻车</div>
+            <div class="trend-meta">AI 大众娱乐 · 模型体验赛道</div>
+            <div class="trend-obs">💡 趋势观察：「让AI画13个鸡蛋」是教科书级的低成本UGC挑战——零创作门槛+强结果反差，天然适配小红书的晒图社区属性。AI 产品的大众传播正在从「参数跑分」转向「生活化翻车现场」，AI 品牌的内容营销值得把「可被玩梗」当作特性而非事故来运营。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%93%AA%E5%AE%B6AI%E8%83%BD%E7%94%BB%E5%AF%B913%E4%B8%AA%E9%B8%A1%E8%9B%8B" target="_blank">→ 微博热搜·13个鸡蛋</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#黄金跌得有多狠 热度12万</div>
+            <div class="trend-meta">消费理财 · 情绪向内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：金价回调话题在小红书的受众远不止投资者——「金饰还能不能买」关系到婚礼、悦己、送礼等场景消费决策。对黄金珠宝品牌而言，价格下行期反而是「按克计价回归」的内容沟通窗口：把保值叙事换成工艺与设计叙事，承接观望人群。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%BB%84%E9%87%91%E8%B7%8C%E5%BE%97%E6%9C%89%E5%A4%9A%E7%8B%A0" target="_blank">→ 微博热搜·黄金跌得有多狠</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#deepseek算力 热度4万</div>
+            <div class="trend-meta">国产AI · 技术叙事赛道</div>
+            <div class="trend-obs">💡 趋势观察：Anthropic 上市首日与 DeepSeek 算力话题同日发酵，「AI 资产定价」正在从行业圈层话题走向大众财经内容。小红书上的财经科普类创作者迎来选题红利期，品牌侧则可关注「普通人如何理解AI公司上市」这类认知差内容。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=deepseek%E7%AE%97%E5%8A%9B" target="_blank">→ 微博热搜·deepseek算力</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#超长奶茶火了你喝了吗 · 纸质短剧 双11后的消费余温</div>
+            <div class="trend-meta">新消费 · 生活方式内容赛道</div>
+            <div class="trend-obs">💡 趋势观察：双11一结束，「超长奶茶」「纸质短剧」这类奇观型单品迅速接棒热搜——大促后的消费叙事正在从「买了什么」转向「什么好玩」。品牌在 11 月下旬的内容策略应从促销素材切换到「体验晒单+猎奇场景」，用新鲜感维持大促后的对话量。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%B6%85%E9%95%BF%E5%A5%B6%E8%8C%B6%E7%81%AB%E4%BA%86%E4%BD%A0%E5%96%9D%E4%BA%86%E5%90%97" target="_blank">→ 微博热搜·超长奶茶</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 增量经营</div>
+        <div class="learning-title">第 18 个双11教会我们的事：当「低价」失效后，品牌拿什么制造心动？</div>
+        <div class="learning-subtitle">从「耗规模」到「创新增量」——一份迟到但不缺席的行业逻辑换轨记录</div>
+        <div class="learning-body">
+          <p>2026年的双11，被许多人称为「分水岭式」的一届。不是因为它更大，而是因为品牌们第一次集体<strong>停止了内卷式让利</strong>：美妆转向买赠正装、奢侈品收缩涨价幅度、黄金珠宝回归按克计价。当所有人都意识到「折扣换不来忠诚」时，行业的注意力终于回到了它本该在的地方——<strong>新品类、新场景、新赛道</strong>。</p>
+          <p>最生动的注脚来自天猫：「词元（Token）」首次成为双11独立品类，智谱、MiniMax、阿里云、千问等大模型厂商集体开店，消费者像充话费一样购买算力额度，开卖首日成交额环比增长 <strong>450%</strong>。一个十年前不存在的商品类别，成了这届大促最亮眼的增长曲线。这提醒我们：<strong>增量从来不藏在旧货架上，它藏在新需求的命名里</strong>。</p>
+          <p>同样是「新」，奢侈品行业给出了另一个方向的答案：当普涨时代结束，硬奢用提价强化稀缺，软奢用降价挽回中产——<strong>定价策略第一次成为品牌分层叙事的一部分</strong>，而不仅仅是财务手段。消费者不再为 Logo 溢价买单，但依然愿意为「稀缺的确定性」买单。</p>
+          <p>对内容平台与营销人而言，这条换轨路径有一个清晰的方法论出口：<strong>大促的终局不是流量运营，而是需求策展</strong>。谁能为用户新的欲望「命名」——像「词元」被命名成商品那样——谁就拥有了下一轮增长的定价权。双11走过的18年，本质是消费社会欲望清单的18次改写；而改写清单的人，永远比照着清单卖货的人赚得多。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://m.21jingji.com/article/20261112/herald/c9fee05cb6442db6a729309d40bea407.html" target="_blank">21财经《2026年双11：新品新赛道在天猫涌现》</a> ·
+          <a href="https://news.pedaily.cn/202611/571562.shtml" target="_blank">投资界《第18个双11：当品牌不再卷低价和流量》</a> ·
+          <a href="https://k.sina.com.cn/article_7879922984_1d5ae152806802ekcm.html" target="_blank">新浪新闻《奢侈品行业的未来发展趋势》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">下周登场 · 广州国际车展</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🚗⚡🇨🇳</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">汽车行业</span>
+          <span class="festival-tag">中国·广州</span>
+          <span class="festival-tag">每年11月下旬</span>
+          <span class="festival-tag">年度压轴A级车展</span>
+        </div>
+        <div class="festival-name">广州国际汽车展览会</div>
+        <div class="festival-name-en">Auto Guangzhou · 始于2003年 · 2026年第24届</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从「中国车市风向标」到收官大考</div>
+          <div class="festival-block-body">
+            <p>2003年，中国车市正处在家庭购车的第一波井喷期，广州——这座聚集了广汽本田、广汽丰田与庞大零部件集群的南方工业重镇——创办了自己的国际车展。起初它只是北上之后又一个展销场，但凭借珠三角最强的汽车消费腹地，它迅速长成与北京、上海车展并列的<strong>中国三大顶级车展</strong>。</p>
+            <p>广州车展的江湖地位，来自它独特的「时间坐标」：每年11月底举办，是<strong>中国车市的年度收官之战</strong>。全年销量冲刺、次年战略定调、年度车型压轴首发，都挤在这十天里完成。车企在这里交卷，也在这里布阵。</p>
+            <p>主题的变迁就是一部中国汽车产业进化史：从早年主打「国际化的窗口」，到电动化时代的「新科技·新生活」，再到现在智能化主导的展台叙事——车展主题年年相似，展台上的主角却彻底换了人。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】新能源占比超六成的「电动主场」</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">22万㎡</div>
+                <div class="festival-stat-label">总展览规模</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">1106台</div>
+                <div class="festival-stat-label">展出整车</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">707台</div>
+                <div class="festival-stat-label">新能源车·占比超六成</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">115台</div>
+                <div class="festival-stat-label">全球/全国首发新车</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">800万</div>
+                <div class="festival-stat-label">预计观众人次</div>
+              </div>
+            </div>
+            <p>第24届广州车展定于 <strong>2026年11月27日至12月6日</strong> 在广交会展馆举办，主题仍是「新科技·新生活」，但内涵已然不同：全面启用 A、D 两区室内展厅、南北广场室外展区及广交会堂，27日为媒体日。新能源车707台、占比超过六成——车展已经从「汽车展」变成事实上的<strong>智能终端与能源生态展</strong>。</p>
+            <p>运作模式上，广州车展的「展销一体」特色愈发鲜明：本届推出五大创新服务降低观展购车门槛，把「看展」直接压缩成「决策链路」。车展不再只是发布会的舞台，而是全年最大的一次<strong>线下成交场</strong>——这是它区别于日内瓦、东京车展等「纯展示型」车展的关键。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】收官展的新使命与对小红书平台大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>下届看点：</strong>随着中国车企出海成为主叙事，广州车展正尝试从「全国风向标」升级为「全球南方市场的发布锚点」；同时智能化座舱、机器人与飞行汽车等泛出行业态持续挤压传统展位，车展边界预计进一步外扩。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件业务的启发：</strong>广州车展证明了「时间坐标型IP」的力量——它不需要发明新概念，只需要在行业天然需要交卷的时刻，提供一个确定的舞台。小红书大事件同样可以寻找这样的「行业收官节点」：年终好物盘点、年度出行决策季、新年前消费冲刺，都是用户天然有决策需求、品牌天然有冲刺诉求的时间窗口。另外，车展「展销一体」的启示在于：大事件的内容场与转化场不该是两个场地——让用户「看完即买得」,「种收一体」的链路在汽车这类重决策品类上同样是终局答案。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.autoguangzhou.org.cn/" target="_blank">广州国际车展官网</a> ·
+          <a href="https://news.dayoo.com/guangzhou/202611/18/139995_55024809.htm" target="_blank">广州日报《广州国际车展下周五开幕》</a> ·
+          <a href="https://www.sina.cn/weibo/detail/5366539986404230.html" target="_blank">新浪新闻《2026广州车展定档》</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 汽车设计</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🚗 主题策展 · 改变汽车审美的六个人</div>
+        <div class="knowledge-headline">从甘迪尼到李斌：车展聚光灯背后的设计谱系</div>
+        <div class="knowledge-tagline">「汽车是会移动的建筑，也是被人抚摸得最多的雕塑。」</div>
+
+        <div class="knowledge-intro">
+          车展上被闪光灯包围的从来不只是发动机和电池，还有<strong>车身线条背后的设计哲学</strong>。广州车展下周开幕，1700多台展车驶上展台之前，它们的样子早已被一个世纪以来的设计大师们写好了语法。认识这条谱系，就像拿到了看懂任何一台车的密钥。<br><br>
+          对营销人而言，汽车设计史是一部最好的「品牌美学进化案例集」：每一道腰线、每一块格栅的取舍背后，都是一个品牌对时代的回答。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Marcello_Gandini_2013_%28cropped%29.jpg/440px-Marcello_Gandini_2013_%28cropped%29.jpg"
+              alt="马塞罗·甘迪尼"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🏎️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">马塞罗·甘迪尼</div>
+              <div class="knowledge-card-sub">Marcello Gandini · 意大利 · 兰博基尼之魂</div>
+              <div class="knowledge-card-work">剪刀门的发明者。兰博基尼 Countach 与 Diablo 的线条出自他手，把「未来主义」焊死在了超跑的基因里。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Giorgetto_Giugiaro_2012.jpg/440px-Giorgetto_Giugiaro_2012.jpg"
+              alt="乔杰托·乔治亚罗"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📐</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">乔杰托·乔治亚罗</div>
+              <div class="knowledge-card-sub">Giorgetto Giugiaro · 意大利 · 世纪设计大师</div>
+              <div class="knowledge-card-work">初代大众高尔夫、阿尔法·罗密欧、莲花 Esprit……1999年被评为「世纪汽车设计师」，他定义了「家用车也可以好看」。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Chris_Bangle_2009.jpg/440px-Chris_Bangle_2009.jpg"
+              alt="克里斯·班戈"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🔥</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">克里斯·班戈</div>
+              <div class="knowledge-card-sub">Chris Bangle · 美国 · 争议的颠覆者</div>
+              <div class="knowledge-card-work">在宝马推行「火焰曲面」，当年被全球车迷骂上头条，如今几乎所有品牌的曲面设计都活在他划定的语言里。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Ferdinand_Pi%C3%ABch_2011.jpg/440px-Ferdinand_Pi%C3%ABch_2011.jpg"
+              alt="费迪南德·皮耶希"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚙️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">费迪南德·皮耶希</div>
+              <div class="knowledge-card-sub">Ferdinand Piëch · 奥地利 · 工程师皇帝</div>
+              <div class="knowledge-card-work">保时捷家族后人，主导奥迪 quattro 四驱与布加迪威龙。他证明：最疯狂的产品野心，也能被工程兑现成商业帝国。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🇨🇳⚡</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">李斌</div>
+              <div class="knowledge-card-sub">中国 · 蔚来创始人</div>
+              <div class="knowledge-card-work">把「用户企业」从口号变成体系：NIO House、换电网络、年度 NIO Day——他重新定义了中国汽车品牌与用户的关系范式。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🔋🧪</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">曾毓群</div>
+              <div class="knowledge-card-sub">中国 · 宁德时代创始人</div>
+              <div class="knowledge-card-work">「赌性更坚强」挂在办公室的福建人。动力电池全球市占率第一背后的男人——电动车时代真正的隐形设计者。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          看懂车展的方式，从来不是数展车，而是看<strong>谁在回答时代的问题</strong>：甘迪尼回答了「未来长什么样」，班戈回答了「曲面能不能有情绪」，李斌和曾毓群回答的是「车与人的关系能不能重来一遍」。下周走进广州车展，不妨带着同一个问题看每一块展台——它，回答了什么？
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
