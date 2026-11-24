@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/24</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/24/index.html" class="active">2026 / 11 / 24</a></li>
+      <li><a href="/daypulse/2026/11/23/index.html">2026 / 11 / 23</a></li>
+      <li><a href="/daypulse/2026/11/20/index.html">2026 / 11 / 20</a></li>
+      <li><a href="/daypulse/2026/11/19/index.html">2026 / 11 / 19</a></li>
+      <li><a href="/daypulse/2026/11/18/index.html">2026 / 11 / 18</a></li>
+      <li><a href="/daypulse/2026/11/17/index.html">2026 / 11 / 17</a></li>
+      <li><a href="/daypulse/2026/11/16/index.html">2026 / 11 / 16</a></li>
+      <li><a href="/daypulse/2026/11/13/index.html">2026 / 11 / 13</a></li>
+      <li><a href="/daypulse/2026/11/12/index.html">2026 / 11 / 12</a></li>
+      <li><a href="/daypulse/2026/11/11/index.html">2026 / 11 / 11</a></li>
+      <li><a href="/daypulse/2026/11/10/index.html">2026 / 11 / 10</a></li>
+      <li><a href="/daypulse/2026/10/30/index.html">2026 / 10 / 30</a></li>
+      <li><a href="/daypulse/2026/10/28/index.html">2026 / 10 / 28</a></li>
+      <li><a href="/daypulse/2026/10/27/index.html">2026 / 10 / 27</a></li>
+      <li><a href="/daypulse/2026/10/19/index.html">2026 / 10 / 19</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 24</div>
+      <div class="day-week">星期二</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达暴涨超31%单日市值激增9520亿美元，美股三大指数大幅收涨</div>
+            <div class="news-item-desc">黄仁勋复职消息引爆市场：道指涨3.01%、标普500涨4.74%、纳指涨6.51%，费城半导体指数全线飙升。单日9520亿美元的市值增量创下历史级别纪录，AI叙事的"信心修复"直接写进了K线。</div>
+            <a class="news-item-link" href="https://k.sina.com.cn/article_7857201856_1d45362c001908vz6w.html" target="_blank">→ 新浪财经</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">今日关注：德国11月IFO商业景气指数、小米Q3财报电话会、美国ADP就业周度数据</div>
+            <div class="news-item-desc">欧洲方面看IFO能否企稳；国内焦点是小米Q3财报电话会（19:30），汽车与AIoT业务的增速将持续检验"人车家全生态"叙事；晚间美国ADP周度就业为12月议息预期再添变量。</div>
+            <a class="news-item-link" href="https://shishixinwen.news/news/jin10/20261124065000001800" target="_blank">→ NewsNow 财经日历</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">英伟达董事会全票恢复黄仁勋职务，复职决定参考美国政府高层意见</div>
+            <div class="news-item-desc">11月23日，NVIDIA宣布黄仁勋即刻复任总裁、CEO及董事会成员，临时CEO Colette Kress回归CFO岗位。针对"外国情报行动目标"传闻的独立调查将继续进行，董事会另设国家安全与出口管制委员会并启动首席合规官招聘。一场CEO风波以创纪录速度落幕，AI芯片赛道的地缘敏感度可见一斑。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/ajcxs84uezjqgsgxpdtr31o0l" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">Lean 社区确认黎曼猜想证明正确：斯坦福数学家 Alpöge 用 1700 万行代码攻克 160 年难题</div>
+            <div class="news-item-desc">Levent Alpöge 于11月20日发布黎曼猜想证明，Lean 与 Mathlib 社区数十人独立运行验证程序得到相同结果，且验证程序被设计为"不会接受有缺陷的证明"。数学界最坚硬的堡垒以机器可验证的方式被攻克——AI辅助形式化数学的时代标志性一页。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/ikpixx0j7414se1f6lww2csek" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">智谱发布 GLM-5.4 旗舰模型：首个 Loop Transformer 架构，参数不变推理更深</div>
+            <div class="news-item-desc">GLM-5.4 让28层共享权重循环执行两轮，在参数量不变的前提下获得更深推理能力，智能水平达到2-3T级模型效果，同时开启"泛Coding"能力并上线 Coding Plan。国产大模型开始用架构创新而非单纯堆参数参与旗舰竞争。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/d4hhqnlmrclsx7d6idtvq95wz" target="_blank">→ AIHOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">第18个双11复盘：182个新品牌冲进行业前10，靠的不是低价是新品</div>
+            <div class="news-item-desc">天猫数据显示，新品牌用精准击中细分需求的产品撕开成熟品牌防线——新品不打折，却照样卖爆。当"卷低价、卷流量"走到尽头，供给侧的新鲜感成为消费回暖的主引擎。</div>
+            <a class="news-item-link" href="https://news.pedaily.cn/202611/571562.shtml" target="_blank">→ 投资界</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">天猫奢品双11：新品成交同比增长109%，Cartier、Miu Miu、Prada等40+品牌双位数增长</div>
+            <div class="news-item-desc">在"不卷低价"的策略下，奢侈品牌用新品与稀缺性守住溢价。美服奢赛道验证了一个反常识结论：高客单品类与电商大促并非天然互斥，关键在"货"而非"价"。</div>
+            <a class="news-item-link" href="https://www.sohu.com/a/1103471883_121948407" target="_blank">→ 搜狐商业洞察</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">直播间双11热卖背后的消费迁移：从"买商品"到"买生活"</div>
+            <div class="news-item-desc">李佳琦直播间的货架上，快消品之外出现了运动相机、胶囊洗碗机、乐园门票乃至数字产品。21财经梳理指出，供给变化记录着需求迁移——消费者购买的正在从单品变成一种生活方式的拼图。</div>
+            <a class="news-item-link" href="https://m.21jingji.com/article/20261113/herald/1148a23ca50ffdac78474f30995a1e9f.html" target="_blank">→ 21财经</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">U17国足第99分钟被摩洛哥绝平，2-2痛失好局，出线形势悬而未决</div>
+            <div class="news-item-desc">U17世界杯小组赛，国少在两球领先下第99分钟被扳平，相关话题冲上微博热搜第2位，讨论量52万。年轻一代国字号的表现依然牵动全民情绪，"惜败叙事"在社交平台的传播力不亚于胜利。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=U17%E5%9B%BD%E8%B6%B3%E7%AC%AC99%E5%88%86%E9%92%9F%E8%A2%AB%E7%BB%9D%E5%B9%B3" target="_blank">→ 微博热搜</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">舒淇获奖，冯德伦台下的反应火了；复联5版复仇者集结物料释出</div>
+            <div class="news-item-desc">舒淇凭新作斩获表演奖项，丈夫冯德伦在台下的动容瞬间被镜头捕捉，登上热搜；同期漫威《复仇者联盟5》"复仇者集结"版物料释出，复古情怀牌精准打击十年老粉。影视话题本周热度重心从颁奖季向好莱坞大片预热切换。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E8%88%92%E6%B7%87%E5%BE%97%E5%A5%96%E5%86%AF%E5%BE%B7%E4%BC%A6%E5%8F%8D%E5%BA%94" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">a16z 实测 11,307 次 Agent 购物：总结企业赢得"B2A经济"的五条方法</div>
+            <div class="news-item-desc">a16z 联合 The Prompting Company 测试 Grok Bot、Muse 等智能体在 1,270 条提示词、11,307 次完整运行中的购物表现，并比对 YipitData 消费数据。当 AI Agent 替人下单成为现实，品牌优化的对象从"人的注意力"扩展到"机器的判断逻辑"——电商SEO之后，"Agent优化"（B2A）正在成为营销新战场。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/qkxvs90ewfu3k430sdefndv56" target="_blank">→ AIHOT</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">俄勒冈州与弗吉尼亚州起诉 SpaceX：指控 Grok 色情深伪防护不足、虚假宣传安全性</div>
+            <div class="news-item-desc">两州总检察长指控 SpaceX 忽视行业标准防护，核心指向 Grok Imagine 的 spicy 模式与"任意图片编辑"功能导致非自愿深伪泛滥。AI内容工具的安全合规风险正从平台责任上升为州级诉讼，品牌使用AI生成内容的边界标准将被这些案件重新划定。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/vlxrimiuixb91iodhjh5hxmte" target="_blank">→ AIHOT</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">特朗普抵达深圳，把照片打印了出来；BBC报道引发"应向深圳市民道歉"争议</div>
+            <div class="news-item-desc">特朗普访华行程抵达深圳，亲自打印抵达照片的细节引发热议；随后BBC相关报道被指失实，"BBC应向被冒犯的深圳市民道歉"登上热搜。外交行程的城市叙事正在成为舆论场的主战场，城市形象的国际传播议题值得内容行业持续关注。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%89%B9%E6%9C%97%E6%99%AE%E6%8A%8A%E6%8A%B5%E8%BE%BE%E6%B7%B1%E5%9C%B3%E7%85%A7%E7%89%87%E6%89%93%E5%8D%B0%E5%87%BA%E6%9D%A5%E4%BA%86" target="_blank">→ 微博热搜</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#黄仁勋复职原因 热度119万，美股芯片股涨疯了</div>
+            <div class="trend-meta">科技商业话题 · 情绪修复叙事</div>
+            <div class="trend-obs">💡 趋势观察：黄仁勋复职同时占据微博热搜第1、5位，英伟达盘前大涨28%、最终收涨超31%。科技巨头的"人事戏剧"是大众理解AI行业的最佳入口——小红书上"英伟达发生了什么"类科普解读笔记将迎来流量窗口，财经科普博主与科技博主可借势做"一句话讲清风波"的内容。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%BB%84%E4%BB%81%E5%8B%8B%E5%A4%8D%E8%81%8C%E5%8E%9F%E5%9B%A0" target="_blank">→ 微博热搜·黄仁勋复职原因</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#金价 热度15万+，震荡行情引发买金讨论</div>
+            <div class="trend-meta">理财消费赛道 · 金饰与投资双属性</div>
+            <div class="trend-obs">💡 趋势观察：金价话题持续在榜，年轻用户的"攒金豆""金饰穿搭"内容在小红书长期繁荣。金价波动期是"理财入门"内容的天然节点——品牌侧，金饰品牌可将投资属性与悦己消费结合叙事；平台侧，此类内容天然带高互动与高搜索意图。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E9%87%91%E4%BB%B7" target="_blank">→ 微博热搜·金价</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#U17国足第99分钟被绝平 热度52万</div>
+            <div class="trend-meta">体育赛事话题 · 青春遗憾叙事</div>
+            <div class="trend-obs">💡 趋势观察：国少队2-2被摩洛哥绝平，"惜败"话题的情绪浓度极高。体育内容在小红书的最佳形态不是比分播报，而是"人"的故事——小将的成长经历、球迷看球的父子情、青春热血的二创混剪。遗憾叙事往往比胜利叙事更易激发UGC共鸣。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=U17%E5%9B%BD%E8%B6%B3%E7%AC%AC99%E5%88%86%E9%92%9F%E8%A2%AB%E7%BB%9D%E5%B9%B3" target="_blank">→ 微博热搜·U17国足被绝平</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#舒淇得奖冯德伦反应 演艺圈情感话题升温</div>
+            <div class="trend-meta">影视颁奖季 · 情感向内容</div>
+            <div class="trend-obs">💡 趋势观察：舒淇获奖、冯德伦台下动容的细节成为热搜，明星夫妻的真挚瞬间是小红书情感内容的顶级素材。"岁月感+陪伴感"叙事与平台成熟女性用户高度契合，美妆与时尚品牌可关注舒淇后续的杂志与代言动态。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E8%88%92%E6%B7%87%E5%BE%97%E5%A5%96%E5%86%AF%E5%BE%B7%E4%BC%A6%E5%8F%8D%E5%BA%94" target="_blank">→ 微博热搜·舒淇得奖冯德伦反应</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#中式炸鸡配方一百万都不买 民间手艺话题走红</div>
+            <div class="trend-meta">美食内容赛道 · 非遗与手艺叙事</div>
+            <div class="trend-obs">💡 趋势观察："百万不卖的配方"类话题持续验证一个规律：具体的、有出处的手艺故事比泛美食教程更具传播力。餐饮品牌与本地生活业务可借鉴——把产品还原成"一个人的手艺"，用人物叙事撬动探店与复购，是美食赛道内容种草的高转化路径。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E4%B8%AD%E5%BC%8F%E7%82%B8%E9%B8%A1%E9%85%8D%E6%96%B9%E4%B8%80%E7%99%BE%E4%B8%87%E9%83%BD%E4%B8%8D%E4%B9%B0" target="_blank">→ 微博热搜·中式炸鸡配方</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · B2A 经济</div>
+        <div class="learning-title">当购物者不是人：a16z 一万次实测背后的"Agent 优化"新战场</div>
+        <div class="learning-subtitle">从 SEO、GEO 到 BAO——被 AI Agent 替代的消费者，正在改写营销的基本假设</div>
+        <div class="learning-body">
+          <p>a16z 做了一件营销行业迟早都要面对的事：让 AI Agent 真的去购物。1,270 条提示词、11,307 次完整购买流程、覆盖 Grok Bot、Muse、Instinct、Dots 等主流购物智能体，再比对 YipitData 的真实消费数据——结论指向一个新词：<strong>B2A（Business to Agent）经济</strong>。企业要赢得的下一个顾客，可能根本没有眼睛。</p>
+          <p>这个转变的深刻之处在于：<strong>过去二十年营销的所有技巧，都建立在对"人"的理解之上</strong>——注意力稀缺、情感共鸣、视觉冲击、从众心理。但 Agent 不看广告，不刷信息流，不为情怀买单。它读取结构化数据、比价、验证评价、执行预算约束。品牌在 Agent 眼中的形象，取决于商品数据的质量、服务的可验证性、履约的确定性——这些恰恰是传统营销最不看重的"基本功"。</p>
+          <p>a16z 总结的五条方法，本质上是一份"机器友好度"清单：让 Agent 能<b>读懂你的商品</b>（结构化、无歧义）、能<b>信任你的承诺</b>（评价可验证）、能<b>顺利完成交易</b>（支付与履约对机器无摩擦）。有趣的是，这些原则与小红书"种草效果化"的方向暗合——当种草链路被 AI 拆解和度量，"内容种草"的价值终将被翻译成 Agent 能理解的语言。</p>
+          <p>对营销人而言，这不是终点而是分层：<strong>to C 的情感连接依然存在，但 to A 的机器沟通成为新增必修课</strong>。就像十五年前每个品牌都要学 SEO，五年前都要学直播，接下来两年，"你的品牌对 Agent 说什么、怎么说"将写进每一份年度营销方案。先行者已经在做了——问题只是，你的组织里谁负责这件事。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://aihot.virxact.com/items/qkxvs90ewfu3k430sdefndv56" target="_blank">AIHOT《a16z 实测 11,307 次 Agent 购物，总结 B2A 经济五条方法》</a> ·
+          <a href="https://aihot.virxact.com/" target="_blank">AIHOT 今日精选</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · NeurIPS 神经信息处理系统大会</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🧠✨🌐</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">AI 学术盛会</span>
+          <span class="festival-tag">悉尼 · 亚特兰大 · 巴黎</span>
+          <span class="festival-tag">每年12月</span>
+          <span class="festival-tag">机器学习顶会之首</span>
+        </div>
+        <div class="festival-name">NeurIPS 神经信息处理系统大会</div>
+        <div class="festival-name-en">Conference on Neural Information Processing Systems · 始于1987年，2026年恰逢第40届</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】从几百人的"神经网络互助小组"到 AI 世界的奥林匹克</div>
+          <div class="festival-block-body">
+            <p>1987年，丹佛。深度学习还是学界眼里的"冷门偏方"，一群相信神经网络的人聚在一起，办了第一届 NeurIPS（当时叫 NIPS）——参会者不过数百人，像一个抱团取暖的互助小组。谁能想到，这个小组日后定义了整个智能时代。</p>
+            <p>2012年，AlexNet 在 ImageNet 上横空出世，深度学习纪元开启，NeurIPS 的命运随之改写：论文投稿量从几千篇膨胀到两万多篇，录用率长期压在25%左右，中稿成为研究者简历上最硬的通货。2018年，组织方正式更名为 NeurIPS——摆脱旧缩写，也宣告它已是覆盖机器学习全领域的中枢。</p>
+            <p>它的历年记忆点本身就是一部 AI 通史：2012年的深度学习黎明、2017年《Attention Is All You Need》的前夜气氛、Transformer 与大模型时代的军备竞赛。多少改变世界的想法，最早是在这里的海报展板前，被三五个研究者围着讨论出来的。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一场会议，半个 AI 工业界</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">40届</div>
+                <div class="festival-stat-label">2026年恰逢四十周年</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">20,000+</div>
+                <div class="festival-stat-label">年度投稿量级</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">~25%</div>
+                <div class="festival-stat-label">录用率</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">3城</div>
+                <div class="festival-stat-label">悉尼·亚特兰大·巴黎联动</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">12月</div>
+                <div class="festival-stat-label">2026届举办时间</div>
+              </div>
+            </div>
+            <p>今天的 NeurIPS 已不只是学术会议，而是<strong>全球 AI 人才的年度定价场</strong>：顶会论文是科技巨头与实验室争夺人才的硬指标，会议期间的招聘酒会与公司展位密度堪比人才市场。OpenAI、DeepMind、Anthropic、Meta、Google 的核心研究者几乎全员到场——一次 NeurIPS，等于把全球最强的 AI 大脑装进同一个时区。</p>
+            <p>运作模式也独具一格：投稿由社区志愿者大规模评审，论文以海报（Poster）、口头报告（Oral）、聚焦报告（Spotlight）分级展示；工作坊（Workshops）与竞赛（Competitions）覆盖从气候建模到量子计算的边缘方向。2026年第40届首次采用<strong>悉尼、亚特兰大、巴黎三城联动</strong>的形式，让不同时区的研究者就近参与——会议本身的组织形式，也在回应"AI 是全球协作产物"这个命题。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】四十岁的 NeurIPS 与对小红书平台大事件业务的启发</div>
+          <div class="festival-block-body">
+            <p><strong>本届看点：</strong>推理模型与 Agent 成为绝对主线，形式化数学验证（本周 Lean 社区刚确认黎曼猜想证明）预计将带动"AI 做数学"方向的热度；同时，多城联动模式如果跑通，可能成为顶级会议应对规模膨胀与碳足迹的新范式。四十周年之际，回头看1987年那几百人的小组——技术的信仰者，最终等来了技术的时代。</p>
+            <p><strong>对小红书平台大事件业务的启发：</strong>NeurIPS 最重要的产品不是论文，而是<strong>"在场感"</strong>——一张海报展板前的争论、一场酒会上的偶遇，产出的是信任与协作网络，这正是线上会议无法替代的稀缺品。小红书的大事件设计同样如此：活动的核心资产不是曝光量，而是让关键人群（创作者、品牌、用户）在同一物理或情感场域中"相遇"。另外，NeurIPS 用近四十年把一个学术聚会经营成行业定价标准——大事件IP也应该追求成为<strong>某个赛道的"年度必经仪式"</strong>，而不是一场孤立的爆款活动。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>记忆点：</strong>1987年，一群"研究冷门"的人开了一场几百人的小会；2026年，这场小会的第40届同时点亮悉尼、亚特兰大、巴黎三个时区。所有改变世界的浪潮，最初都只是少数人的坚持。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://neurips.cc/" target="_blank">NeurIPS 官网</a> ·
+          <a href="https://neurips.cc/Conferences/2026" target="_blank">NeurIPS 2026 会议主页</a> ·
+          <a href="https://www.aischolar.com/conference/neurips2026" target="_blank">AI Scholar·NeurIPS 2026 三城信息</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 深度学习人物图谱</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">🧠 主题策展 · 深度学习的六位旗手</div>
+        <div class="knowledge-headline">从寒冬守望者到 trillion 时代的建筑师：谁把你口袋里的 AI 变成现实？</div>
+        <div class="knowledge-tagline">「他们被冷落了三十年，然后用十年改变了世界。」</div>
+
+        <div class="knowledge-intro">
+          本周 Lean 社区确认黎曼猜想证明、黄仁勋复职、GLM-5.4 发布——AI 的新闻从未如此密集。但今天你用到的每一个模型，都能追溯到一小群人的名字。他们中的大多数，在神经网络被学界视为"民科玩具"的漫长寒冬里坚持了三十年。认识他们，就像拿到了理解这个时代的一张地图。<br><br>
+          对内容策划者来说，这六个人构成了一条完整的<strong>叙事骨架</strong>：理论奠基者、反向传播布道者、卷积网络发明者、生成对抗之父、数据基础设施构建者、工程师文化的代言人。任何关于 AI 的故事，都可以挂在这张图谱上。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Geoffrey_Hinton_2018.jpg/440px-Geoffrey_Hinton_2018.jpg"
+              alt="Geoffrey Hinton"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🧓</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Geoffrey Hinton</div>
+              <div class="knowledge-card-sub">深度学习之父 · 2024诺贝尔物理学奖</div>
+              <div class="knowledge-card-work">神经网络最黑暗的年代里唯一的坚持者之一。反向传播与深度信念网络的奠基人，培养出了 Ilya Sutskever 等一大批改变行业的学生。晚年频繁警告 AI 风险——造物者开始担忧造物。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Yann_LeCun-2018.05.10.png/440px-Yann_LeCun-2018.05.10.png"
+              alt="Yann LeCun"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🔤</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Yann LeCun</div>
+              <div class="knowledge-card-sub">卷积网络发明人 · Meta 首席AI科学家</div>
+              <div class="knowledge-card-work">1989年在贝尔实验室发明 CNN，让机器"看见"。LeNet 识别手写支票时，深度学习还是笑话；三十年后他的架构跑在每一部手机的相册里。图灵奖三巨头之一。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Yoshua_Bengio_2017.jpg/440px-Yoshua_Bengio_2017.jpg"
+              alt="Yoshua Bengio"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">📜</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Yoshua Bengio</div>
+              <div class="knowledge-card-sub">深度学习理论家 · 蒙特利尔学派旗手</div>
+              <div class="knowledge-card-work">把神经网络的语言概率化，序列建模与注意力机制的理论源头就在他的实验室。图灵奖得主中最关注 AI 安全的一位，如今把研究重心转向了"如何让 AI 不伤害人"。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Ian_Goodfellow_2017.jpg/440px-Ian_Goodfellow_2017.jpg"
+              alt="Ian Goodfellow"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">⚔️</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Ian Goodfellow</div>
+              <div class="knowledge-card-sub">GAN 之父 ·《深度学习》教材作者</div>
+              <div class="knowledge-card-work">2014年在酒吧聚会的争论中想出 GAN：让两个网络互相欺骗、共同进化。AI 生成图像的一切——从换脸到艺术创作——都始于那个夜晚。教科书《Deep Learning》至今仍是行业圣经。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🌸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">李飞飞</div>
+              <div class="knowledge-card-sub">Fei-Fei Li · ImageNet 创建者 · AI4All 联合发起人</div>
+              <div class="knowledge-card-work">2009年力排众议建成了 ImageNet——1500万张标注图片，让 AlexNet 的革命有了舞台。没有她建的数据地基，就没有 2012 年之后的深度学习浪潮。如今专注空间智能与人本 AI。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Andrej_Karpathy_%282018%29.jpg/440px-Andrej_Karpathy_%282018%29.jpg"
+              alt="Andrej Karpathy"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🚗</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">Andrej Karpathy</div>
+              <div class="knowledge-card-sub">前 Tesla AI 总监 · OpenAI 创始成员</div>
+              <div class="knowledge-card-work">把深度学习讲成互联网最流行的公开课，"从零构建 GPT"系列让无数人入了行。他证明了工程教育的另一条路：知识不必锁在校园里，代码即讲义。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          这张图谱最动人的地方不是天才，而是<strong>时间</strong>：Hinton 们守了三十年寒冬，才等到 AlexNet 的黎明；李飞飞标注图片时，没人相信数据比算法重要。内容行业也一样——真正的护城河从来不是单点爆款，而是长期主义的复利。今天 Lean 社区用 1700 万行代码验证一个数学猜想，本质上是同一个故事的续篇：<strong>相信一件暂时无人相信的事，然后活到它成为常识的那天。</strong>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
