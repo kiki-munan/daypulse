@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayPulse 🌱 · 2026/11/26</title>
+  <style>
+    :root {
+      --bg: #faf9f6; --surface: #ffffff; --border: #e8e4dc;
+      --text-primary: #1a1a18; --text-secondary: #6b6860; --text-muted: #9e9b94;
+      --accent: #c4653a; --accent-light: #f5ede8; --tag-bg: #f0ede6;
+      --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-serif: 'Georgia', 'Noto Serif SC', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .site-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
+    .site-title span { color: var(--accent); }
+    .header-date { font-size: 13px; color: var(--text-muted); letter-spacing: 0.06em; }
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 32px 24px; gap: 32px; }
+    .sidebar { width: 200px; flex-shrink: 0; transition: width 0.25s ease; position: relative; }
+    .sidebar.collapsed { width: 32px; }
+    .sidebar-inner { overflow: hidden; transition: opacity 0.2s ease; }
+    .sidebar.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; white-space: nowrap; }
+    .date-list { list-style: none; }
+    .date-list li { margin-bottom: 4px; }
+    .date-list a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .date-list a:hover, .date-list a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .sidebar-toggle { position: absolute; top: 0; right: -12px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); z-index: 10; transition: background 0.15s, color 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .sidebar-toggle:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .main-content { flex: 1; min-width: 0; }
+    .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .day-date { font-size: 28px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); }
+    .day-week { font-size: 13px; color: var(--text-muted); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-icon { font-size: 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .section-body { padding: 20px 24px; }
+    .news-panel { margin-bottom: 20px; }
+    .news-panel:last-child { margin-bottom: 0; }
+    .news-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .news-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-item-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+    .news-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+    .news-item-link { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .news-item-link:hover { opacity: 1; text-decoration: underline; }
+    .trend-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trend-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .trend-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--tag-bg); color: var(--text-secondary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .trend-rank.hot { background: var(--accent); color: white; }
+    .trend-content { flex: 1; }
+    .trend-title { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .trend-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .trend-obs { font-size: 12px; color: var(--text-secondary); line-height: 1.6; background: var(--tag-bg); padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+    .trend-source { font-size: 11px; margin-top: 6px; }
+    .trend-source a { color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .trend-source a:hover { opacity: 1; text-decoration: underline; }
+    .learning-label { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px; }
+    .learning-title { font-size: 18px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
+    .learning-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .learning-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .learning-body p { margin-bottom: 10px; }
+    .learning-body strong { color: var(--text-primary); }
+    .learning-source { margin-top: 16px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+    .learning-source a { color: var(--accent); text-decoration: none; }
+    .learning-source a:hover { text-decoration: underline; }
+    .festival-banner { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; background: var(--tag-bg); }
+    .festival-banner-placeholder { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: linear-gradient(135deg, #1a1a2e 0%, #c4653a 60%, #f5ede8 100%); }
+    .festival-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 20px; }
+    .festival-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--text-muted); }
+    .festival-tag.highlight { background: var(--accent); color: white; }
+    .festival-name { font-size: 22px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 4px; }
+    .festival-name-en { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .festival-block { margin-bottom: 20px; }
+    .festival-block:last-child { margin-bottom: 0; }
+    .festival-block-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .festival-block-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; }
+    .festival-block-body p { margin-bottom: 8px; }
+    .festival-block-body strong { color: var(--text-primary); }
+    .festival-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
+    .festival-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .festival-stat-num { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-serif); }
+    .festival-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .festival-insight { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+    .festival-insight strong { color: var(--accent); }
+    .knowledge-theme { display: inline-block; font-size: 11px; color: var(--text-muted); background: var(--tag-bg); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.04em; }
+    .knowledge-headline { font-size: 20px; font-weight: 700; font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 6px; }
+    .knowledge-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 16px; }
+    .knowledge-intro { font-size: 13.5px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 18px; }
+    .knowledge-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .knowledge-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knowledge-card-img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: var(--tag-bg); display: block; }
+    .knowledge-card-img-placeholder { width: 100%; height: 130px; background: linear-gradient(135deg, var(--tag-bg) 0%, var(--border) 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .knowledge-card-body { padding: 12px; }
+    .knowledge-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+    .knowledge-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .knowledge-card-work { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .knowledge-coda { font-size: 13px; color: var(--text-secondary); line-height: 1.8; border-left: 3px solid var(--accent); padding-left: 14px; font-style: italic; }
+    .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 24px; }
+    @media (max-width: 768px) { .layout { flex-direction: column; padding: 16px; } .sidebar { width: 100%; } .site-header { padding: 16px 20px; } .knowledge-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">DayPulse <span>🌱</span></div>
+  <div class="header-date">每个工作日 09:45 更新</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-inner">
+    <div class="sidebar-label">归档日期</div>
+    <ul class="date-list">
+      <li><a href="/daypulse/2026/11/26/index.html" class="active">2026 / 11 / 26</a></li>
+      <li><a href="/daypulse/2026/11/25/index.html">2026 / 11 / 25</a></li>
+      <li><a href="/daypulse/2026/11/24/index.html">2026 / 11 / 24</a></li>
+      <li><a href="/daypulse/2026/11/23/index.html">2026 / 11 / 23</a></li>
+      <li><a href="/daypulse/2026/11/20/index.html">2026 / 11 / 20</a></li>
+      <li><a href="/daypulse/2026/11/19/index.html">2026 / 11 / 19</a></li>
+      <li><a href="/daypulse/2026/11/18/index.html">2026 / 11 / 18</a></li>
+    </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="day-header">
+      <div class="day-date">2026 · 11 · 26</div>
+      <div class="day-week">星期四 · 感恩节（美）</div>
+    </div>
+
+    <!-- ① 新闻拼盘 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🗞</span>
+        <span class="section-title">新闻拼盘</span>
+        <span class="section-subtitle">今日精选 · 6 板块</span>
+      </div>
+      <div class="section-body">
+
+        <div class="news-panel">
+          <div class="news-panel-title">宏观 · 经济</div>
+          <div class="news-item">
+            <div class="news-item-title">美国贸易调查后提议对欧盟商品征收最高20%关税，对日韩加征15%最惠国关税</div>
+            <div class="news-item-desc">新一轮关税提议在感恩节假期前出炉，欧盟、日韩市场情绪再受扰动。与此同时，韩国政府正寻求扩大10.76万亿韩元规模的股市稳定基金，韩国开发银行已向25家金融机构摸底追加出资能力。全球贸易与资本市场的"防波堤"正在同步加高。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/cpbd/2026-11-26/doc-inizzftq8226276.shtml" target="_blank">→ 新浪财经·操盘必读</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">A股并购重组持续升温，"科技成色"成为交易主线：艾为电子收购钰泰半导体、纳芯微4.87亿元收购隔空智能</div>
+            <div class="news-item-desc">11月以来上市公司并购动作密集，模拟芯片、光互联、毫米波雷达等硬科技赛道成为资本深耕方向。明日起神雾节能、大烨智能因财务造假被实施ST，监管与扩张并行，市场正在完成一轮结构性换血。</div>
+            <a class="news-item-link" href="https://finance.sina.com.cn/stock/y/2026-11-26/doc-inizzftq8222545.shtml" target="_blank">→ 新浪财经·四大证券报头条</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">科技 · AI</div>
+          <div class="news-item">
+            <div class="news-item-title">OpenAI发布预印本：GPT-6展现内在蛋白质设计能力，无需专用生物学模型</div>
+            <div class="news-item-desc">GPT-6系列模型仅凭推理和通用编码工具即可设计新蛋白的结构与序列。与Onava的实验室测试中，322个minibinder有35个（10.9%）结合阳性，重设计抗体片段66%保留结合能力。大模型的科学发现能力，正从数学、代码扩展到生命科学最深处。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/yg04c9d5qnwzitqstg19c6ow2" target="_blank">→ AIHOT·OpenAI官网动态</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">42州总检察长介入Character.AI破产程序，反对拍卖2100万账户用户私密聊天记录</div>
+            <div class="news-item-desc">数据集涉及逾210万未成年人账户及IP地址等敏感信息，拍卖定于12月1日举行。当AI陪伴产品的商业生命终结时，用户数据该何去何从——这将成为全球AI监管的标志性案例。</div>
+            <a class="news-item-link" href="https://aihot.virxact.com/items/j0hoj1rlmltoft6okserijp25" target="_blank">→ AIHOT·TechCrunch</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">梁文锋成全球最富AI模型创始人，微博话题热度破百万</div>
+            <div class="news-item-desc">DeepSeek创始人的财富数字背后，是中国开源模型路线的全球议价权。与此同时，"大量英伟达GPU涌入转售市场"登上热搜——算力供需的天平，似乎正在出现微妙松动。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%A2%81%E6%96%87%E9%94%8B%E6%88%90%E5%85%A8%E7%90%83%E6%9C%80%E5%AF%8CAI%E6%A8%A1%E5%9E%8B%E5%88%9B%E5%A7%8B%E4%BA%BA" target="_blank">→ 微博热搜·梁文锋</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">行业 · 消费</div>
+          <div class="news-item">
+            <div class="news-item-title">小米SU7 Ultra申报工信部，新版本进入上市倒计时</div>
+            <div class="news-item-desc">"小米SU7 Ultra上工信部"冲上微博热搜第9位。汽车消费的新能源叙事从"参数内卷"进入"版本迭代"阶段，米粉经济与汽车消费的边界正在消融。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B0%8F%E7%B1%B3SU7+Ultra%E4%B8%8A%E5%B7%A5%E4%BF%A1%E9%83%A8" target="_blank">→ 微博热搜·小米SU7 Ultra</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">感恩节今日而至，黑五消费季正式打响：品牌进入年末转化冲刺</div>
+            <div class="news-item-desc">美国时间11月26日是感恩节，梅西百货大游行照例开启假日季。对跨境品牌与国内平台而言，从黑五、网络星期一到双十二、圣诞，年末六周的转化窗口已全部打开。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E6%84%9F%E6%81%A9%E8%8A%82" target="_blank">→ 微博热搜·感恩节</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">品牌 · 营销</div>
+          <div class="news-item">
+            <div class="news-item-title">巴黎世家在上海：奢侈品牌将全球首发放进黄浦江畔</div>
+            <div class="news-item-desc">"巴黎世家在上海"登上微博热搜第8位。国际奢侈品牌把最新大秀放到上海全球首发，呼应"首发经济"政策叙事——品牌事件正在成为城市营销与消费地标的双向奔赴。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E5%B7%B4%E9%BB%8E%E4%B8%96%E5%AE%B6%E5%9C%A8%E4%B8%8A%E6%B5%B7" target="_blank">→ 微博热搜·巴黎世家在上海</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">娱乐 · 文化</div>
+          <div class="news-item">
+            <div class="news-item-title">马伯庸回应《两京十五日》改编争议：IP改编的话语权博弈再成公共话题</div>
+            <div class="news-item-desc">原著作者亲自下场回应影视化改编争议，"作者—剧方—读者"三方叙事的张力在热搜上公开演化。IP改编的商业成功公式，从来不只关于"还原度"。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E9%A9%AC%E4%BC%AF%E5%BA%B8%E5%9B%9E%E5%BA%94%E4%B8%A4%E4%BA%AC%E5%8D%81%E4%BA%94%E6%97%A5%E4%BA%89%E8%AE%AE" target="_blank">→ 微博热搜·马伯庸回应</a>
+          </div>
+          <div class="news-item">
+            <div class="news-item-title">"美术生不是被AI干掉的"引发全网共鸣，创作者价值讨论破圈</div>
+            <div class="news-item-desc">这条热搜的语法值得玩味：它不是在否认AI的冲击，而是在追问冲击的方向。设计与内容行业的情绪正在积累，等待一个更完整的公共叙事。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%BE%8E%E6%9C%AF%E7%94%9F%E4%B8%8D%E6%98%AF%E8%A2%ABAI%E5%B9%B2%E6%8E%89%E7%9A%84" target="_blank">→ 微博热搜·美术生不是被AI干掉的</a>
+          </div>
+        </div>
+
+        <div class="news-panel">
+          <div class="news-panel-title">国际 · 地缘</div>
+          <div class="news-item">
+            <div class="news-item-title">神舟24乘组进驻天宫，首位外籍航天员进入中国空间站</div>
+            <div class="news-item-desc">中国空间站正式迎来外籍航天员，"首位外籍航天员进天宫机密如何保障"同时成为热搜话题。太空合作正在成为国际关系的另一种语法——在技术信任与地缘博弈之间，寻找新的公共语言。</div>
+            <a class="news-item-link" href="https://s.weibo.com/weibo?q=%E7%A5%9E24%E4%B9%98%E7%BB%84%E8%BF%9B%E9%A9%BB%E5%A4%A9%E5%AE%AB" target="_blank">→ 微博热搜·神24乘组进驻天宫</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ② 站内要闻 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">站内要闻</span>
+        <span class="section-subtitle">小红书热点 · 趋势观察</span>
+      </div>
+      <div class="section-body">
+
+        <div class="trend-item">
+          <div class="trend-rank hot">1</div>
+          <div class="trend-content">
+            <div class="trend-title">#巴黎世家在上海 奢侈品牌上海大秀</div>
+            <div class="trend-meta">时尚内容赛道 · 品牌大事件</div>
+            <div class="trend-obs">💡 趋势观察：奢侈品牌把全球首发放进上海，小红书的"看秀穿搭解析"内容通常在大秀后24小时内起量。巴黎世家的争议性品牌人格在小红书天然具备讨论势能——从秀场造型复刻到"敢不敢穿"的投票式内容，都是品牌事件二次发酵的典型路径。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E5%B7%B4%E9%BB%8E%E4%B8%96%E5%AE%B6%E5%9C%A8%E4%B8%8A%E6%B5%B7" target="_blank">→ 微博热搜·巴黎世家在上海</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank hot">2</div>
+          <div class="trend-content">
+            <div class="trend-title">#美术生不是被AI干掉的 创作者群体共鸣话题</div>
+            <div class="trend-meta">设计/艺术创作者赛道 · AI情绪议题</div>
+            <div class="trend-obs">💡 趋势观察：小红书是美术生、设计师浓度最高的平台之一。AI冲击创作者生计的情绪话题在此有极强的穿透力——"AI替代焦虑"正在从技术议题变成"具体的人"的生计叙事。品牌在AI话题上的表态，比投放AI广告本身更能影响这个圈层的好感度。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%BE%8E%E6%9C%AF%E7%94%9F%E4%B8%8D%E6%98%AF%E8%A2%ABAI%E5%B9%B2%E6%8E%89%E7%9A%84" target="_blank">→ 微博热搜·美术生不是被AI干掉的</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">3</div>
+          <div class="trend-content">
+            <div class="trend-title">#王玉雯皮草代言争议 明星代言的价值观风控样本</div>
+            <div class="trend-meta">品牌营销赛道 · 代言风险管理</div>
+            <div class="trend-obs">💡 趋势观察："网友抵制王玉雯代言皮草"与"付智恩真皮草"两个话题同时上榜。当代言物本身带有伦理争议，明星粉丝群体的价值观分化会直接反噬品牌。小红书上的讨论往往更细分——"可持续时尚""人造皮草测评"类内容是这类争议的天然承接面。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E7%BD%91%E5%8F%8B%E6%8A%B5%E5%88%B6%E7%8E%8B%E7%8E%89%E9%9B%AF%E4%BB%A3%E8%A8%80%E7%9A%AE%E8%8D%89" target="_blank">→ 微博热搜·王玉雯皮草代言争议</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">4</div>
+          <div class="trend-content">
+            <div class="trend-title">#梁文锋成全球最富AI模型创始人 国产AI叙事新峰值</div>
+            <div class="trend-meta">科技内容赛道 · 国民级AI话题</div>
+            <div class="trend-obs">💡 趋势观察：DeepSeek相关话题在小红书的内容形态正从"技术测评"转向"人物故事"——创始人传记、开源理念、团队轶事类笔记热度持续。当科技人物具备了故事性，就具备了种草内容的底层燃料，这也是科技品牌做"人设化传播"的黄金窗口。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%A2%81%E6%96%87%E9%94%8B%E6%88%90%E5%85%A8%E7%90%83%E6%9C%80%E5%AF%8CAI%E6%A8%A1%E5%9E%8B%E5%88%9B%E5%A7%8B%E4%BA%BA" target="_blank">→ 微博热搜·梁文锋</a></div>
+          </div>
+        </div>
+
+        <div class="trend-item">
+          <div class="trend-rank">5</div>
+          <div class="trend-content">
+            <div class="trend-title">#感恩节开启年末消费季 黑五种草内容进入高峰</div>
+            <div class="trend-meta">消费内容赛道 · 跨境购物节点</div>
+            <div class="trend-obs">💡 趋势观察：感恩节当日美国商场歇业、线上预热，小红书"黑五攻略""海淘比价"类搜索已从本周初开始爬坡。跨境消费决策链路长、依赖攻略内容，是种草笔记介入转化漏斗最深的品类之一——黑五周末将出现第一波发布峰值。</div>
+            <div class="trend-source"><a href="https://s.weibo.com/weibo?q=%E6%84%9F%E6%81%A9%E8%8A%82" target="_blank">→ 微博热搜·感恩节</a></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ③ 行业学习 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">📚</span>
+        <span class="section-title">行业学习</span>
+        <span class="section-subtitle">广告 · 商业 · 营销</span>
+      </div>
+      <div class="section-body">
+        <div class="learning-label">今日主题 · 代言风险管理</div>
+        <div class="learning-title">当明星遇上皮草：代言合同的"价值观条款"正在成为品牌必修课</div>
+        <div class="learning-subtitle">王玉雯皮草代言争议背后：为什么越是高调的官宣，越需要前置的风险审计？</div>
+        <div class="learning-body">
+          <p>今天，"网友抵制王玉雯代言皮草"与"王玉雯到底咋想的"同时登上微博热搜。一位年轻艺人为皮草品牌代言，本应是一次常规的商业合作，却在几个小时内演变为一场价值观公开审判——评论区里，粉丝脱粉、路人抵制、动保组织介入，多重声浪叠加发酵。</p>
+          <p>这件事的本质，不是"皮草能不能卖"，而是<strong>代言物本身的伦理争议性，正在成为品牌风险的第一来源</strong>。过去品牌审计代言人，查的是税务、言行、情感史；但今天的舆论场里，"你代言了什么"和"你做了什么"同样致命。皮草、游戏、医美、白酒……每个品类都自带一张隐形的价值观地图，而社交媒体让这张地图上的每一条边界都变得可以即时投票。</p>
+          <p>成熟的品牌怎么做？三个动作值得记住：<strong>官宣前做品类舆情审计</strong>（这个品类过去三年有过哪些抵制事件？核心反对群体是谁？）；<strong>合同里写价值观退出机制</strong>（当争议发酵到什么量级，双方如何体面收场）；<strong>预备48小时回应剧本</strong>（沉默、道歉、公益对冲，三条路径的文案提前备好）。这次事件中品牌方的响应速度与口径，本身就是一堂公开课。</p>
+          <p>对平台大事件业务而言，这个案例的启发更深一层：<strong>小红书是价值观冲突最先"内容化"的地方</strong>。微博热搜告诉你争议存在，小红书告诉你争议的具体纹理——抵制笔记的论证方式、粉丝的辩护逻辑、中立用户的摇摆理由。做IP合作与代言策划之前，先去小红书搜一搜这个品类的"争议笔记"，是成本最低的风险调研。</p>
+          <p>当消费者的每一次购买都变成一次表态，品牌选择代言人，本质上是选择站进哪一场对话。而对话，从来都比广告更需要技巧。</p>
+        </div>
+        <div class="learning-source">
+          📖 参考来源：
+          <a href="https://s.weibo.com/weibo?q=%E7%BD%91%E5%8F%8B%E6%8A%B5%E5%88%B6%E7%8E%8B%E7%8E%89%E9%9B%AF%E4%BB%A3%E8%A8%80%E7%9A%AE%E8%8D%89" target="_blank">微博热搜·网友抵制王玉雯代言皮草</a> ·
+          <a href="https://s.weibo.com/weibo?q=%E4%BB%98%E6%99%BA%E6%81%A9+%E7%9C%9F%E7%9A%AE%E8%8D%89" target="_blank">微博热搜·付智恩真皮草</a> ·
+          <a href="https://tophub.today/n/KqndgxeLl9" target="_blank">今日热榜·微博热搜榜</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 节日词典 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🎪</span>
+        <span class="section-title">节日词典</span>
+        <span class="section-subtitle">今日登场 · 诺贝尔奖颁奖典礼</span>
+      </div>
+
+      <div class="festival-banner-placeholder">🏅🔔🇸🇪</div>
+
+      <div class="section-body">
+        <div class="festival-meta">
+          <span class="festival-tag highlight">学术·文化盛事</span>
+          <span class="festival-tag">瑞典·斯德哥尔摩</span>
+          <span class="festival-tag">每年12月10日</span>
+          <span class="festival-tag">全球最高学术荣誉</span>
+        </div>
+        <div class="festival-name">诺贝尔奖颁奖典礼</div>
+        <div class="festival-name-en">Nobel Prize Award Ceremony · 始于1901年 · 2026年颁奖季已进入倒计时</div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【过去】一纸遗嘱长出的百年殿堂</div>
+          <div class="festival-block-body">
+            <p>1895年，瑞典实业家、炸药发明者阿尔弗雷德·诺贝尔在遗嘱中写下惊人的一笔：将绝大部分财产（约3100万瑞典克朗）设立基金，"每年颁给为人类带来最大利益的人"。1896年他去世，1901年首届颁奖典礼在斯德哥尔摩举行——一份遗嘱，就此长成人类历史上延续时间最长、声望最高的荣誉体系。</p>
+            <p>从1901年至今，奖项覆盖物理、化学、生理学或医学、文学、和平，1968年增设经济学奖。一百二十余年间，它见证了从相对论到CRISPR、从泰戈尔到鲍勃·迪伦的无数次"人类高光时刻"。<strong>12月10日</strong>——诺贝尔的忌日——被固定为颁奖日，这个细节本身就是一场精心设计的叙事：把纪念死亡的日子，变成庆祝人类智识的节日。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【现在】一场持续百年的"仪式经济"</div>
+          <div class="festival-block-body">
+            <div class="festival-stats">
+              <div class="festival-stat">
+                <div class="festival-stat-num">1200万</div>
+                <div class="festival-stat-label">瑞典克朗/每项奖金</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">120+</div>
+                <div class="festival-stat-label">年颁奖历史</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">900+</div>
+                <div class="festival-stat-label">累计获奖个人与组织</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">12/10</div>
+                <div class="festival-stat-label">斯德哥尔摩音乐厅颁奖</div>
+              </div>
+              <div class="festival-stat">
+                <div class="festival-stat-num">蓝厅</div>
+                <div class="festival-stat-label">市政厅诺贝尔晚宴</div>
+              </div>
+            </div>
+            <p>颁奖典礼在斯德哥尔摩音乐厅举行，瑞典国王亲自颁奖；晚宴设在市政厅蓝厅，1200余名宾客、严格的座次礼仪、被称为"诺贝尔之花"的黄玫瑰装饰，共同构成一套百年不变的仪式语法。和平奖则单独在挪威奥斯陆颁发——一个奖项，两个国家，这本身也是诺贝尔遗嘱的政治智慧。</p>
+            <p>这套仪式的商业与文化辐射力惊人：整个"<strong>诺贝尔周</strong>"（Nobel Week）包含获奖者讲座、点亮斯德哥尔摩的诺贝尔灯光秀、面向全球青年的Nobel Prize Dialogue，多数活动在线直播。对主办城市来说，它是年末旅游与城市品牌的顶级IP；对学界来说，它是全年讨论度最高的"学术热搜周"——2026年诺奖季10月初开奖后，奖金已从1100万提升至1200万瑞典克朗。</p>
+          </div>
+        </div>
+
+        <div class="festival-block">
+          <div class="festival-block-title">【未来】2026年12月10日开奖在即，对小红书大事件的启发</div>
+          <div class="festival-block-body">
+            <p><strong>两周倒计时：</strong>2026年诺贝尔周已于12月初在斯德哥尔摩与奥斯陆展开，大量活动开放在线直播。获奖者名单10月已全部揭晓，全球媒体的焦点将从"猜奖"切换为"听获奖演说"——那些演讲金句，往往才是社交媒体真正的传播单元。</p>
+          </div>
+          <div class="festival-insight">
+            <strong>对小红书平台大事件业务的启发：</strong>诺贝尔奖最值得学的不是荣誉本身，而是它把"专业判断"翻译成"大众仪式"的能力——用一个固定日期、一个固定场所、一套固定流程，让普通人每年都愿意为世界上最艰深的学术成就停下来十五分钟。大事件IP同样如此：内容可以每年变，但"仪式感锚点"（固定时间、固定环节、固定的视觉符号）才是让用户形成年度期待的原因。此外，诺贝尔周的知识内容全部直播、金句优先传播的做法，正是小红书"高信息密度内容破圈"的教科书路径。
+          </div>
+        </div>
+
+        <div class="learning-source" style="margin-top:16px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">
+          📖 来源：
+          <a href="https://www.nobelprize.org/ceremonies/nobel-prize-award-ceremony-2026/" target="_blank">NobelPrize.org·2026颁奖典礼官方页面</a> ·
+          <a href="https://www.nobelprize.org/ceremonies/nobel-week-2026/" target="_blank">NobelPrize.org·Nobel Week 2026</a> ·
+          <a href="https://www.rfi.fr/cn/%E5%9B%BD%E9%99%85/20261005-2026%E5%B9%B4%E8%AF%BA%E8%B4%9D%E5%B0%94%E5%A5%96%E5%AD%A3%E6%8B%89%E5%BC%80%E5%B8%B7%E5%B9%95-%E5%8C%BB%E5%AD%A6%E5%A5%96%E8%8A%B1%E8%90%BD%E7%BE%8E%E5%9B%BD%E5%92%8C%E5%BE%B7%E5%9B%BD" target="_blank">RFI·2026诺贝尔奖季开启</a> ·
+          <a href="https://special.nextapple.com/nobel-prize-2026" target="_blank">壹苹·2026诺贝尔奖得主名单</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 知识增长 -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-icon">🌐</span>
+        <span class="section-title">知识增长</span>
+        <span class="section-subtitle">今日策展 · 文学桂冠</span>
+      </div>
+      <div class="section-body">
+        <div class="knowledge-theme">📖 主题策展 · 诺贝尔文学奖得主的六重宇宙</div>
+        <div class="knowledge-headline">当人类把文学也做成一门"科学"：六个改变世界写作版图的名字</div>
+        <div class="knowledge-tagline">「文学奖的存在，不是为了选出最好的作家，而是为了让世界看见文学还能做什么。」</div>
+
+        <div class="knowledge-intro">
+          诺贝尔文学奖或许是世界上最具争议的文学奖——鲍勃·迪伦得奖那年，有人说文学死了；可正是这种"还能这样？"的错愕，一次次拓宽了"文学"的边界。今天趁节日词典写诺贝尔之机，策展六位改变世界写作版图的得主——他们的共同点不是风格，而是都证明了同一件事：<strong>语言可以为无法发声的东西发声</strong>。<br><br>
+          对内容创作者来说，这些作家的手法——魔幻与现实的对撞、极简的冰山叙事、复调的历史书写——本质上都是"内容策略"：如何用一个具体的故事，承载一个时代的重量。
+        </div>
+
+        <div class="knowledge-cards">
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Ernest_Hemingway_Nobel.jpg/440px-Ernest_Hemingway_Nobel.jpg"
+              alt="海明威"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎣</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">欧内斯特·海明威</div>
+              <div class="knowledge-card-sub">Ernest Hemingway · 美国 · 1954年得奖</div>
+              <div class="knowledge-card-work">"冰山理论"的发明者：八分之七藏在水面之下。极简到近乎粗暴的句子，反而让《老人与海》里的每一条鱼都成了人类尊严的隐喻。他用删减证明了：不说出来的部分，才是最响的部分。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🦋</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">加西亚·马尔克斯</div>
+              <div class="knowledge-card-sub">Gabriel García Márquez · 哥伦比亚 · 1982年得奖</div>
+              <div class="knowledge-card-work">《百年孤独》让"魔幻现实主义"成为全球文学的通用语。他证明了一件奇妙的事：把一个家族的孤独写到位，就写出了所有拉丁美洲的历史。叙事的规模感，不来自题材大小，而来自语言密度。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🪟</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">托妮·莫里森</div>
+              <div class="knowledge-card-sub">Toni Morrison · 美国 · 1993年得奖</div>
+              <div class="knowledge-card-work">首位获诺奖的非裔女性作家。《宠儿》直面奴隶制留下的精神创伤，把美国历史最黑暗的一页写成了无法归档的痛。她的方法：让被历史抹去的人重新拥有语言的全部重量。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🎻</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">石黑一雄</div>
+              <div class="knowledge-card-sub">Kazuo Ishiguro · 英国 · 2017年得奖</div>
+              <div class="knowledge-card-work">《长日将尽》用一个管家的回忆，写完了一个帝国的黄昏。他的绝技是"不可靠叙事"——记忆的每次自我美化，都是一次背叛的供词。克制，是他最大的戏剧性。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <div class="knowledge-card-img-placeholder">🏮</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">莫言</div>
+              <div class="knowledge-card-sub">中国 · 2012年得奖</div>
+              <div class="knowledge-card-work">首位获诺奖的中国籍作家。"高密东北乡"在他笔下成为与马尔克斯的马孔多齐名的文学地标。《红高粱家族》用感官爆炸式的语言写乡土暴力与生命力——他把最土的故事，写成了最世界的文学。</div>
+            </div>
+          </div>
+
+          <div class="knowledge-card">
+            <img class="knowledge-card-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Bob_Dylan_-_Azkena_Rock_Festival_2010.jpg/440px-Bob_Dylan_-_Azkena_Rock_Festival_2010.jpg"
+              alt="鲍勃·迪伦"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div class="knowledge-card-img-placeholder" style="display:none;">🎸</div>
+            <div class="knowledge-card-body">
+              <div class="knowledge-card-name">鲍勃·迪伦</div>
+              <div class="knowledge-card-sub">Bob Dylan · 美国 · 2016年得奖</div>
+              <div class="knowledge-card-work">史上最大争议：民谣歌手凭什么得文学奖？瑞典学院的答案是——"在伟大的美国歌曲传统中创造了新的诗性表达"。这场争议最终变成一次胜利：文学的定义权，被他用一把口琴改写了。</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="knowledge-coda">
+          六个名字，六种"让不可能被听见的东西被听见"的方法。对做内容的人来说，诺奖文学不是遥远的桂冠，而是一座手艺宝库：海明威教删减，马尔克斯教密度，莫里森教视角，石黑教克制，莫言教感官，迪伦教破界。下一个刷屏的Campaign，也许就差其中一门手艺。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  DayPulse 🌱 · 由 Ki 生成 · 每个工作日 09:45 更新
+</footer>
+
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebarToggle');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '展开日期栏' : '收起日期栏';
+    try { localStorage.setItem('daypulse-sidebar', collapsed ? '1' : '0'); } catch(e) {}
+  }
+  // 恢复上次状态
+  try {
+    if (localStorage.getItem('daypulse-sidebar') === '1') {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('sidebarToggle');
+      sidebar.classList.add('collapsed');
+      btn.textContent = '▶';
+      btn.title = '展开日期栏';
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
